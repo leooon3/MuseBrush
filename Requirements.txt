@@ -1,4 +1,4 @@
-page always with proportions 16/9
+canva always with proportions 16/9
 elements in the top part like a header
 pointer to not draw
 various pencils 
@@ -7,3 +7,7 @@ geometric figures
 download
 user system 
 text block
+clear canva
+layering
+undo action
+redo action
