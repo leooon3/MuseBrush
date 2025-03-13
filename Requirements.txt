@@ -1,6 +1,9 @@
-pagina 16/9 sempre in rapporto con i pixel 
-menù in alto con centro vuoto
-pennelli vari
+page always with proportions 16/9
+elements in the top part like a header
+pointer to not draw
+various pencils 
+size for pencils
+geometric figures
 download
-account system 
-
+user system 
+text block
