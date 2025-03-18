@@ -17,13 +17,31 @@ canvas {
 button {
     padding: 10px 20px;
     font-size: 16px;
-    background-color: #ff4444;
+    background-color: #ffffff;
     color: white;
     border: none;
     cursor: pointer;
     border-radius: 5px;
+    position: left;
+}
+header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 10px;
+    border: 2px;
+    border-color: #333;
+}
+
+#clearBtn {
+    position: absolute;
+    right: 10px; /* Adjust distance from the left */
+}
+#clearBtn img {
+    display: block;
 }
 
 button:hover {
-    background-color: #cc0000;
+    background-color: #ffd3d3;
 }
