@@ -1,17 +1,29 @@
-// Initialize Fabric.js canvas
-var canvas = new fabric.Canvas('drawingCanvas', {
-    isDrawingMode: true // Enables drawing mode
-});
+var el = document.getElementById('c');
+var ctx = el.getContext('2d');
+var isDrawing = false;
 
-// Set canvas dimensions
-canvas.setWidth(600);
-canvas.setHeight(400);
+el.onmousedown = function(e) {
+  isDrawing = true;
+  ctx.beginPath(); // Start a new path
+  let rect = el.getBoundingClientRect();
+  ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+};
 
-// Configure pencil settings
-canvas.freeDrawingBrush.color = "black";
-canvas.freeDrawingBrush.width = 3;
+el.onmousemove = function(e) {
+  if (isDrawing) {
+    let rect = el.getBoundingClientRect();
+    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    ctx.stroke();
+  }
+};
 
-// Clear Canvas Button
-document.getElementById("clearBtn").addEventListener("click", function() {
-    canvas.clear(); // Clears the canvas
-});
+el.onmouseup = function() {
+  isDrawing = false;
+};
+el.onmouseleave = function() { 
+  isDrawing = false; 
+};
+
+document.getElementById('clearBtn').onclick = function() {
+    ctx.clearRect(0, 0, el.width, el.height);
+  };
