@@ -72,3 +72,52 @@ document.getElementById("downloadBtn").addEventListener("click", function () {
   link.href = el.toDataURL(`image/${format}`); // Convert canvas to chosen format
   link.click();
 });
+document.addEventListener("DOMContentLoaded", () => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+      window.location.href = "login.html"; // Redirect if not logged in
+  }
+
+  // Fetch User Info
+  fetch("http://localhost:5000/api/auth/user", {
+      method: "GET",
+      headers: { "Authorization": token }
+  })
+  .then(res => res.json())
+  .then(data => {
+      document.getElementById("userGreeting").textContent = `Welcome, ${data.username}`;
+  });
+
+  // Logout Button
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
+  });
+
+  // Save Drawing to Database
+  document.getElementById("saveBtn").addEventListener("click", () => {
+      const dataURL = document.getElementById("c").toDataURL();
+
+      fetch("http://localhost:5000/api/auth/save", {
+          method: "POST",
+          headers: { 
+              "Authorization": token,
+              "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ image: dataURL })
+      })
+      .then(res => res.json())
+      .then(data => alert("Drawing saved!"));
+  });
+
+  // Download Drawing
+  document.getElementById("downloadBtn").addEventListener("click", () => {
+      const canvas = document.getElementById("c");
+      const link = document.createElement("a");
+      link.download = "drawing.png";
+      link.href = canvas.toDataURL();
+      link.click();
+  });
+});
+
