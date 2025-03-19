@@ -65,3 +65,10 @@ document.addEventListener("click", function (event) {
         brushDropdown.style.display = "none";
     }
 });
+document.getElementById("downloadBtn").addEventListener("click", function () {
+  let format = document.getElementById("formatSelect").value; // Get selected format
+  let link = document.createElement("a");
+  link.download = `drawing.${format}`; // Set file name
+  link.href = el.toDataURL(`image/${format}`); // Convert canvas to chosen format
+  link.click();
+});
