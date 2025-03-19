@@ -36,11 +36,32 @@ el.onmousemove = function(e) {
 el.onmouseup = function() {
   isDrawing = false;
 };
-/*el.onmouseleave = function() { 
-  isDrawing = false; 
-};*/
 
 // Function to clear the canvas
 document.getElementById('clearBtn').onclick = function() {
   ctx.clearRect(0, 0, el.width, el.height);
 };
+
+var brushButton = document.getElementById("brushes_tab");
+var brushDropdown = document.getElementById("brushDropdown");
+
+// Toggle dropdown visibility
+brushButton.onclick = function () {
+    brushDropdown.style.display = (brushDropdown.style.display === "block") ? "none" : "block";
+};
+
+// Set brush size when clicking an option
+document.querySelectorAll(".brush-option").forEach(button => {
+    button.addEventListener("click", function () {
+        let size = this.getAttribute("data-size");
+        ctx.lineWidth = size; // Change brush size
+        brushDropdown.style.display = "none"; // Hide dropdown after selection
+    });
+});
+
+// Close dropdown if clicking outside
+document.addEventListener("click", function (event) {
+    if (!brushButton.contains(event.target) && !brushDropdown.contains(event.target)) {
+        brushDropdown.style.display = "none";
+    }
+});

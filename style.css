@@ -1,4 +1,4 @@
-body {
+body { 
     text-align: center;
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
@@ -18,30 +18,61 @@ button {
     padding: 10px 20px;
     font-size: 16px;
     background-color: #ffffff;
-    color: white;
+    color: black;
     border: none;
     cursor: pointer;
     border-radius: 5px;
-    position: left;
 }
+
 header {
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     padding: 10px;
-    border: 2px;
-    border-color: #333;
+    border: 2px solid #333;
 }
 
 #clearBtn {
     position: absolute;
-    right: 10px; /* Adjust distance from the left */
+    right: 10px;
 }
-#clearBtn img {
+
+#clearBtn img, #brushes_tab img {
     display: block;
 }
 
 button:hover {
     background-color: #ffd3d3;
+}
+
+#brushes_tab {
+    position: absolute;
+    left: 10px;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    left: 10px;
+    top: 60px;
+    background-color: white;
+    border: 1px solid black;
+    padding: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+}
+
+.dropdown-content button {
+    display: block;
+    width: 100%;
+    padding: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+}
+
+.dropdown-content button:hover {
+    background-color: #ddd;
 }
