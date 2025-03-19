@@ -9,19 +9,11 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
     </head>
     <body>
-        <div class="canvas-container"></div>
-            <header>
+        <div class="canvas-container">
+            <div id="menu">
                 <button id="brushes_tab">
                     <img src="image.png" width="40" height="40">
                 </button>
-                <select id="formatSelect">
-                    <option value="png">PNG</option>
-                    <option value="jpeg">JPEG</option>
-                </select>
-                <button id="downloadBtn">
-                    <img src="downloads.png" width="30" height="40">
-                </button>
-                
                 <div id="brushDropdown" class="dropdown-content">
                     <button class="brush-option" data-size="2">Thin</button>
                     <button class="brush-option" data-size="5">Medium</button>
@@ -33,7 +25,14 @@
                 <h1>
                     MuseBrush
                 </h1>
-            </header>
+                <select id="formatSelect">
+                    <option value="png">PNG</option>
+                    <option value="jpeg">JPEG</option>
+                </select>
+                <button id="downloadBtn">
+                    <img src="downloads.png" width="30" height="40">
+                </button>
+            </div>
             <canvas id="c"></canvas>
         </div>
         <script src="script.js"></script>

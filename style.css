@@ -23,14 +23,17 @@ button {
     cursor: pointer;
     border-radius: 5px;
 }
-
-header {
+#menu{
+    position: sticky;
+    top: 0; /* Sticks to the top */
+    width: 100%;
+    background-color: white; /* Background color to avoid transparency */
+    z-index: 1000; /* Ensures it stays above other elements */
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
     padding: 10px;
-    border: 2px solid #333;
+    border-bottom: 2px solid #333;
 }
 
 #clearBtn {
@@ -75,4 +78,12 @@ button:hover {
 
 .dropdown-content button:hover {
     background-color: #ddd;
+}
+#downloadBtn{
+    position: absolute;
+    right: 80px;
+}
+#formatSelect{
+    position: absolute;
+    right: 160px;
 }
