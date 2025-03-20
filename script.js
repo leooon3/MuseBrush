@@ -8,6 +8,10 @@ ctx.lineWidth = 2;          // Line thickness
 ctx.lineJoin = "round";     // Smooth joints
 ctx.lineCap = "round";      // Rounded stroke edges
 
+// Undo/Redo stacks
+var undoStack = [];
+var redoStack = [];
+
 function getMousePos(e) {
   let rect = el.getBoundingClientRect();
   let scaleX = el.width / rect.width;  // Scale factor in X
@@ -23,6 +27,9 @@ el.onmousedown = function(e) {
   let pos = getMousePos(e);
   ctx.beginPath();
   ctx.moveTo(pos.x, pos.y);
+
+  // Save the initial state when drawing starts
+  saveStateToUndo();
 };
 
 el.onmousemove = function(e) {
@@ -35,11 +42,62 @@ el.onmousemove = function(e) {
 
 el.onmouseup = function() {
   isDrawing = false;
+  // Optionally, save state on mouseup, if you want the current state saved after every stroke
+  // saveStateToUndo();
 };
+
+// Function to save the canvas state to the undo stack
+function saveStateToUndo() {
+  undoStack.push(el.toDataURL());  // Save current state as image
+  if (undoStack.length > 10) {  // Limit the stack size (optional)
+    undoStack.shift();  // Remove the oldest state if over limit
+  }
+  redoStack = [];  // Clear the redo stack on new action
+}
+
+// Undo functionality
+function undo() {
+  if (undoStack.length > 0) {
+    let state = undoStack.pop();
+    redoStack.push(el.toDataURL());  // Save current state for redo
+    let img = new Image();
+    img.src = state;
+    img.onload = () => {
+      ctx.clearRect(0, 0, el.width, el.height);  // Clear the canvas before drawing the previous state
+      ctx.drawImage(img, 0, 0);  // Restore the previous state
+    };
+  }
+}
+
+// Redo functionality
+function redo() {
+  if (redoStack.length > 0) {
+    let state = redoStack.pop();
+    undoStack.push(el.toDataURL());  // Save current state for undo
+    let img = new Image();
+    img.src = state;
+    img.onload = () => {
+      ctx.clearRect(0, 0, el.width, el.height);  // Clear the canvas before drawing the next state
+      ctx.drawImage(img, 0, 0);  // Restore the next state
+    };
+  }
+}
 
 // Function to clear the canvas
 document.getElementById('clearBtn').onclick = function() {
   ctx.clearRect(0, 0, el.width, el.height);
+  undoStack = [];  // Clear undo stack on reset
+  redoStack = [];  // Clear redo stack on reset
+};
+
+// Undo button event
+document.getElementById('undoBtn').onclick = function() {
+  undo();
+};
+
+// Redo button event
+document.getElementById('redoBtn').onclick = function() {
+  redo();
 };
 
 var brushButton = document.getElementById("brushes_tab");
@@ -65,6 +123,7 @@ document.addEventListener("click", function (event) {
         brushDropdown.style.display = "none";
     }
 });
+
 document.getElementById("downloadBtn").addEventListener("click", function () {
   let format = document.getElementById("formatSelect").value; // Get selected format
   let link = document.createElement("a");
