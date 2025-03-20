@@ -1,0 +1,17 @@
+{
+    "name": "musebrush-backend",
+    "version": "1.0.0",
+    "main": "server.js",
+    "dependencies": {
+      "express": "^4.17.1",
+      "cors": "^2.8.5",
+      "mongoose": "^6.0.14",
+      "jsonwebtoken": "^9.0.0",
+      "bcryptjs": "^2.4.3",
+      "dotenv": "^16.0.0"
+    },
+    "scripts": {
+      "start": "node server.js"
+    }
+  }
+  

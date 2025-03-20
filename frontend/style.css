@@ -1,89 +1,117 @@
-body { 
+/* General Page Styles */
+body {
     text-align: center;
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
 }
 
+/* Header Styles */
+header {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 2px solid black;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Header Title */
 h1 {
     color: #333;
+    margin: 0 auto;
 }
 
-canvas {
-    border: 2px solid black;
-    background: transparent;
-    width: 100%;
-}
-
-button {
-    padding: 10px 20px;
+/* User Greeting */
+#userGreeting {
     font-size: 16px;
-    background-color: #ffffff;
-    color: black;
+    font-weight: bold;
+    color: #555;
+}
+
+/* Buttons */
+button {
+    padding: 10px 15px;
+    font-size: 16px;
+    background-color: #ff6b6b;
+    color: white;
     border: none;
     cursor: pointer;
     border-radius: 5px;
-}
-#menu{
-    position: sticky;
-    top: 0; /* Sticks to the top */
-    width: 100%;
-    background-color: white; /* Background color to avoid transparency */
-    z-index: 1000; /* Ensures it stays above other elements */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    border-bottom: 2px solid #333;
-}
-
-#clearBtn {
-    position: absolute;
-    right: 10px;
-}
-
-#clearBtn img, #brushes_tab img {
-    display: block;
+    margin: 5px;
+    transition: background 0.3s;
 }
 
 button:hover {
-    background-color: #ffd3d3;
+    background-color: #ff4040;
 }
 
+/* Logout Button */
+#logoutBtn {
+    background-color: #333;
+}
+
+#logoutBtn:hover {
+    background-color: #555;
+}
+
+/* Canvas Styles */
+canvas {
+    border: 2px solid black;
+    background: white;
+    display: block;
+    margin: 20px auto;
+    width: 100%;
+    max-width: 800px;
+    height: 400px;
+}
+
+/* Brushes Dropdown */
 #brushes_tab {
-    position: absolute;
-    left: 10px;
+    background-color: #ffffff;
+    position: relative;
+    padding: 10px;
 }
 
-.dropdown-content {
+#brushes_tab img {
+    display: block;
+    width: 40px;
+    height: 40px;
+}
+
+/* Dropdown Menu */
+#brushDropdown {
     display: none;
     position: absolute;
     left: 10px;
-    top: 60px;
+    top: 50px;
     background-color: white;
-    border: 1px solid black;
-    padding: 5px;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    border: 1px solid #ddd;
     border-radius: 5px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 10px;
 }
 
-.dropdown-content button {
+#brushDropdown button {
     display: block;
     width: 100%;
-    padding: 5px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-align: left;
+    margin: 5px 0;
+    background-color: #007bff;
 }
 
-.dropdown-content button:hover {
-    background-color: #ddd;
+#brushDropdown button:hover {
+    background-color: #0056b3;
 }
-#downloadBtn{
-    position: absolute;
-    right: 80px;
+
+/* Download & Save Buttons */
+#saveBtn, #downloadBtn {
+    background-color: #28a745;
 }
-#formatSelect{
-    position: absolute;
-    right: 160px;
+
+#saveBtn:hover, #downloadBtn:hover {
+    background-color: #218838;
 }
