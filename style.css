@@ -26,7 +26,7 @@ button {
 #menu{
     position: sticky;
     top: 0; /* Sticks to the top */
-    width: 100%;
+    width: 99.15%;
     background-color: white; /* Background color to avoid transparency */
     z-index: 1000; /* Ensures it stays above other elements */
     display: flex;
@@ -48,12 +48,6 @@ button {
 button:hover {
     background-color: #ffd3d3;
 }
-
-#brushes_tab {
-    position: absolute;
-    left: 10px;
-}
-
 .dropdown-content {
     display: none;
     position: absolute;
@@ -79,11 +73,24 @@ button:hover {
 .dropdown-content button:hover {
     background-color: #ddd;
 }
-#downloadBtn{
-    position: absolute;
-    right: 80px;
+.dropdown {
+    position: relative;
+    display: inline-block;
 }
-#formatSelect{
+.dropdown:last-child {
     position: absolute;
-    right: 160px;
+    right: 90px;
+}
+.dropdown:first-child {
+    position: absolute;
+    left: 10px;
+}
+#undoBtn{
+    position: absolute;
+    right: 260px;
+}
+
+#redoBtn{
+    position:absolute;
+    right: 180px;
 }

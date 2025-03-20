@@ -46,6 +46,9 @@ el.onmouseup = function() {
   // saveStateToUndo();
 };
 
+
+
+
 // Function to save the canvas state to the undo stack
 function saveStateToUndo() {
   undoStack.push(el.toDataURL());  // Save current state as image
@@ -100,6 +103,9 @@ document.getElementById('redoBtn').onclick = function() {
   redo();
 };
 
+
+
+
 var brushButton = document.getElementById("brushes_tab");
 var brushDropdown = document.getElementById("brushDropdown");
 
@@ -116,7 +122,6 @@ document.querySelectorAll(".brush-option").forEach(button => {
         brushDropdown.style.display = "none"; // Hide dropdown after selection
     });
 });
-
 // Close dropdown if clicking outside
 document.addEventListener("click", function (event) {
     if (!brushButton.contains(event.target) && !brushDropdown.contains(event.target)) {
@@ -124,10 +129,29 @@ document.addEventListener("click", function (event) {
     }
 });
 
-document.getElementById("downloadBtn").addEventListener("click", function () {
-  let format = document.getElementById("formatSelect").value; // Get selected format
-  let link = document.createElement("a");
-  link.download = `drawing.${format}`; // Set file name
-  link.href = el.toDataURL(`image/${format}`); // Convert canvas to chosen format
-  link.click();
+
+
+var downloadButton=document.getElementById("download_tab");
+var downloadDropdown = document.getElementById("downloadDropdown");
+
+downloadButton.onclick = function (){
+  downloadDropdown.style.display = (downloadDropdown.style.display === "block") ? "none" : "block";
+}
+document.addEventListener("click", function (event) {
+  if (!downloadButton.contains(event.target) && !downloadDropdown.contains(event.target)) {
+      downloadDropdown.style.display = "none";
+  }
+});
+
+document.querySelectorAll(".download-option").forEach(button => {
+  button.addEventListener("click", function () {
+      let format = this.getAttribute("value");
+      document.getElementById("downloadBtn").addEventListener("click", function (){
+        let link=document.createElement("a");
+        link.download=`drawing.${format}`;
+        link.href=el.toDataURL(`image/${format}`);
+        link.click();
+        downloadDropdown.style.display = "none";
+      }); // Hide dropdown after selection
+  });
 });
