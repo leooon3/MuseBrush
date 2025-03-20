@@ -1,6 +1,17 @@
+function drawGrid(ctx, size) {
+  for (let x = 0; x < ctx.canvas.width; x += size) {
+      for (let y = 0; y < ctx.canvas.height; y += size) {
+          ctx.fillStyle = (x / size + y / size) % 2 === 0 ? "#ddd" : "#fff";
+          ctx.fillRect(x, y, size, size);
+      }
+  }
+}
+
+
 var el = document.getElementById('c');
 var ctx = el.getContext('2d');
 var isDrawing = false;
+drawGrid(ctx, 2); // 20px squares
 
 // Set stroke properties for better visibility
 ctx.strokeStyle = "black";  // Line color
@@ -11,6 +22,8 @@ ctx.lineCap = "round";      // Rounded stroke edges
 // Undo/Redo stacks
 var undoStack = [];
 var redoStack = [];
+
+
 
 function getMousePos(e) {
   let rect = el.getBoundingClientRect();
