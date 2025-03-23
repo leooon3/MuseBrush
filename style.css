@@ -94,3 +94,53 @@ button:hover {
     position:absolute;
     right: 180px;
 }
+.slider-container {
+    position: fixed;  /* Use fixed to stay on screen */
+    right: 20px;  /* Stick to the right */
+    top: 50%;  /* Move to middle */
+    transform: translateY(-50%);  /* Adjust to be centered */
+    display: flex;
+    align-items: center;
+    height: auto;
+    justify-content: center;
+}
+
+/* Style the slider */
+.slider {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    writing-mode: vertical-lr; /* Correct vertical mode */
+    width: 8px;
+    height: 150px;
+    background: linear-gradient(to bottom, #3f3f3f, #1f1f1f);
+    border-radius: 5px;
+    outline: none;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+    cursor: pointer;
+    writing-mode: vertical-rl; /* Corrects orientation */
+    direction: rtl; /* Flips the direction so the small values are at the bottom */
+}
+
+.slider:hover {
+    opacity: 1;
+}
+
+/* Thumb styling */
+.slider::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #ff5733;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    transition: 0.2s;
+}
+
+.slider::-webkit-slider-thumb:hover {
+    background: #ff2e00;
+}

@@ -1,3 +1,41 @@
+// Function to initialize the canvas for high resolution
+var el = document.getElementById('c');
+var ctx = el.getContext('2d');
+function setupCanvas() {
+
+  const dpr = window.devicePixelRatio || 1; // Get device pixel ratio
+  const width = 800; // Your desired width
+  const height = 500; // Your desired height
+
+  // Set canvas width and height to dpr scaled size for better rendering
+  el.width = width * dpr;
+  el.height = height * dpr;
+
+  // Scale the context for high-definition rendering
+  ctx.scale(dpr, dpr);
+
+  // Optional: Draw a grid to check the resolution
+  drawGrid(ctx, 2);
+}
+
+// Call this function to set up the canvas with high resolution
+setupCanvas();
+
+
+var isDrawing = false;
+// Set stroke properties for better visibility
+ctx.strokeStyle = "black";  // Line color
+ctx.lineWidth = 2;          // Line thickness
+ctx.lineJoin = "round";     // Smooth joints
+ctx.lineCap = "round";      // Rounded stroke edges
+    // Rounded stroke edges
+
+// Undo/Redo stacks
+var undoStack = [];
+var redoStack = [];
+
+
+
 function drawGrid(ctx, size) {
   for (let x = 0; x < ctx.canvas.width; x += size) {
       for (let y = 0; y < ctx.canvas.height; y += size) {
@@ -8,27 +46,12 @@ function drawGrid(ctx, size) {
 }
 
 
-var el = document.getElementById('c');
-var ctx = el.getContext('2d');
-var isDrawing = false;
-drawGrid(ctx, 2); // 20px squares
-
-// Set stroke properties for better visibility
-ctx.strokeStyle = "black";  // Line color
-ctx.lineWidth = 2;          // Line thickness
-ctx.lineJoin = "round";     // Smooth joints
-ctx.lineCap = "round";      // Rounded stroke edges
-
-// Undo/Redo stacks
-var undoStack = [];
-var redoStack = [];
-
-
 
 function getMousePos(e) {
-  let rect = el.getBoundingClientRect();
-  let scaleX = el.width / rect.width;  // Scale factor in X
-  let scaleY = el.height / rect.height; // Scale factor in Y
+  var rect = el.getBoundingClientRect();
+  var scaleX = el.width / rect.width;  // Scale factor in X (scaled canvas width)
+  var scaleY = el.height / rect.height; // Scale factor in Y (scaled canvas height)
+
   return {
     x: (e.clientX - rect.left) * scaleX,
     y: (e.clientY - rect.top) * scaleY
@@ -55,9 +78,19 @@ el.onmousemove = function(e) {
 
 el.onmouseup = function() {
   isDrawing = false;
-  // Optionally, save state on mouseup, if you want the current state saved after every stroke
-  // saveStateToUndo();
 };
+
+
+
+
+
+const thicknessSlider = document.getElementById('thicknessSlider');
+        // Update pencil thickness when slider changes
+thicknessSlider.addEventListener('input', function () {
+  ctx.lineWidth = parseInt(this.value, 10);
+});
+
+
 
 
 
@@ -104,6 +137,7 @@ document.getElementById('clearBtn').onclick = function() {
   ctx.clearRect(0, 0, el.width, el.height);
   undoStack = [];  // Clear undo stack on reset
   redoStack = [];  // Clear redo stack on reset
+  drawGrid(ctx,2);
 };
 
 // Undo button event
