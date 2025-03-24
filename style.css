@@ -5,17 +5,17 @@ body {
     margin:0;
 }
 
-h1 {
+#menu h1 {
     color: #333;
     text-align: center;
-    margin-top: 20px; /* Space between the title and the menu */
-    width: 100%; /* Ensure it stretches across */
+    margin-top: 20px;
+    width: 100%;
 }
 
 canvas {
     border: 2px solid black;
     background: transparent;
-    width: 100%;
+    width: 99.70%;
 }
 
 button {
@@ -35,36 +35,31 @@ button {
     background-color: white;
     z-index: 1000;
     display: flex;
-    align-items: center;  /* Vertically align items */
-    justify-content: space-between;  /* Spread out the elements */
-    padding: 10px;
+    align-items: center;
+    justify-content: space-between;
     border-bottom: 2px solid #333;
 }
 
-
-/* Clear Button (most left) */
 #clearBtn {
     position: absolute;
-     right: 15px; /* Adjust spacing from left edge */
+     right: 0;
 }
 
 
 
-/* Contenitore per allineamento */
 .colorContainer {
     display: inline-block;
     padding: 10px;
     position: relative;
 }
 
-/* Stile del color picker come cerchio perfetto */
 #colorInput {
-    appearance: none; /* Rimuove lo stile predefinito */
+    appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
     width: 50px;
     height: 50px;
-    border-radius: 50%; /* Rende il colore un cerchio */
+    border-radius: 50%;
     padding: 0;
     border: none;
     cursor: pointer;
@@ -73,7 +68,6 @@ button {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Modifica lo swatch del colore per eliminare il bordo */
 #colorInput::-webkit-color-swatch-wrapper {
     padding: 0;
     border-radius: 50%;
@@ -88,8 +82,6 @@ button {
     border: none;
     border-radius: 50%;
 }
-
-/* Effetto hover */
 #colorInput:hover {
     transform: scale(1.1);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
@@ -97,16 +89,16 @@ button {
 
 
 
-
-/* Undo/Redo Buttons */
 #undoBtn{
     position: absolute;
-    right:230px;
+    right:215px;
 }
 #redoBtn {
    position: absolute; 
-   right:160px; /* Adjust spacing between Undo and Redo */
+   right:145px;
 }
+
+
 /* Slider for Brush Thickness */
 .slider-container {
     position: fixed;
@@ -186,7 +178,7 @@ button:hover{
 }
 .dropdown:last-child {
     position: absolute;
-    right: 85px;
+    right: 75px;
 }
 .dropdown:first-child {
     position: absolute;
