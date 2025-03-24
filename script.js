@@ -49,14 +49,14 @@ function drawGrid(ctx, size) {
 
 function getMousePos(e) {
   var rect = el.getBoundingClientRect();
-  var scaleX = el.width / rect.width;  // Scale factor in X (scaled canvas width)
-  var scaleY = el.height / rect.height; // Scale factor in Y (scaled canvas height)
+  var dpr = window.devicePixelRatio || 1;  // Ensure correct pixel ratio
 
   return {
-    x: (e.clientX - rect.left) * scaleX,
-    y: (e.clientY - rect.top) * scaleY
+    x: (e.clientX - rect.left) * (el.width / rect.width/dpr),
+    y: (e.clientY - rect.top) * (el.height / rect.height /dpr)
   };
 }
+
 
 el.onmousedown = function(e) {
   isDrawing = true;
@@ -97,48 +97,31 @@ thicknessSlider.addEventListener('input', function () {
 
 // Function to save the canvas state to the undo stack
 function saveStateToUndo() {
-  undoStack.push(el.toDataURL());  // Save current state as image
-  if (undoStack.length > 10) {  // Limit the stack size (optional)
-    undoStack.shift();  // Remove the oldest state if over limit
+  const dpr = window.devicePixelRatio || 1;
+  const snapshot = ctx.getImageData(0, 0, el.width, el.height); // Save exact pixels
+  undoStack.push(snapshot);
+
+  if (undoStack.length > 10) {
+    undoStack.shift(); // Limit stack size
   }
-  redoStack = [];  // Clear the redo stack on new action
+  redoStack = []; // Clear redo stack when new action happens
 }
 
-// Undo functionality
 function undo() {
   if (undoStack.length > 0) {
-    let state = undoStack.pop();
-    redoStack.push(el.toDataURL());  // Save current state for redo
-    let img = new Image();
-    img.src = state;
-    img.onload = () => {
-      ctx.clearRect(0, 0, el.width, el.height);  // Clear the canvas before drawing the previous state
-      ctx.drawImage(img, 0, 0);  // Restore the previous state
-    };
+    redoStack.push(ctx.getImageData(0, 0, el.width, el.height)); // Save current state for redo
+    let previousState = undoStack.pop();
+    ctx.putImageData(previousState, 0, 0); // Restore previous state
   }
 }
 
-// Redo functionality
 function redo() {
   if (redoStack.length > 0) {
-    let state = redoStack.pop();
-    undoStack.push(el.toDataURL());  // Save current state for undo
-    let img = new Image();
-    img.src = state;
-    img.onload = () => {
-      ctx.clearRect(0, 0, el.width, el.height);  // Clear the canvas before drawing the next state
-      ctx.drawImage(img, 0, 0);  // Restore the next state
-    };
+    undoStack.push(ctx.getImageData(0, 0, el.width, el.height)); // Save current state for undo
+    let nextState = redoStack.pop();
+    ctx.putImageData(nextState, 0, 0); // Restore next state
   }
 }
-
-// Function to clear the canvas
-document.getElementById('clearBtn').onclick = function() {
-  ctx.clearRect(0, 0, el.width, el.height);
-  undoStack = [];  // Clear undo stack on reset
-  redoStack = [];  // Clear redo stack on reset
-  drawGrid(ctx,2);
-};
 
 // Undo button event
 document.getElementById('undoBtn').onclick = function() {
@@ -149,6 +132,16 @@ document.getElementById('undoBtn').onclick = function() {
 document.getElementById('redoBtn').onclick = function() {
   redo();
 };
+// Function to clear the canvas
+document.getElementById('clearBtn').onclick = function() {
+  ctx.clearRect(0, 0, el.width, el.height);
+  undoStack = [];  // Clear undo stack on reset
+  redoStack = [];  // Clear redo stack on reset
+  drawGrid(ctx,2);
+};
+
+
+
 
 
 
@@ -193,12 +186,10 @@ document.addEventListener("click", function (event) {
 document.querySelectorAll(".download-option").forEach(button => {
   button.addEventListener("click", function () {
       let format = this.getAttribute("value");
-      document.getElementById("downloadBtn").addEventListener("click", function (){
-        let link=document.createElement("a");
+      let link=document.createElement("a");
         link.download=`drawing.${format}`;
         link.href=el.toDataURL(`image/${format}`);
         link.click();
-        downloadDropdown.style.display = "none";
-      }); // Hide dropdown after selection
+        downloadDropdown.style.display = "none"; // Hide dropdown after selection
   });
 });
