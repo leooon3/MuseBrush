@@ -193,3 +193,10 @@ document.querySelectorAll(".download-option").forEach(button => {
         downloadDropdown.style.display = "none"; // Hide dropdown after selection
   });
 });
+
+const colorInput = document.getElementById('colorInput');
+colorInput.addEventListener('input', function () {
+  brushColor = colorInput.value;  // Get the selected color
+  ctx.strokeStyle = brushColor;  // Update the brush color
+  ctx.fillStyle = brushColor;    // If you need to fill with the same color
+});

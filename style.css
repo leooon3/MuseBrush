@@ -2,10 +2,14 @@ body {
     text-align: center;
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
+    margin:0;
 }
 
 h1 {
     color: #333;
+    text-align: center;
+    margin-top: 20px; /* Space between the title and the menu */
+    width: 100%; /* Ensure it stretches across */
 }
 
 canvas {
@@ -23,30 +27,131 @@ button {
     cursor: pointer;
     border-radius: 5px;
 }
-#menu{
+
+#menu {
     position: sticky;
-    top: 0; /* Sticks to the top */
-    width: 99.15%;
-    background-color: white; /* Background color to avoid transparency */
-    z-index: 1000; /* Ensures it stays above other elements */
+    top: 0;
+    width: 100%;
+    background-color: white;
+    z-index: 1000;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: center;  /* Vertically align items */
+    justify-content: space-between;  /* Spread out the elements */
     padding: 10px;
     border-bottom: 2px solid #333;
 }
 
+
+/* Clear Button (most left) */
 #clearBtn {
     position: absolute;
-    right: 10px;
+     right: 15px; /* Adjust spacing from left edge */
 }
 
-#clearBtn img, #brushes_tab img {
-    display: block;
+
+
+/* Contenitore per allineamento */
+.colorContainer {
+    display: inline-block;
+    padding: 10px;
+    position: relative;
 }
 
-button:hover {
-    background-color: #ffd3d3;
+/* Stile del color picker come cerchio perfetto */
+#colorInput {
+    appearance: none; /* Rimuove lo stile predefinito */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%; /* Rende il colore un cerchio */
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    background: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Modifica lo swatch del colore per eliminare il bordo */
+#colorInput::-webkit-color-swatch-wrapper {
+    padding: 0;
+    border-radius: 50%;
+}
+
+#colorInput::-webkit-color-swatch {
+    border: none;
+    border-radius: 50%;
+}
+
+#colorInput::-moz-color-swatch {
+    border: none;
+    border-radius: 50%;
+}
+
+/* Effetto hover */
+#colorInput:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+
+
+
+/* Undo/Redo Buttons */
+#undoBtn{
+    position: absolute;
+    right:230px;
+}
+#redoBtn {
+   position: absolute; 
+   right:160px; /* Adjust spacing between Undo and Redo */
+}
+/* Slider for Brush Thickness */
+.slider-container {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    height: auto;
+    justify-content: center;
+}
+.slider {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    writing-mode: vertical-lr;
+    width: 8px;
+    height: 150px;
+    background: linear-gradient(to bottom, #3f3f3f, #1f1f1f);
+    border-radius: 5px;
+    outline: none;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+    cursor: pointer;
+}
+.slider:hover {
+    opacity: 1;
+}
+.slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(to bottom, #252525, #141414);
+    border-radius: 50%;
+    cursor: pointer;
+}
+.slider::-webkit-slider-thumb:hover {
+    background: #ff2e00;
+}
+
+
+
+button, .dropdown-content button {
+    display: inline-block; /* Keep all buttons inline */
+    margin-right: 10px; /* Add space between buttons */
 }
 .dropdown-content {
     display: none;
@@ -59,7 +164,6 @@ button:hover {
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
     border-radius: 5px;
 }
-
 .dropdown-content button {
     display: block;
     width: 100%;
@@ -69,78 +173,22 @@ button:hover {
     cursor: pointer;
     text-align: left;
 }
+button:hover{
+    background-color:#cccaca ;
+}
 
 .dropdown-content button:hover {
-    background-color: #ddd;
+    background-color: #cccaca;
 }
 .dropdown {
-    position: relative;
-    display: inline-block;
+    display:flex;
+    align-items: center;
 }
 .dropdown:last-child {
     position: absolute;
-    right: 90px;
+    right: 85px;
 }
 .dropdown:first-child {
     position: absolute;
     left: 10px;
-}
-#undoBtn{
-    position: absolute;
-    right: 260px;
-}
-
-#redoBtn{
-    position:absolute;
-    right: 180px;
-}
-.slider-container {
-    position: fixed;  /* Use fixed to stay on screen */
-    right: 20px;  /* Stick to the right */
-    top: 50%;  /* Move to middle */
-    transform: translateY(-50%);  /* Adjust to be centered */
-    display: flex;
-    align-items: center;
-    height: auto;
-    justify-content: center;
-}
-
-/* Style the slider */
-.slider {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    writing-mode: vertical-lr; /* Correct vertical mode */
-    width: 8px;
-    height: 150px;
-    background: linear-gradient(to bottom, #3f3f3f, #1f1f1f);
-    border-radius: 5px;
-    outline: none;
-    opacity: 0.8;
-    transition: opacity 0.3s;
-    cursor: pointer;
-    writing-mode: vertical-rl; /* Corrects orientation */
-    direction: rtl; /* Flips the direction so the small values are at the bottom */
-}
-
-.slider:hover {
-    opacity: 1;
-}
-
-/* Thumb styling */
-.slider::-webkit-slider-thumb {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    width: 20px;
-    height: 20px;
-    background: #ff5733;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid #fff;
-    transition: 0.2s;
-}
-
-.slider::-webkit-slider-thumb:hover {
-    background: #ff2e00;
 }
