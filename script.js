@@ -21,61 +21,123 @@ function setupCanvas() {
   // Optional: Draw a grid to check the resolution
   drawGrid(ctx, 2);
 }
-// Call this function to set up the canvas with high resolution
 setupCanvas();
 
-
-
 var isDrawing = false;
-// Set stroke properties for better visibility
-ctx.strokeStyle = "black";  // Line color
-ctx.lineWidth = 2;          // Line thickness
-ctx.lineJoin = "round";     // Smooth joints
-ctx.lineCap = "round";      // Rounded stroke edges
-// Rounded stroke edges
-// Undo/Redo stacks
+var brushType = 'Basic';
+var brushColor = "black";
+var brushSize = 5;
+ctx.strokeStyle = brushColor;
+ctx.lineWidth = brushSize;
+ctx.lineJoin = 'round';
+ctx.lineCap = 'round';
+
 var undoStack = [];
 var redoStack = [];
 
-
-
-//drawing part
 function getMousePos(e) {
   var rect = el.getBoundingClientRect();
-  var dpr = window.devicePixelRatio || 1;  // Ensure correct pixel ratio
-
+  var dpr = window.devicePixelRatio || 1;
   return {
-    x: (e.clientX - rect.left) * (el.width / rect.width/dpr),
-    y: (e.clientY - rect.top) * (el.height / rect.height /dpr)
+    x: (e.clientX - rect.left) * (el.width / rect.width / dpr),
+    y: (e.clientY - rect.top) * (el.height / rect.height / dpr)
   };
 }
+
 el.onmousedown = function(e) {
   isDrawing = true;
   let pos = getMousePos(e);
   ctx.beginPath();
   ctx.moveTo(pos.x, pos.y);
-  // Save the initial state when drawing starts
   saveStateToUndo();
 };
+
 el.onmousemove = function(e) {
-  if (isDrawing) {
-    let pos = getMousePos(e);
+  if (!isDrawing) return;
+  let pos = getMousePos(e);
+  if (brushType === 'Spray') {
+    for (let i = 0; i < 10; i++) {
+      let offsetX = Math.random() * 10 - 5;
+      let offsetY = Math.random() * 10 - 5;
+      ctx.fillStyle = brushColor;
+      ctx.fillRect(pos.x + offsetX, pos.y + offsetY, 1, 1);
+    }
+  } else if (brushType === 'Dotted') {
+    ctx.beginPath();
+    ctx.fillStyle = brushColor;
+    ctx.arc(pos.x, pos.y, ctx.lineWidth / 2, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
   }
 };
+
 el.onmouseup = function() {
   isDrawing = false;
 };
 
-
-
-//thickness of brushes
 const thicknessSlider = document.getElementById('thicknessSlider');
-        // Update pencil thickness when slider changes
 thicknessSlider.addEventListener('input', function () {
-  ctx.lineWidth = parseInt(this.value, 10);
+  brushSize = parseInt(this.value, 10);
+  setBrush(brushType);
 });
+
+const colorInput = document.getElementById('colorInput');
+colorInput.addEventListener('input', function () {
+  brushColor = this.value;
+  ctx.strokeStyle = brushColor;
+  ctx.fillStyle = brushColor;
+});
+
+var brushButton = document.getElementById("brushes_tab");
+var brushDropdown = document.getElementById("brushDropdown");
+brushButton.onclick = function () {
+    brushDropdown.style.display = (brushDropdown.style.display === "block") ? "none" : "block";
+};
+document.querySelectorAll(".brush-option").forEach(button => {
+    button.addEventListener("click", function () {
+        brushType = this.getAttribute("data");
+        setBrush(brushType);
+        brushDropdown.style.display = "none";
+    });
+});
+document.addEventListener("click", function (event) {
+    if (!brushButton.contains(event.target) && !brushDropdown.contains(event.target)) {
+        brushDropdown.style.display = "none";
+    }
+});
+
+function setBrush(type) {
+  switch (type) {
+    case 'Basic':
+      ctx.lineWidth = brushSize;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      break;
+    case 'Smooth':
+      ctx.lineWidth = brushSize * 1.5;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      break;
+    case 'Thick':
+      ctx.lineWidth = brushSize * 3;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      break;
+    case 'Spray':
+      ctx.lineWidth = 1;
+      break;
+    case 'Calligraphy':
+      ctx.lineWidth = brushSize;
+      ctx.lineJoin = 'bevel';
+      ctx.lineCap = 'square';      
+      break;
+    case 'Dotted':
+      ctx.lineWidth = brushSize;
+      break;
+  }
+}
 
 
 
@@ -123,56 +185,6 @@ document.getElementById('clearBtn').onclick = function() {
 };
 
 
-
-
-// brushes_situation
-var brushButton = document.getElementById("brushes_tab");
-var brushDropdown = document.getElementById("brushDropdown");
-// Toggle dropdown visibility
-brushButton.onclick = function () {
-    brushDropdown.style.display = (brushDropdown.style.display === "block") ? "none" : "block";
-};
-// Set brush size when clicking an option
-document.querySelectorAll(".brush-option").forEach(button => {
-    button.addEventListener("click", function () {
-        let info = this.getAttribute("data");
-          switch(info){
-            case "Thick":
-              thick_brush();
-              break;
-            case "Basic":
-              basic_brush();
-              break;
-            case "Smooth":
-              smooth_brush();
-              break;
-  }
-        brushDropdown.style.display = "none"; // Hide dropdown after selection
-    });
-});
-// Close dropdown if clicking outside
-document.addEventListener("click", function (event) {
-    if (!brushButton.contains(event.target) && !brushDropdown.contains(event.target)) {
-        brushDropdown.style.display = "none";
-    }
-});
-function thick_brush(){
-  ctx.lineWidth = 20;          // Line thickness
-  ctx.lineJoin = "round";     // Smooth joints
-  ctx.lineCap = "round";  
-}
-function smooth_brush(){
-  ctx.lineWidth = 10;
-  ctx.lineJoin = ctx.lineCap = 'round';
-}
-function basic_brush(){
-  ctx.lineWidth = 2;
-  ctx.lineJoin = "round";     
-  ctx.lineCap = "round";  
-}
-
-
-
 //download  situation
 var downloadButton=document.getElementById("download_tab");
 var downloadDropdown = document.getElementById("downloadDropdown");
@@ -193,14 +205,4 @@ document.querySelectorAll(".download-option").forEach(button => {
         link.click();
         downloadDropdown.style.display = "none"; // Hide dropdown after selection
   });
-});
-
-
-
-//color choosing
-const colorInput = document.getElementById('colorInput');
-colorInput.addEventListener('input', function () {
-  brushColor = colorInput.value;  // Get the selected color
-  ctx.strokeStyle = brushColor;  // Update the brush color
-  ctx.fillStyle = brushColor;    // If you need to fill with the same color
 });
