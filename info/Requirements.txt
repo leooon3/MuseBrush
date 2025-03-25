@@ -1,13 +1,13 @@
-canva always with proportions 16/9
-elements in the top part like a header
-pointer to not draw
-various pencils 
-size for pencils
-geometric figures
-download
-user system 
-text block
-clear canva
-layering
-undo action
-redo action
+canva always with proportions 16/9 	    to do
+elements in the top part like a header	✔
+pointer to not draw     		        ✔
+various pencils     			        ✔ and working on more
+size for pencils    			        ✔
+geometric figures  			            to do
+download        			            ✔
+user system 				            to do
+text block  				            to do
+clear canva 				            ✔
+layering    				            to do
+undo action 				            ✔
+redo action 				            ✔
