@@ -11,3 +11,5 @@ clear canva 				            ✔
 layering    				            to do
 undo action 				            ✔
 redo action 				            ✔
+rubber                                  to do
+
