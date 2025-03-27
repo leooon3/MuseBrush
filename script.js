@@ -33,6 +33,7 @@ const colorInput = document.getElementById('colorInput');
 let brushSize = parseInt(thicknessSlider.value, 10) || 5;
 let brushColor = colorInput.value || "#000000";
 let currentBrush = "Basic"; // default iniziale
+let isInsertingText = false;
 
 
 
@@ -214,6 +215,34 @@ document.querySelectorAll(".shape-option").forEach(button => {
 
 
 canvas.on('mouse:down', function(opt) {
+    if (isInsertingText) {
+        const pointer = canvas.getPointer(opt.e);
+    
+        const text = new fabric.IText("Testo", {
+            left: pointer.x,
+            top: pointer.y,
+            fontFamily: 'Arial',
+            fontSize: 24,
+            fill: brushColor,
+            fontWeight: 'normal',
+            fontStyle: 'normal',
+            underline: false
+        });
+    
+        canvas.add(text);
+        canvas.setActiveObject(text);
+        canvas.renderAll();
+        saveState();
+    
+        // Fine modalità testo
+        isInsertingText = false;
+        setDrawingMode(previousDrawingMode);
+        if (previousDrawingMode) {
+            setBrush(currentBrush);
+        }
+    }
+    
+    
     if (!drawingShape) return;
         // Forza salvataggio prima di inserire una nuova forma
 
@@ -346,3 +375,11 @@ shapeBtn.onclick = function (e) {
 downloadBtn.onclick = function (e) {
     downloadDropdown.style.display = (downloadDropdown.style.display === "block") ? "none" : "block";
 };
+
+const textBtn = document.getElementById('text_tab');
+textBtn.addEventListener("click", () => {
+    previousDrawingMode = canvas.isDrawingMode;
+    disableDrawingSilently(); // disattiva il disegno
+    drawingShape = null; // disattiva le forme
+    isInsertingText = true;
+});

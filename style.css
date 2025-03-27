@@ -192,3 +192,7 @@ button:hover{
     position: absolute;
     left: 230px; /* distanza dal bordo sinistro accanto a pointer */
 }
+#text_tab {
+    position: absolute;
+    left: 300px; /* accanto alle forme */
+}
