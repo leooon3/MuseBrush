@@ -3,10 +3,10 @@ elements in the top part like a header	✔
 pointer to not draw     		        ✔
 various pencils     			        ✔ and working on more
 size for pencils    			        ✔
-geometric figures  			            to do
+geometric figures  			            ✔
 download        			            ✔
 user system 				            to do
-text block  				            to do
+text block  				            ✔
 clear canva 				            ✔
 layering    				            to do
 undo action 				            ✔
