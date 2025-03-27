@@ -1,385 +1,431 @@
-var brushButton = document.getElementById("brushes_tab");
-var brushDropdown = document.getElementById("brushDropdown");
-document.querySelectorAll(".brush-option").forEach(button => {
-    button.addEventListener("click", function () {
-        setBrush(this.getAttribute("data"));
-        brushDropdown.style.display = "none";
-        setDrawingMode(true); // forza modalità disegno
+
+function createLayer(container, index) {
+    const layerCanvasEl = document.createElement('canvas');
+    layerCanvasEl.classList.add('layer-canvas');
+    layerCanvasEl.width = window.innerWidth;
+    layerCanvasEl.height = window.innerHeight * 0.85;
+
+    const layerCanvas = new fabric.Canvas(layerCanvasEl, {
+        isDrawingMode: index === 1,
+        backgroundColor: index === 0 ? 'white' : 'transparent',
+        width: layerCanvasEl.width,
+        height: layerCanvasEl.height
     });
-});
 
-// Inizializzazione canvas Fabric.js
-const canvasEl = document.getElementById('c');
-canvasEl.width = window.innerWidth;
-canvasEl.height = window.innerHeight * 0.85;
+    layerCanvas.setZoom(window.devicePixelRatio || 1);
 
-const canvas = new fabric.Canvas('c', {
-    isDrawingMode: true,
-    backgroundColor: 'transparent',
-    width: canvasEl.width,
-    height: canvasEl.height
-});
+    // 🟢 Ora che layerCanvas è definito, possiamo accedere a upperCanvasEl
+    container.appendChild(layerCanvas.lowerCanvasEl);
+    container.appendChild(layerCanvas.upperCanvasEl);
+
+    layers.push({
+        canvas: layerCanvas,
+        undoStack: [JSON.stringify(layerCanvas)],
+        redoStack: [],
+        name: `Livello ${layers.length}`,
+        visible: true
+    });
+
+    attachCanvasEvents(layerCanvas);
+}
 
 
-canvas.setZoom(window.devicePixelRatio || 1);
+
+function initLayers() {
+    const container = document.querySelector('.canvas-container');
+    createLayer(container, 1);
+    updateCanvasVisibility();
+    setDrawingMode(true);
+    setBrush(currentBrush);
+}
+
+function attachCanvasEvents(canvas) {
+    canvas.on('path:created', () => {
+        canvas.renderAll();
+        saveState();
+    });
+
+    canvas.on('mouse:down', function(opt) {
+        const pointer = canvas.getPointer(opt.e);
+
+        if (isInsertingText) {
+            const text = new fabric.IText("Testo", {
+                left: pointer.x,
+                top: pointer.y,
+                fontFamily: 'Arial',
+                fontSize: 24,
+                fill: brushColor
+            });
+            canvas.add(text);
+            canvas.setActiveObject(text);
+            canvas.renderAll();
+            saveState();
+            isInsertingText = false;
+            setDrawingMode(previousDrawingMode);
+            if (previousDrawingMode) setBrush(currentBrush);
+            return;
+        }
+
+        if (!drawingShape) return;
+
+        isDrawingShape = true;
+        shapeOrigin = { x: pointer.x, y: pointer.y };
+
+        switch (drawingShape) {
+            case 'rect':
+                shapeObject = new fabric.Rect({
+                    left: pointer.x,
+                    top: pointer.y,
+                    width: 0,
+                    height: 0,
+                    fill: brushColor,
+                    selectable: true
+                });
+                break;
+            case 'circle':
+                shapeObject = new fabric.Circle({
+                    left: pointer.x,
+                    top: pointer.y,
+                    radius: 0,
+                    fill: brushColor,
+                    selectable: true
+                });
+                break;
+            case 'line':
+                shapeObject = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
+                    stroke: brushColor,
+                    strokeWidth: brushSize,
+                    selectable: true
+                });
+                break;
+        }
+        if (shapeObject) canvas.add(shapeObject);
+    });
+
+    canvas.on('mouse:move', function(opt) {
+        if (!isDrawingShape || !shapeObject) return;
+        const pointer = canvas.getPointer(opt.e);
+        switch (drawingShape) {
+            case 'rect':
+                shapeObject.set({
+                    width: Math.abs(pointer.x - shapeOrigin.x),
+                    height: Math.abs(pointer.y - shapeOrigin.y),
+                    left: Math.min(pointer.x, shapeOrigin.x),
+                    top: Math.min(pointer.y, shapeOrigin.y)
+                });
+                break;
+            case 'circle':
+                const radius = Math.sqrt(Math.pow(pointer.x - shapeOrigin.x, 2) + Math.pow(pointer.y - shapeOrigin.y, 2)) / 2;
+                shapeObject.set({
+                    radius: radius,
+                    left: (pointer.x + shapeOrigin.x) / 2 - radius,
+                    top: (pointer.y + shapeOrigin.y) / 2 - radius
+                });
+                break;
+            case 'line':
+                shapeObject.set({ x2: pointer.x, y2: pointer.y });
+                break;
+        }
+        canvas.renderAll();
+    });
+
+    canvas.on('mouse:up', function() {
+        if (isDrawingShape) {
+            isDrawingShape = false;
+            shapeObject = null;
+            drawingShape = null;
+            setDrawingMode(previousDrawingMode);
+            if (previousDrawingMode) setBrush(currentBrush);
+            canvas.discardActiveObject();
+            canvas.requestRenderAll();
+            saveState();
+        }
+    });
+}
 
 
-// Inizializzazione colore e dimensione
+// 🎨 MuseBrush con gestione livelli corretta (fixati problemi disegno dopo cambio layer)
 
-// Inizializzazione colore e dimensione
-const thicknessSlider = document.getElementById('thicknessSlider');
-const colorInput = document.getElementById('colorInput');
-
-let brushSize = parseInt(thicknessSlider.value, 10) || 5;
-let brushColor = colorInput.value || "#000000";
-let currentBrush = "Basic"; // default iniziale
+// =======================
+// VARIABILI GLOBALI
+// =======================
+const layers = []; // array di oggetti { canvas, undoStack, redoStack, name, visible }
+let activeLayerIndex = 0;
+let brushSize = 5;
+let brushColor = "#000000";
+let currentBrush = "Basic";
 let isInsertingText = false;
+let drawingShape = null;
+let isDrawingShape = false;
+let previousDrawingMode = false;
+let shapeOrigin = { x: 0, y: 0 };
+let shapeObject = null;
+let globalDrawingMode = true;
 
+// =======================
+function getActiveLayer() {
+    return layers[activeLayerIndex];
+}
 
+function updateCanvasVisibility() {
+    layers.forEach((layer, i) => {
+        const canvas = layer.canvas;
+        const isActive = i === activeLayerIndex;
 
-// Inizializza il pennello base
-canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-canvas.freeDrawingBrush.width = brushSize;
-canvas.freeDrawingBrush.color = brushColor;
+        const zBase = i * 2; // <--- riga modificata
+        canvas.lowerCanvasEl.style.zIndex = zBase;
+        canvas.upperCanvasEl.style.zIndex = zBase + 1;
+        
+        
 
+        canvas.lowerCanvasEl.style.display = layer.visible ? 'block' : 'none';
+        canvas.upperCanvasEl.style.display = i === activeLayerIndex ? 'block' : 'none';
+        
 
+        canvas.lowerCanvasEl.style.position = 'absolute';
+        canvas.upperCanvasEl.style.position = 'absolute';
 
-// Funzioni pennelli
-document.querySelectorAll(".brush-option").forEach(button => {
-    button.addEventListener("click", function () {
-        setBrush(this.getAttribute("data"));
-        brushDropdown.style.display = "none";
+        canvas.lowerCanvasEl.classList.toggle('active', isActive);
+        canvas.upperCanvasEl.classList.toggle('active', isActive);
+
+        canvas.isDrawingMode = isActive && globalDrawingMode;
+        canvas.selection = isActive;
+        canvas.skipTargetFind = !isActive;
     });
-});
+}
+
+
 function setBrush(type) {
-        currentBrush = type; // ✅ memorizza il tipo selezionato    
+    const layer = getActiveLayer();
+    currentBrush = type;
+    if (!layer.canvas.isDrawingMode) return;
+
+    let brush;
     switch (type) {
-        case 'Basic':
-            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-            canvas.freeDrawingBrush.width = brushSize;
-            break;
-        case 'Smooth':
-            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-            canvas.freeDrawingBrush.width = brushSize * 1.5;
-            break;
-        case 'Thick':
-            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-            canvas.freeDrawingBrush.width = brushSize * 3;
-            break;
-        case 'Spray':
-            canvas.freeDrawingBrush = new fabric.SprayBrush(canvas);
-            canvas.freeDrawingBrush.width = brushSize;
-            canvas.freeDrawingBrush.density = 20;
-            break;
-        case 'Calligraphy':
-            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
-            canvas.freeDrawingBrush.width = brushSize;
-            canvas.freeDrawingBrush.strokeLineCap = 'square';
-            break;
-        case 'Dotted':
-            canvas.freeDrawingBrush = new fabric.CircleBrush(canvas);
-            canvas.freeDrawingBrush.width = brushSize;
-            break;
+        case 'Basic': brush = new fabric.PencilBrush(layer.canvas); brush.width = brushSize; break;
+        case 'Smooth': brush = new fabric.PencilBrush(layer.canvas); brush.width = brushSize * 1.5; break;
+        case 'Thick': brush = new fabric.PencilBrush(layer.canvas); brush.width = brushSize * 3; break;
+        case 'Spray': brush = new fabric.SprayBrush(layer.canvas); brush.width = brushSize; brush.density = 20; break;
+        case 'Calligraphy': brush = new fabric.PencilBrush(layer.canvas); brush.width = brushSize; brush.strokeLineCap = 'square'; break;
+        case 'Dotted': brush = new fabric.CircleBrush(layer.canvas); brush.width = brushSize; break;
     }
-    canvas.freeDrawingBrush.color = brushColor;
-    drawingShape = null;  // disabilita disegno forme se si seleziona un pennello
-
+    brush.color = brushColor;
+    layer.canvas.freeDrawingBrush = brush;
 }
+
 function setDrawingMode(active) {
-    canvas.isDrawingMode = active;
-    const icon = document.getElementById('pointerIcon');
-    icon.src = active ? "./images/pencil-icon.png" : "./images/pointer-icon.png";
+    layers.forEach((layer, i) => layer.canvas.isDrawingMode = (i === activeLayerIndex) && active);
+    document.getElementById('pointerIcon').src = active ? "./images/pencil-icon.png" : "./images/pointer-icon.png";
 }
+
 function disableDrawingSilently() {
-    canvas.isDrawingMode = false;
-    // NON tocco l’icona!
+    layers.forEach(layer => layer.canvas.isDrawingMode = false);
 }
-
-
-// Gestione colore
-colorInput.addEventListener('input', function () {
-    brushColor = this.value;
-    if (canvas.freeDrawingBrush) {
-        canvas.freeDrawingBrush.color = brushColor;
-    }
-});
-
-// Gestione spessore
-thicknessSlider.addEventListener('input', function () {
-    brushSize = parseInt(this.value, 10);
-    canvas.freeDrawingBrush.width = brushSize;
-});
-
-// Modalità puntatore
-document.getElementById('pointerToggleBtn').onclick = function() {
-    const newMode = !canvas.isDrawingMode;
-    setDrawingMode(newMode);
-    drawingShape = null; // esce anche dalla modalità forme
-};
-
-// Undo e Redo
-const undoStack = [];
-const redoStack = [];
-let isRestoring = false;
-
-undoStack.push(JSON.stringify(canvas));
 
 function saveState() {
-    if (isRestoring) return;
-
-    const current = JSON.stringify(canvas);
-    if (undoStack.length === 0 || undoStack[undoStack.length - 1] !== current) {
-        undoStack.push(current);
-        redoStack.length = 0;
-    }
+    const layer = getActiveLayer();
+    const current = JSON.stringify(layer.canvas);
+if (layer.undoStack[layer.undoStack.length - 1] !== current) {
+    layer.undoStack.push(current);
+    layer.redoStack.length = 0;
+}
 }
 
-canvas.on('path:created', function(e) {
-    // Dopo che un tratto è stato disegnato, assicuriamoci che venga tracciato
-    canvas.renderAll();
-    saveState();
-});
-document.getElementById('undoBtn').onclick = undo;
-document.getElementById('redoBtn').onclick = redo;
-
-
 function undo() {
-    if (undoStack.length > 1) {
-        redoStack.push(undoStack.pop());
-        const previous = undoStack[undoStack.length - 1];
-        isRestoring = true;
-        canvas.loadFromJSON(previous, () => {
-            canvas.renderAll();
-            isRestoring = false;
+    const layer = getActiveLayer();
+    if (layer.undoStack.length > 1) {
+        layer.redoStack.push(layer.undoStack.pop());
+        const previous = layer.undoStack[layer.undoStack.length - 1];
+        layer.canvas.loadFromJSON(previous, () => {
+            layer.canvas.renderAll();
         });
     }
 }
 
 function redo() {
-    if (redoStack.length > 0) {
-        const next = redoStack.pop();
-        undoStack.push(next);
-        isRestoring = true;
-        canvas.loadFromJSON(next, () => {
-            canvas.renderAll();
-            isRestoring = false;
+    const layer = getActiveLayer();
+    if (layer.redoStack.length > 0) {
+        const next = layer.redoStack.pop();
+        layer.undoStack.push(next);
+        layer.canvas.loadFromJSON(next, () => {
+            layer.canvas.renderAll();
         });
     }
 }
 
-// Cancella tutto
-document.getElementById('clearBtn').onclick = function() {
-    canvas.clear();
-    undoStack.length = 0;
-    redoStack.length = 0;
-    saveState(); // aggiunto per aggiornare lo stato anche dopo clear
-};
-
-
-// Download immagine
-document.querySelectorAll(".download-option").forEach(button => {
-    button.addEventListener("click", function () {
-        const format = this.getAttribute("value");
-        const dataURL = canvas.toDataURL({
-            format: format,
-            quality: 1.0
-        });
-        const link = document.createElement('a');
-        link.href = dataURL;
-        link.download = `drawing.${format}`;
-        link.click();
-    });
-});
-
-
-
-let drawingShape = null;
-let isDrawingShape = false;
-let previousDrawingMode = canvas.isDrawingMode;
-let shapeOrigin = { x: 0, y: 0 };
-let shapeObject = null;
-
-const shapeBtn = document.getElementById('shapes_tab');
-const shapeDropdown = document.getElementById('shapeDropdown');
+// UI SETUP
+const brushButton = document.getElementById("brushes_tab");
+const brushDropdown = document.getElementById("brushDropdown");
 const downloadBtn = document.getElementById("download_tab");
 const downloadDropdown = document.getElementById("downloadDropdown");
+const shapesButton = document.getElementById("shapes_tab");
+const shapeDropdown = document.getElementById("shapeDropdown");
+
+shapesButton.onclick = function () {
+    shapeDropdown.style.display = (shapeDropdown.style.display === "block") ? "none" : "block";
+};
+
 document.querySelectorAll(".shape-option").forEach(button => {
     button.addEventListener("click", function () {
-        previousDrawingMode = canvas.isDrawingMode;
         drawingShape = this.getAttribute("data-shape");
-        disableDrawingSilently(); // ✅ Disattiva il disegno senza cambiare l’icona
-        shapeDropdown.style.display = "none";        
+        previousDrawingMode = globalDrawingMode;
+        setDrawingMode(false);
+        shapeDropdown.style.display = "none";
     });
 });
 
 
+brushButton.onclick = function () {
+    brushDropdown.style.display = (brushDropdown.style.display === "block") ? "none" : "block";
+};
 
-canvas.on('mouse:down', function(opt) {
-    if (isInsertingText) {
-        const pointer = canvas.getPointer(opt.e);
-    
-        const text = new fabric.IText("Testo", {
-            left: pointer.x,
-            top: pointer.y,
-            fontFamily: 'Arial',
-            fontSize: 24,
-            fill: brushColor,
-            fontWeight: 'normal',
-            fontStyle: 'normal',
-            underline: false
-        });
-    
-        canvas.add(text);
-        canvas.setActiveObject(text);
-        canvas.renderAll();
-        saveState();
-    
-        // Fine modalità testo
-        isInsertingText = false;
-        setDrawingMode(previousDrawingMode);
-        if (previousDrawingMode) {
-            setBrush(currentBrush);
-        }
-    }
-    
-    
-    if (!drawingShape) return;
-        // Forza salvataggio prima di inserire una nuova forma
-
-    isDrawingShape = true;
-    const pointer = canvas.getPointer(opt.e);
-    shapeOrigin = { x: pointer.x, y: pointer.y };
-
-    switch (drawingShape) {
-        case 'rect':
-            shapeObject = new fabric.Rect({
-                left: pointer.x,
-                top: pointer.y,
-                width: 0,
-                height: 0,
-                fill: brushColor,
-                selectable:true
-            });
-            break;
-        case 'circle':
-            shapeObject = new fabric.Circle({
-                left: pointer.x,
-                top: pointer.y,
-                radius: 0,
-                fill: brushColor,
-                selectable: true
-            });
-            break;
-        case 'line':
-            shapeObject = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
-                stroke: brushColor,
-                strokeWidth: brushSize,
-                selectable: true 
-            });
-            break;
-    }
-
-    if (shapeObject) {
-        canvas.add(shapeObject);
-    }
+document.querySelectorAll(".brush-option").forEach(button => {
+    button.addEventListener("click", function () {
+        setBrush(this.getAttribute("data"));
+        brushDropdown.style.display = "none";
+        setDrawingMode(true);
+    });
 });
 
-canvas.on('mouse:move', function(opt) {
-    if (!isDrawingShape || !shapeObject) return;
-
-    const pointer = canvas.getPointer(opt.e);
-
-    switch (drawingShape) {
-        case 'rect':
-            shapeObject.set({
-                width: Math.abs(pointer.x - shapeOrigin.x),
-                height: Math.abs(pointer.y - shapeOrigin.y),
-                left: Math.min(pointer.x, shapeOrigin.x),
-                top: Math.min(pointer.y, shapeOrigin.y)
-            });
-            break;
-        case 'circle':
-            const radius = Math.sqrt(Math.pow(pointer.x - shapeOrigin.x, 2) + Math.pow(pointer.y - shapeOrigin.y, 2)) / 2;
-            shapeObject.set({
-                radius: radius,
-                left: (pointer.x + shapeOrigin.x) / 2 - radius,
-                top: (pointer.y + shapeOrigin.y) / 2 - radius
-            });
-            break;
-        case 'line':
-            shapeObject.set({ x2: pointer.x, y2: pointer.y });
-            break;
-    }
-
-    canvas.renderAll();
+const thicknessSlider = document.getElementById('thicknessSlider');
+thicknessSlider.addEventListener('input', function () {
+    brushSize = parseInt(this.value, 10);
+    setBrush(currentBrush);
 });
 
-canvas.on('mouse:up', function() {
-    if (isDrawingShape) {
-        isDrawingShape = false;
-        shapeObject = null;
+const colorInput = document.getElementById('colorInput');
+colorInput.addEventListener('input', function () {
+    brushColor = this.value;
+    setBrush(currentBrush);
+});
 
-        // ✅ Disattiva modalità figura
-        drawingShape = null;
+document.getElementById('pointerToggleBtn').onclick = function () {
+    globalDrawingMode = !globalDrawingMode;
+    setDrawingMode(globalDrawingMode);
+    setBrush(currentBrush);
+    drawingShape = null;
+};
 
-        // ✅ Torna alla modalità precedente
-                // ✅ Torna alla modalità precedente
-                setDrawingMode(previousDrawingMode);
+document.getElementById('undoBtn').onclick = undo;
+document.getElementById('redoBtn').onclick = redo;
 
-                // ✅ Se torno al disegno, reimposto il pennello attivo
-                if (previousDrawingMode) {
-                    setBrush(currentBrush); // <== la variabile che useremo subito
-                }
+document.getElementById("text_tab").addEventListener("click", () => {
+    previousDrawingMode = getActiveLayer().canvas.isDrawingMode;
+    disableDrawingSilently();
+    drawingShape = null;
+    isInsertingText = true;
+});
+
+const layersTab = document.getElementById('layers_tab');
+const layersPanel = document.getElementById('layersPanel');
+function renderLayerList() {
+    const list = document.getElementById("layersList");
+    list.innerHTML = '';
+
+    layers.forEach((layer, index) => {
+        const li = document.createElement('li');
+        li.className = index === activeLayerIndex ? 'active' : '';
+        li.textContent = layer.name;
+
+        const controls = document.createElement('div');
+        controls.className = 'layer-controls';
+
+        const visibilityBtn = document.createElement('button');
+        visibilityBtn.textContent = layer.visible ? '👁️' : '🚫';
+        visibilityBtn.onclick = (e) => {
+            e.stopPropagation();
+            layer.visible = !layer.visible;
+            updateCanvasVisibility();
+            renderLayerList();
+        };
+        controls.appendChild(visibilityBtn);
+        li.appendChild(controls);
+
+        li.onclick = () => {
+            activeLayerIndex = index;
+            updateCanvasVisibility();
+            renderLayerList();
+        
+            setDrawingMode(globalDrawingMode);           // attiva modalità disegno
+            setTimeout(() => setBrush(currentBrush), 0); // applica il brush
+        };
         
 
-        // ✅ Deseleziona eventuali oggetti
-        canvas.discardActiveObject();
-        canvas.requestRenderAll();
+        list.appendChild(li);
+    });
+    // ➕ Bottone per aggiungere un nuovo livello
+const addBtn = document.createElement('button');
+addBtn.textContent = "+ Nuovo Livello";
+addBtn.style.marginTop = "10px";
+addBtn.style.width = "100%";
+addBtn.style.padding = "6px 10px";
+addBtn.style.border = "1px solid #ccc";
+addBtn.style.borderRadius = "5px";
+addBtn.style.backgroundColor = "#f0f0f0";
+addBtn.style.cursor = "pointer";
 
-        saveState();
-        // Rendi selezionabile e interattivo dopo aver completato
-const objects = canvas.getObjects();
-const last = objects[objects.length - 1];
-if (last) {
-    last.selectable = true;
-    last.evented = true;
+addBtn.onclick = () => {
+    const container = document.querySelector('.canvas-container');
+    createLayer(container, layers.length + 1);
+    
+    updateCanvasVisibility(); // <-- aggiungi questa riga prima di cambiare l'index
+    
+    activeLayerIndex = layers.length - 1;
+    renderLayerList();
+    setDrawingMode(globalDrawingMode);
+    setTimeout(() => setBrush(currentBrush), 0);
+};
+
+list.appendChild(addBtn);
+
 }
-
-    }
-});
-
-
-
-
-
+downloadBtn.onclick = function () {
+    downloadDropdown.style.display = (downloadDropdown.style.display === "block") ? "none" : "block";
+};
 
 document.addEventListener("click", function(e) {
-    if (!brushButton.contains(e.target) && !brushDropdown.contains(e.target)) {
-        brushDropdown.style.display = "none";
-    }
-    if (!shapeBtn.contains(e.target) && !shapeDropdown.contains(e.target)) {
-        shapeDropdown.style.display = "none";
-    }
     if (!downloadBtn.contains(e.target) && !downloadDropdown.contains(e.target)) {
         downloadDropdown.style.display = "none";
     }
 });
-brushButton.onclick = function (e) {
-    brushDropdown.style.display = (brushDropdown.style.display === "block") ? "none" : "block";
-};
 
-shapeBtn.onclick = function (e) {
-    shapeDropdown.style.display = (shapeDropdown.style.display === "block") ? "none" : "block";
-};
+document.querySelectorAll(".download-option").forEach(button => {
+    button.addEventListener("click", function () {
+      const format = this.getAttribute("value");
+      const width = window.innerWidth;
+      const height = window.innerHeight * 0.85;
+      const mergedCanvas = document.createElement("canvas");
+      mergedCanvas.width = width;
+      mergedCanvas.height = height;
+      const ctx = mergedCanvas.getContext("2d");
 
-downloadBtn.onclick = function (e) {
-    downloadDropdown.style.display = (downloadDropdown.style.display === "block") ? "none" : "block";
-};
+      layers.forEach(layer => {
+        if (!layer.visible) return;
+        const layerEl = layer.canvas.lowerCanvasEl;
+        ctx.drawImage(layerEl, 0, 0);
+      });
 
-const textBtn = document.getElementById('text_tab');
-textBtn.addEventListener("click", () => {
-    previousDrawingMode = canvas.isDrawingMode;
-    disableDrawingSilently(); // disattiva il disegno
-    drawingShape = null; // disattiva le forme
-    isInsertingText = true;
+      const dataURL = mergedCanvas.toDataURL(`image/${format}`, 1.0);
+      const link = document.createElement('a');
+      link.href = dataURL;
+      link.download = `drawing.${format}`;
+      link.click();
+    });
 });
+
+const allCanvasElements = () => document.querySelectorAll(".layer-canvas");
+
+layersTab.addEventListener("click", () => {
+  layersPanel.classList.toggle("visible");
+  renderLayerList();
+
+  const disable = layersPanel.classList.contains("visible");
+  allCanvasElements().forEach(c => {
+    c.style.pointerEvents = disable ? "none" : "auto";
+  });
+});
+
+
+window.onload = () => {
+    initLayers();
+};

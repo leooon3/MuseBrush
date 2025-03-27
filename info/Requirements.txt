@@ -8,8 +8,7 @@ download        			            ✔
 user system 				            to do
 text block  				            ✔
 clear canva 				            ✔
-layering    				            to do
+layering    				            not ready still
 undo action 				            ✔
 redo action 				            ✔
 rubber                                  to do
-
