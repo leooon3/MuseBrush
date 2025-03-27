@@ -32,6 +32,8 @@ const colorInput = document.getElementById('colorInput');
 
 let brushSize = parseInt(thicknessSlider.value, 10) || 5;
 let brushColor = colorInput.value || "#000000";
+let currentBrush = "Basic"; // default iniziale
+
 
 
 // Inizializza il pennello base
@@ -48,8 +50,8 @@ document.querySelectorAll(".brush-option").forEach(button => {
         brushDropdown.style.display = "none";
     });
 });
-
 function setBrush(type) {
+        currentBrush = type; // ✅ memorizza il tipo selezionato    
     switch (type) {
         case 'Basic':
             canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
@@ -86,6 +88,10 @@ function setDrawingMode(active) {
     canvas.isDrawingMode = active;
     const icon = document.getElementById('pointerIcon');
     icon.src = active ? "./images/pencil-icon.png" : "./images/pointer-icon.png";
+}
+function disableDrawingSilently() {
+    canvas.isDrawingMode = false;
+    // NON tocco l’icona!
 }
 
 
@@ -198,10 +204,10 @@ const downloadBtn = document.getElementById("download_tab");
 const downloadDropdown = document.getElementById("downloadDropdown");
 document.querySelectorAll(".shape-option").forEach(button => {
     button.addEventListener("click", function () {
+        previousDrawingMode = canvas.isDrawingMode;
         drawingShape = this.getAttribute("data-shape");
-        previousDrawingMode = canvas.isDrawingMode; // ✅ Salviamo lo stato qui!
-        setDrawingMode(false); // per evitare disegno durante figura
-        shapeDropdown.style.display = "none";
+        disableDrawingSilently(); // ✅ Disattiva il disegno senza cambiare l’icona
+        shapeDropdown.style.display = "none";        
     });
 });
 
@@ -223,7 +229,7 @@ canvas.on('mouse:down', function(opt) {
                 width: 0,
                 height: 0,
                 fill: brushColor,
-                selectable: false
+                selectable:true
             });
             break;
         case 'circle':
@@ -232,14 +238,14 @@ canvas.on('mouse:down', function(opt) {
                 top: pointer.y,
                 radius: 0,
                 fill: brushColor,
-                selectable: false
+                selectable: true
             });
             break;
         case 'line':
             shapeObject = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
                 stroke: brushColor,
                 strokeWidth: brushSize,
-                selectable: false
+                selectable: true 
             });
             break;
     }
@@ -283,12 +289,36 @@ canvas.on('mouse:up', function() {
     if (isDrawingShape) {
         isDrawingShape = false;
         shapeObject = null;
-        saveState();
 
-        // Torna alla modalità precedente
-        setDrawingMode(previousDrawingMode);
+        // ✅ Disattiva modalità figura
+        drawingShape = null;
+
+        // ✅ Torna alla modalità precedente
+                // ✅ Torna alla modalità precedente
+                setDrawingMode(previousDrawingMode);
+
+                // ✅ Se torno al disegno, reimposto il pennello attivo
+                if (previousDrawingMode) {
+                    setBrush(currentBrush); // <== la variabile che useremo subito
+                }
+        
+
+        // ✅ Deseleziona eventuali oggetti
+        canvas.discardActiveObject();
+        canvas.requestRenderAll();
+
+        saveState();
+        // Rendi selezionabile e interattivo dopo aver completato
+const objects = canvas.getObjects();
+const last = objects[objects.length - 1];
+if (last) {
+    last.selectable = true;
+    last.evented = true;
+}
+
     }
 });
+
 
 
 
