@@ -1,91 +1,100 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width">
-    <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
-    <title>MuseBrush</title>
-    <link href="style.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MuseBrush Elegante</title>
+  <link rel="icon" type="image/png" href="./images/favicon.ico" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
 </head>
 <body>
-    <div id="menu">
-        <div class="dropdown">
-            <button id="brushes_tab" aria-label="Pennelli">
-                <img src="./images/image.png" width="40" height="40" alt="Pennelli">
-            </button>
-            <div id="brushDropdown" class="dropdown-content">
+    <header id="menu">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap;">
+          <h1 class="logo">MuseBrush</h1>
+          <nav class="toolbar">
+            <!-- 🖌️ BRUSH + COLOR PICKER -->
+            <div class="tool-group">
+              <button id="brushes_tab" title="Pennelli">
+                <img src="./images/image.png" alt="Pennelli" />
+              </button>
+              <div id="brushDropdown" class="dropdown-content">
                 <button class="brush-option" data="Basic">Basic</button>
                 <button class="brush-option" data="Smooth">Smooth</button>
                 <button class="brush-option" data="Thick">Thick</button>
                 <button class="brush-option" data="Spray">Spray</button>
                 <button class="brush-option" data="Dotted">Dotted</button>
                 <button class="brush-option" data="Calligraphy">Calligraphy</button>
+              </div>
+              <input type="color" id="colorInput" class="color-picker" title="Colore pennello" />
             </div>
-            <div class="colorContainer">
-                <input type="color" id="colorInput" class="color-picker" aria-label="Seleziona colore">
+      
+            <!-- 🎯 POINTER -->
+            <div class="tool-group">
+              <button id="pointerToggleBtn" title="Pointer">
+                <img id="pointerIcon" src="./images/pointer-icon.png" alt="Pointer Icon" />
+              </button>
             </div>
-        </div>
-
-        <div class="dropdown">
-            <button id="pointerToggleBtn" aria-label="Attiva/disattiva disegno">
-                <img id="pointerIcon" src="./images/pointer-icon.png" width="20" height="20" alt="Pointer Icon">
-            </button>
-        </div>
-
-        <div class="dropdown">
-            <button id="shapes_tab" aria-label="Forme">
-                <img src="./images/square.png" width="40" height="40" alt="Forme">
-            </button>
-            <div id="shapeDropdown" class="dropdown-content">
+      
+            <!-- ⬛ SHAPES -->
+            <div class="tool-group">
+              <button id="shapes_tab" title="Forme">
+                <img src="./images/square.png" alt="Forme" />
+              </button>
+              <div id="shapeDropdown" class="dropdown-content">
                 <button class="shape-option" data-shape="rect">Rettangolo</button>
                 <button class="shape-option" data-shape="circle">Cerchio</button>
                 <button class="shape-option" data-shape="line">Linea</button>
+              </div>
             </div>
-        </div>
-
-        <div class="dropdown">
-            <button id="text_tab" aria-label="Testo">
-                <img src="./images/text.png" width="30" height="30" alt="Testo">
-            </button>
-        </div>
-
-        <div class="slider-container">
-            <input type="range" id="thicknessSlider" min="1" max="20" value="5" orient="vertical" class="slider" aria-label="Spessore pennello">
-        </div>
-
-        <h1>MuseBrush</h1>
-
-        <div class="dropdown">
-            <button id="layers_tab" aria-label="Livelli">
-                <img src="./images/layers.png" width="30" height="30" alt="Livelli">
-            </button>
-            <button id="undoBtn" aria-label="Annulla">
-                <img src="./images/undo.png" width="30" height="30" alt="Undo">
-            </button>
-            <button id="redoBtn" aria-label="Ripeti">
-                <img src="./images/arrow.png" width="30" height="30" alt="Redo">
-            </button>
-            <button id="clearBtn" aria-label="Pulisci tutto">
-                <img src="https://icons.veryicon.com/png/o/miscellaneous/flat-wireframe-library/trash-bin-3.png" width="30" height="40" alt="Pulisci">
-            </button>
-            <div class="dropdown">
-                <button id="download_tab" aria-label="Download">
-                    <img src="./images/downloads.png" width="30" height="40" alt="Download">
-                </button>
-                <div id="downloadDropdown" class="dropdown-content">
-                    <button class="download-option" value="jpeg">JPEG</button>
-                    <button class="download-option" value="png">PNG</button>
-                </div>
+      
+            <!-- ✏️ TEXT -->
+            <div class="tool-group">
+              <button id="text_tab" title="Testo">
+                <img src="./images/text.png" alt="Testo" />
+              </button>
             </div>
+      
+            <!-- ⬇️ DOWNLOAD + LAYERS -->
+            <div class="tool-group">
+              <button id="download_tab" title="Download">
+                <img src="./images/downloads.png" alt="Download" />
+              </button>
+              <div id="downloadDropdown" class="dropdown-content">
+                <button class="download-option" value="jpeg">JPEG</button>
+                <button class="download-option" value="png">PNG</button>
+              </div>
+              <button id="layers_tab" title="Livelli">
+                <img src="./images/layers.png" alt="Livelli" />
+              </button>
+            </div>
+      
+            <!-- ↩️ UNDO / REDO / CLEAR -->
+            <div class="tool-group">
+              <button id="undoBtn" title="Annulla">
+                <img src="./images/undo.png" alt="Undo" />
+              </button>
+              <button id="redoBtn" title="Ripeti">
+                <img src="./images/arrow.png" alt="Redo" />
+              </button>
+              <button id="clearBtn" title="Pulisci">
+                <img src="https://icons.veryicon.com/png/o/miscellaneous/flat-wireframe-library/trash-bin-3.png" alt="Pulisci" />
+              </button>
+            </div>
+          </nav>
         </div>
-    </div>
+      </header>
+      <div class="slider-container">
+        <input type="range" id="thicknessSlider" min="1" max="20" value="5" title="Spessore" class="slider" />
+      </div>
+          
+  <main>
     <div class="canvas-container"></div>
-    <div id="layersPanel" class="panel">
-        <h3>Livelli</h3>
-        <ul id="layersList"></ul>
-    </div>
-
-    <script src="script.js"></script>
+    <aside id="layersPanel" class="panel">
+      <h3>Livelli</h3>
+      <ul id="layersList"></ul>
+    </aside>
+  </main>
+  <script src="script.js"></script>
 </body>
 </html>

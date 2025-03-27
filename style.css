@@ -1,100 +1,86 @@
-body { 
-    text-align: center;
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    margin:0;
-}
-
-#menu h1 {
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
     color: #333;
-    text-align: center;
-    margin-top: 20px;
-    width: 100%;
-}
-button {
+  }
+  
+  header#menu {
+    background-color: #ffffffcc;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
     padding: 10px 20px;
-    font-size: 16px;
-    background-color: #ffffff;
-    color: black;
-    border: none;
-    cursor: pointer;
-    border-radius: 5px;
-}
-
-#clearBtn {
-    position: absolute;
-     right: 0;
-}
-
-
-
-.colorContainer {
-    display: inline-block;
-    padding: 10px;
-    position: relative;
-}
-
-#colorInput {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    padding: 0;
-    border: none;
-    cursor: pointer;
-    background: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-#colorInput::-webkit-color-swatch-wrapper {
-    padding: 0;
-    border-radius: 50%;
-}
-
-#colorInput::-webkit-color-swatch {
-    border: none;
-    border-radius: 50%;
-}
-
-#colorInput::-moz-color-swatch {
-    border: none;
-    border-radius: 50%;
-}
-#colorInput:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-}
-
-
-
-#undoBtn{
-    position: absolute;
-    right:215px;
-}
-#redoBtn {
-   position: absolute; 
-   right:145px;
-}
-
-
-/* Slider for Brush Thickness */
-.slider-container {
-    position: fixed;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  
+  .logo {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #3a3a3a;
+    margin: 0 auto 10px;
+  }
+  
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between;
+  }
+  
+  .tool-group {
     display: flex;
     align-items: center;
-    height: auto;
+    gap: 10px;
+  }
+  
+  button {
+    background-color: #f0f0f0;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    display: flex;
+    align-items: center;
     justify-content: center;
-}
-.slider {
+  }
+  
+  button:hover {
+    background-color: #e0e0e0;
+    transform: scale(1.05);
+  }
+  
+  button img {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .color-picker {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
+    background: none;
+  }
+  
+  .color-picker::-webkit-color-swatch-wrapper,
+  .color-picker::-webkit-color-swatch,
+  .color-picker::-moz-color-swatch {
+    border: none;
+    border-radius: 50%;
+    padding: 0;
+  }
+
+  .slider {
+    appearance: none;
     writing-mode: vertical-lr;
     width: 8px;
     height: 150px;
@@ -104,104 +90,112 @@ button {
     opacity: 0.8;
     transition: opacity 0.3s;
     cursor: pointer;
-}
-.slider:hover {
+  }
+  .slider:hover {
     opacity: 1;
-}
-.slider::-webkit-slider-thumb {
+  }
+  .slider::-webkit-slider-thumb {
     appearance: none;
     width: 20px;
     height: 20px;
     background: linear-gradient(to bottom, #252525, #141414);
     border-radius: 50%;
     cursor: pointer;
-}
-.slider::-webkit-slider-thumb:hover {
-    background: #ff2e00;
-}
-
-
-
-button, .dropdown-content button {
-    display: inline-block; /* Keep all buttons inline */
-    margin-right: 10px; /* Add space between buttons */
-}
-.dropdown-content {
-    display: none;
+  }
+  
+  #thicknessSlider::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(to bottom, #252525, #141414);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  
+  .slider-container {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%) rotate(180deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001; /* assicurati sia visibile sopra al resto */
+  }
+  
+  .dropdown-content {
     position: absolute;
-    left: 10px;
-    top: 60px;
     background-color: white;
-    border: 1px solid black;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    display: none;
+    z-index: 1000;
     padding: 5px;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-    border-radius: 5px;
-}
-.dropdown-content button {
-    display: block;
-    width: 100%;
-    padding: 5px;
+  }
+  
+  .dropdown-content button {
+    padding: 8px 12px;
     background: none;
     border: none;
-    cursor: pointer;
+    width: 100%;
     text-align: left;
-}
-button:hover{
-    background-color:#cccaca ;
-}
-
-.dropdown-content button:hover {
-    background-color: #cccaca;
-}
-.dropdown {
-    display:flex;
-    align-items: center;
-}
-.dropdown:last-child {
+    cursor: pointer;
+  }
+  
+  .dropdown-content button:hover {
+    background-color: #f4f4f4;
+  }
+  
+  .canvas-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    height: calc(100vh - 120px);
+    background: #ffffff;
+    border: 2px solid #333;
+    margin: auto;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  
+  .layer-canvas {
     position: absolute;
-    right: 75px;
-}
-.dropdown:first-child {
-    position: absolute;
-    left: 10px;
-}
-#pointerToggleBtn{
-    position: absolute;
-    left:170px;
-}
-#shapes_tab {
-    position: absolute;
-    left: 230px; /* distanza dal bordo sinistro accanto a pointer */
-}
-#text_tab {
-    position: absolute;
-    left: 300px; /* accanto alle forme */
-}
-/* 🎨 STILI PER PANNELLO LIVELLI */
-
-#layersPanel {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  
+  .layer-canvas.active {
+    pointer-events: auto;
+  }
+  
+  #layersPanel {
     position: fixed;
     top: 80px;
     right: -300px;
     width: 250px;
-    background-color: #fff;
-    border-left: 2px solid #333;
-    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.2);
-    padding: 15px;
-    transition: right 0.3s ease-in-out;
-    z-index: 4000; /* assicurati che sia sopra tutto */
     height: 60vh;
-    overflow-y: auto;
+    background-color: #fff;
+    border-left: 1px solid #ccc;
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.05);
+    padding: 15px;
     border-radius: 8px 0 0 8px;
+    overflow-y: auto;
+    transition: right 0.3s ease;
+    z-index: 2000;
   }
   
   #layersPanel.visible {
-    right: 0px;
+    right: 0;
   }
-  
   
   #layersPanel h3 {
     margin-top: 0;
+    font-size: 1.2em;
+    color: #444;
     text-align: left;
   }
   
@@ -212,15 +206,15 @@ button:hover{
   }
   
   #layersList li {
+    padding: 6px 10px;
+    background: #f9f9f9;
+    margin-bottom: 6px;
+    border-radius: 6px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
-    padding: 6px 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #f9f9f9;
     cursor: pointer;
+    border: 1px solid #ccc;
   }
   
   #layersList li.active {
@@ -246,70 +240,19 @@ button:hover{
     background-color: #ddd;
   }
   
-
-#layers_tab {
-    position: absolute;
-    right: 285px;
-    z-index: 3000; /* <--- aggiunto per renderlo cliccabile sopra i canvas */
-  }
-  
-  .layer-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* solo il canvas attivo riceve input */
-}
-  
-.layer-canvas.active {
-    pointer-events: auto;
-}
-  
-
   .panel {
     z-index: 3000;
   }
-  .canvas-container {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    height: calc(100vh - 100px); /* Forza altezza visibile */
-    background: #fff;
-    margin: auto;
-    overflow: hidden;
-    border: 2px solid #333;
-}
-
-
-
-/* ✅ Per i canvas generati dinamicamente */
-
-
-/* ✅ Header (menu) */
-#menu {
-    position: sticky;
-    top: 0;
-    width: 100%;
-    background-color: white;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 2px solid #333;
-    flex-wrap: wrap;
-}
-
-/* ✅ Migliora adattamento su schermi piccoli */
-@media screen and (max-width: 768px) {
-    #menu {
-        flex-direction: column;
-        align-items: flex-start;
+  
+  @media screen and (max-width: 768px) {
+    .toolbar {
+      flex-direction: column;
+      align-items: flex-start;
     }
-
+  
     .slider-container {
-        position: static;
-        transform: none;
-        margin: 10px 0;
+      position: static;
+      transform: rotate(180deg);
+      margin: 10px 0;
     }
-}
+  }

@@ -1,4 +1,4 @@
-
+// Funzione aggiornata per creare un layer
 function createLayer(container, index) {
     const layerCanvasEl = document.createElement('canvas');
     layerCanvasEl.classList.add('layer-canvas');
@@ -14,7 +14,6 @@ function createLayer(container, index) {
 
     layerCanvas.setZoom(window.devicePixelRatio || 1);
 
-    // 🟢 Ora che layerCanvas è definito, possiamo accedere a upperCanvasEl
     container.appendChild(layerCanvas.lowerCanvasEl);
     container.appendChild(layerCanvas.upperCanvasEl);
 
@@ -22,13 +21,12 @@ function createLayer(container, index) {
         canvas: layerCanvas,
         undoStack: [JSON.stringify(layerCanvas)],
         redoStack: [],
-        name: `Livello ${layers.length}`,
+        name: `Livello ${layers.length + 1}`,
         visible: true
     });
 
     attachCanvasEvents(layerCanvas);
 }
-
 
 
 function initLayers() {
@@ -309,6 +307,20 @@ document.getElementById('pointerToggleBtn').onclick = function () {
 document.getElementById('undoBtn').onclick = undo;
 document.getElementById('redoBtn').onclick = redo;
 
+// 🔁 Funzione per svuotare tutti i layer (ma non eliminarli)
+document.getElementById("clearBtn").onclick = () => {
+    layers.forEach(layer => {
+        layer.canvas.clear();
+        layer.canvas.backgroundColor = 'transparent';
+        if (layers.indexOf(layer) === 0) {
+            layer.canvas.backgroundColor = 'white'; // primo layer con sfondo bianco
+        }
+        saveState();
+        layer.canvas.renderAll();
+    });
+};
+
+
 document.getElementById("text_tab").addEventListener("click", () => {
     previousDrawingMode = getActiveLayer().canvas.isDrawingMode;
     disableDrawingSilently();
@@ -318,6 +330,8 @@ document.getElementById("text_tab").addEventListener("click", () => {
 
 const layersTab = document.getElementById('layers_tab');
 const layersPanel = document.getElementById('layersPanel');
+
+// Funzione aggiornata per visualizzare e gestire i layer
 function renderLayerList() {
     const list = document.getElementById("layersList");
     list.innerHTML = '';
@@ -325,7 +339,21 @@ function renderLayerList() {
     layers.forEach((layer, index) => {
         const li = document.createElement('li');
         li.className = index === activeLayerIndex ? 'active' : '';
-        li.textContent = layer.name;
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = layer.name;
+        nameSpan.style.flexGrow = '1';
+        nameSpan.style.cursor = 'pointer';
+        nameSpan.onclick = (e) => {
+            e.stopPropagation();
+            const newName = prompt("Inserisci un nuovo nome per il layer:", layer.name);
+            if (newName !== null && newName.trim() !== '') {
+                layer.name = newName.trim();
+                renderLayerList();
+            }
+        };
+
+        li.appendChild(nameSpan);
 
         const controls = document.createElement('div');
         controls.className = 'layer-controls';
@@ -339,46 +367,67 @@ function renderLayerList() {
             renderLayerList();
         };
         controls.appendChild(visibilityBtn);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '🗑️';
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (layers.length === 1) {
+                alert("Non puoi eliminare l'unico layer rimasto.");
+                return;
+            }
+            if (confirm(`Vuoi davvero eliminare "${layer.name}"?`)) {
+                const container = document.querySelector('.canvas-container');
+                container.removeChild(layer.canvas.lowerCanvasEl);
+                container.removeChild(layer.canvas.upperCanvasEl);
+
+                layers.splice(index, 1);
+                activeLayerIndex = Math.max(0, activeLayerIndex - 1);
+
+                updateCanvasVisibility();
+                renderLayerList();
+                setDrawingMode(globalDrawingMode);
+                setTimeout(() => setBrush(currentBrush), 0);
+            }
+        };
+        controls.appendChild(deleteBtn);
+
         li.appendChild(controls);
 
         li.onclick = () => {
             activeLayerIndex = index;
             updateCanvasVisibility();
             renderLayerList();
-        
-            setDrawingMode(globalDrawingMode);           // attiva modalità disegno
-            setTimeout(() => setBrush(currentBrush), 0); // applica il brush
+            setDrawingMode(globalDrawingMode);
+            setTimeout(() => setBrush(currentBrush), 0);
         };
-        
 
         list.appendChild(li);
     });
-    // ➕ Bottone per aggiungere un nuovo livello
-const addBtn = document.createElement('button');
-addBtn.textContent = "+ Nuovo Livello";
-addBtn.style.marginTop = "10px";
-addBtn.style.width = "100%";
-addBtn.style.padding = "6px 10px";
-addBtn.style.border = "1px solid #ccc";
-addBtn.style.borderRadius = "5px";
-addBtn.style.backgroundColor = "#f0f0f0";
-addBtn.style.cursor = "pointer";
 
-addBtn.onclick = () => {
-    const container = document.querySelector('.canvas-container');
-    createLayer(container, layers.length + 1);
-    
-    updateCanvasVisibility(); // <-- aggiungi questa riga prima di cambiare l'index
-    
-    activeLayerIndex = layers.length - 1;
-    renderLayerList();
-    setDrawingMode(globalDrawingMode);
-    setTimeout(() => setBrush(currentBrush), 0);
-};
+    const addBtn = document.createElement('button');
+    addBtn.textContent = "+ Nuovo Livello";
+    addBtn.style.marginTop = "10px";
+    addBtn.style.width = "100%";
+    addBtn.style.padding = "6px 10px";
+    addBtn.style.border = "1px solid #ccc";
+    addBtn.style.borderRadius = "5px";
+    addBtn.style.backgroundColor = "#f0f0f0";
+    addBtn.style.cursor = "pointer";
 
-list.appendChild(addBtn);
+    addBtn.onclick = () => {
+        const container = document.querySelector('.canvas-container');
+        createLayer(container, layers.length);
+        activeLayerIndex = layers.length - 1;
+        updateCanvasVisibility();
+        renderLayerList();
+        setDrawingMode(globalDrawingMode);
+        setTimeout(() => setBrush(currentBrush), 0);
+    };
 
+    list.appendChild(addBtn);
 }
+
 downloadBtn.onclick = function () {
     downloadDropdown.style.display = (downloadDropdown.style.display === "block") ? "none" : "block";
 };
