@@ -55,7 +55,16 @@ body {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     appearance: none;
     background: none;
+    padding: 0;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
+  
+  .color-picker:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
   
   .color-picker::-webkit-color-swatch-wrapper,
   .color-picker::-webkit-color-swatch,
@@ -102,6 +111,8 @@ body {
   
   .dropdown-content {
     position: absolute;
+    top: 100%;
+    left: 0;
     background-color: white;
     border: 1px solid #ccc;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -109,7 +120,12 @@ body {
     display: none;
     z-index: 1000;
     padding: 5px;
-  }
+}
+.menu-left > button,
+.menu-right > button {
+    position: relative;
+}
+
   
   .dropdown-content button {
     padding: 8px 12px;
@@ -254,3 +270,25 @@ body {
     white-space: nowrap;
   }
   
+  .dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+    border-radius: 50%;
+  }
+  
+  .color-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 50%;
+  }
+  
+  .color-picker::-moz-color-swatch {
+    border: none;
+    border-radius: 50%;
+  }
+  
+  .color-picker::-moz-focus-inner {
+    border: 0;
+  }
