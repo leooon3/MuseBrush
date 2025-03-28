@@ -10,11 +10,9 @@
 </head>
 <body>
     <header id="menu">
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap;">
-          <h1 class="logo">MuseBrush</h1>
-          <nav class="toolbar">
+          <div class="menu-container">
+            <div class="menu-left">
             <!-- 🖌️ BRUSH + COLOR PICKER -->
-            <div class="tool-group">
               <button id="brushes_tab" title="Pennelli">
                 <img src="./images/image.png" alt="Pennelli" />
               </button>
@@ -27,17 +25,13 @@
                 <button class="brush-option" data="Calligraphy">Calligraphy</button>
               </div>
               <input type="color" id="colorInput" class="color-picker" title="Colore pennello" />
-            </div>
       
             <!-- 🎯 POINTER -->
-            <div class="tool-group">
               <button id="pointerToggleBtn" title="Pointer">
                 <img id="pointerIcon" src="./images/pointer-icon.png" alt="Pointer Icon" />
               </button>
-            </div>
       
             <!-- ⬛ SHAPES -->
-            <div class="tool-group">
               <button id="shapes_tab" title="Forme">
                 <img src="./images/square.png" alt="Forme" />
               </button>
@@ -46,17 +40,15 @@
                 <button class="shape-option" data-shape="circle">Cerchio</button>
                 <button class="shape-option" data-shape="line">Linea</button>
               </div>
-            </div>
       
             <!-- ✏️ TEXT -->
-            <div class="tool-group">
               <button id="text_tab" title="Testo">
                 <img src="./images/text.png" alt="Testo" />
               </button>
             </div>
-      
-            <!-- ⬇️ DOWNLOAD + LAYERS -->
-            <div class="tool-group">
+              <h1 class="logo">MuseBrush</h1>
+                <div class="menu-right">
+                              <!-- ⬇️ DOWNLOAD + LAYERS -->
               <button id="download_tab" title="Download">
                 <img src="./images/downloads.png" alt="Download" />
               </button>
@@ -67,10 +59,8 @@
               <button id="layers_tab" title="Livelli">
                 <img src="./images/layers.png" alt="Livelli" />
               </button>
-            </div>
       
             <!-- ↩️ UNDO / REDO / CLEAR -->
-            <div class="tool-group">
               <button id="undoBtn" title="Annulla">
                 <img src="./images/undo.png" alt="Undo" />
               </button>
@@ -81,8 +71,7 @@
                 <img src="https://icons.veryicon.com/png/o/miscellaneous/flat-wireframe-library/trash-bin-3.png" alt="Pulisci" />
               </button>
             </div>
-          </nav>
-        </div>
+          </div>
       </header>
       <div class="slider-container">
         <input type="range" id="thicknessSlider" min="1" max="20" value="5" title="Spessore" class="slider" />

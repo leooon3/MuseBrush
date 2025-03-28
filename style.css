@@ -24,20 +24,6 @@ body {
     color: #3a3a3a;
     margin: 0 auto 10px;
   }
-  
-  .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: space-between;
-  }
-  
-  .tool-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
   button {
     background-color: #f0f0f0;
     border: none;
@@ -102,16 +88,7 @@ body {
     border-radius: 50%;
     cursor: pointer;
   }
-  
-  #thicknessSlider::-webkit-slider-thumb {
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(to bottom, #252525, #141414);
-    border-radius: 50%;
-    cursor: pointer;
-  }
-  
+
   .slider-container {
     position: fixed;
     right: 20px;
@@ -245,14 +222,35 @@ body {
   }
   
   @media screen and (max-width: 768px) {
-    .toolbar {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-  
     .slider-container {
       position: static;
       transform: rotate(180deg);
       margin: 10px 0;
     }
   }
+  .menu-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 20px;
+    position: relative;
+  }
+  
+  .menu-left,
+  .menu-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  
