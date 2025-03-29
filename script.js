@@ -6,6 +6,8 @@ let activeLayerIndex = 0;
 let brushSize = 5;
 let brushColor = "#000000";
 let currentBrush = "Basic";
+let lastEraserPoint = null;
+let isEraserMode = false;
 let isInsertingText = false;
 let drawingShape = null;
 let isDrawingShape = false;
@@ -47,6 +49,18 @@ function createLayer(container, index) {
 }
 
 function initLayers() {
+  // Create eraser overlay canvas
+  const overlay = document.createElement('canvas');
+  overlay.id = 'eraser-preview';
+  overlay.style.position = 'absolute';
+  overlay.style.top = 0;
+  overlay.style.left = 0;
+  overlay.style.pointerEvents = 'none';
+  overlay.width = window.innerWidth;
+  overlay.height = window.innerHeight * 0.85;
+  overlay.style.zIndex = 9999;
+  document.querySelector('.canvas-container').appendChild(overlay);
+
   const container = document.querySelector('.canvas-container');
   createLayer(container, 1);
   updateCanvasVisibility();
@@ -78,21 +92,78 @@ function updateCanvasVisibility() {
 // ================================
 function setBrush(type) {
   const layer = getActiveLayer();
+
+  // ✅ Aggiorna flag
+  isEraserMode = type === 'Eraser';
   currentBrush = type;
+
   if (!layer.canvas.isDrawingMode) return;
 
-  let brush;
+  let brush = null;
+
+  const realColor = isEraserMode ? 'rgba(0,0,0,0)' : brushColor;
   switch (type) {
-    case 'Basic': brush = new fabric.PencilBrush(layer.canvas); brush.width = brushSize; break;
-    case 'Smooth': brush = new fabric.PencilBrush(layer.canvas); brush.width = brushSize * 1.5; break;
-    case 'Thick': brush = new fabric.PencilBrush(layer.canvas); brush.width = brushSize * 3; break;
-    case 'Spray': brush = new fabric.SprayBrush(layer.canvas); brush.width = brushSize; brush.density = 20; break;
-    case 'Calligraphy': brush = new fabric.PencilBrush(layer.canvas); brush.width = brushSize; brush.strokeLineCap = 'square'; break;
-    case 'Dotted': brush = new fabric.CircleBrush(layer.canvas); brush.width = brushSize; break;
+    case 'Basic':
+      brush = new fabric.PencilBrush(layer.canvas);
+      brush.width = brushSize;
+      brush.color = brushColor;
+      break;
+
+    case 'Smooth':
+      brush = new fabric.PencilBrush(layer.canvas);
+      brush.width = brushSize * 1.5;
+      brush.color = brushColor;
+      break;
+
+    case 'Thick':
+      brush = new fabric.PencilBrush(layer.canvas);
+      brush.width = brushSize * 3;
+      brush.color = brushColor;
+      break;
+
+    case 'Spray':
+      brush = new fabric.SprayBrush(layer.canvas);
+      brush.width = brushSize;
+      brush.density = 20;
+      brush.color = realColor;
+      break;
+
+    case 'Calligraphy':
+      brush = new fabric.PencilBrush(layer.canvas);
+      brush.width = brushSize * (type === 'Smooth' ? 1.5 : type === 'Thick' ? 3 : 1);
+      brush.color = realColor;
+      brush.strokeLineCap = type === 'Calligraphy' ? 'square' : 'round';
+      break;
+
+    case 'Dotted':
+      brush = new fabric.CircleBrush(layer.canvas);
+      brush.width = brushSize;
+      brush.color = realColor;
+      break;
+
+    
+      case 'PixelEraser':
+      brush = new fabric.PencilBrush(layer.canvas);
+      brush.width = brushSize;
+      brush.color = 'white';
+      break;
+      
+
+
+      
+
+    case 'Eraser':
+      brush = new fabric.PencilBrush(layer.canvas);
+      brush.width = brushSize;
+      brush.color = "transparent"; // invisibile davvero
+      break;
   }
-  brush.color = brushColor;
-  layer.canvas.freeDrawingBrush = brush;
+
+  if (brush) {
+    layer.canvas.freeDrawingBrush = brush;
+  }
 }
+
 
 function setDrawingMode(active) {
   layers.forEach((layer, i) => {
@@ -140,12 +211,46 @@ function redo() {
 // ✏️ 4. Eventi Canvas: Disegno, Testo, Forme
 // ================================
 function attachCanvasEvents(canvas) {
-  canvas.on('path:created', () => {
+  canvas.on('path:created', (opt) => {
+    const path = opt.path;
+  
+    if (isEraserMode) {
+      path.set({ erasable: false });
+      const pathBounds = path.getBoundingRect();
+  
+      const toDelete = canvas.getObjects().filter(obj => {
+        if (!obj.erasable || obj === path) return false;
+        const objBounds = obj.getBoundingRect();
+        const overlap = !(
+          pathBounds.left > objBounds.left + objBounds.width ||
+          pathBounds.left + pathBounds.width < objBounds.left ||
+          pathBounds.top > objBounds.top + objBounds.height ||
+          pathBounds.top + pathBounds.height < objBounds.top
+        );
+        return overlap;
+      });
+  
+      toDelete.forEach(obj => canvas.remove(obj));
+      canvas.remove(path);
+      canvas.renderAll();
+      saveState();
+      return;
+    }
+  
+    // Solo per path validi
+    if (path && typeof path.set === 'function') {
+      path.set({ erasable: true });
+    }
     canvas.renderAll();
     saveState();
   });
 
+  
   canvas.on('mouse:down', function(opt) {
+    if (currentBrush === 'PixelEraser') {
+      canvas.contextTop.globalCompositeOperation = 'destination-out';
+      canvas._isErasing = true;
+    }
     const pointer = canvas.getPointer(opt.e);
 
     if (isInsertingText) {
@@ -156,6 +261,7 @@ function attachCanvasEvents(canvas) {
         fontSize: 24,
         fill: brushColor
       });
+      text.set({ erasable: true });
       canvas.add(text);
       canvas.setActiveObject(text);
       canvas.renderAll();
@@ -180,6 +286,7 @@ function attachCanvasEvents(canvas) {
           fill: brushColor,
           selectable: true
         });
+        shapeObject.set({ erasable: true });
         break;
       case 'circle':
         shapeObject = new fabric.Circle({
@@ -189,6 +296,7 @@ function attachCanvasEvents(canvas) {
           fill: brushColor,
           selectable: true
         });
+        shapeObject.set({ erasable: true });
         break;
       case 'line':
         shapeObject = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
@@ -196,12 +304,34 @@ function attachCanvasEvents(canvas) {
           strokeWidth: brushSize,
           selectable: true
         });
+        shapeObject.set({ erasable: true });
         break;
     }
     if (shapeObject) canvas.add(shapeObject);
   });
 
   canvas.on('mouse:move', function(opt) {
+    const overlay = document.getElementById('eraser-preview');
+    const ctxOverlay = overlay.getContext('2d');
+    ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
+    if (currentBrush === 'PixelEraser') {
+      const p = canvas.getPointer(opt.e);
+      ctxOverlay.beginPath();
+      ctxOverlay.arc(p.x, p.y, brushSize / 2, 0, 2 * Math.PI);
+      ctxOverlay.fillStyle = 'rgba(0,0,0,0.2)';
+      ctxOverlay.fill();
+    }
+    if (currentBrush === 'PixelEraser' && canvas._isErasing) {
+      const ctx = canvas.contextTop;
+      const p = canvas.getPointer(opt.e);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, brushSize / 2, 0, 2 * Math.PI);
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.fill();
+      lastEraserPoint = p;
+    }
     if (!isDrawingShape || !shapeObject) return;
     const pointer = canvas.getPointer(opt.e);
 
@@ -230,6 +360,16 @@ function attachCanvasEvents(canvas) {
   });
 
   canvas.on('mouse:up', function() {
+    if (currentBrush === 'PixelEraser') {
+      canvas._isErasing = false;
+      lastEraserPoint = null;
+      const ctxOverlay = document.getElementById('eraser-preview').getContext('2d');
+      ctxOverlay.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.contextTop.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.contextTop.globalCompositeOperation = 'source-over';
+      canvas.renderAll();
+      saveState();
+    }
     if (isDrawingShape) {
       isDrawingShape = false;
       shapeObject = null;
@@ -267,11 +407,27 @@ brushButton.onclick = () => brushDropdown.style.display = brushDropdown.style.di
 
 document.querySelectorAll(".brush-option").forEach(button => {
   button.addEventListener("click", () => {
-    setBrush(button.getAttribute("data"));
+    const selectedBrush = button.getAttribute("data");
+
+    // Se non è gomma, aggiorno il currentBrush per i prossimi setBrush()
+    if (selectedBrush !== "Eraser") {
+      currentBrush = selectedBrush;
+    }
+
+    // Applico comunque il pennello selezionato (anche se è "Eraser")
+    setBrush(selectedBrush);
+
+    // Se esco dalla gomma, aggiorno l'icona del cursore
+    if (selectedBrush !== "Eraser") {
+      globalDrawingMode = true;
+      setDrawingMode(true);
+      document.getElementById('pointerIcon').src = "./images/pencil-icon.png";
+    }
+
     brushDropdown.style.display = "none";
-    setDrawingMode(true);
   });
 });
+
 
 document.getElementById('thicknessSlider').addEventListener('input', function () {
   brushSize = parseInt(this.value);
@@ -308,6 +464,12 @@ document.getElementById("text_tab").onclick = () => {
   drawingShape = null;
   isInsertingText = true;
 };
+document.getElementById('eraser_tab').onclick = () => {
+  globalDrawingMode = true;
+  setDrawingMode(true);
+  setBrush("Eraser");
+};
+
 // ================================
 // 🗂️ 6. Gestione Livelli: Aggiunta, Selezione, Visibilità, Elimina
 // ================================

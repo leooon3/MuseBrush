@@ -7,91 +7,98 @@
     <link rel="icon" type="image/png" href="./images/favicon.ico" />
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
-  </head>
-  <body>
-      <header id="menu">
-          <div class="menu-container">
-              <div class="menu-left">
-                  <!-- 🖌️ BRUSH + COLOR PICKER -->
-                  <div class="dropdown-wrapper">
-                      <button id="brushes_tab" title="Pennelli">
-                          <img src="./images/image.png" alt="Pennelli" />
-                      </button>
-                      <div id="brushDropdown" class="dropdown-content">
-                          <button class="brush-option" data="Basic">Basic</button>
-                          <button class="brush-option" data="Smooth">Smooth</button>
-                          <button class="brush-option" data="Thick">Thick</button>
-                          <button class="brush-option" data="Spray">Spray</button>
-                          <button class="brush-option" data="Dotted">Dotted</button>
-                          <button class="brush-option" data="Calligraphy">Calligraphy</button>
-                      </div>
-                  </div>
-                  <input type="color" id="colorInput" class="color-picker" title="Colore pennello" />
+    </head>
+    <body>
+        <header id="menu">
+            <div class="menu-container">
+                <div class="menu-left">
+                    <!-- 🖌️ BRUSH + COLOR PICKER -->
+                    <div class="dropdown-wrapper">
+                        <button id="brushes_tab" title="Pennelli">
+                            <img src="./images/image.png" alt="Pennelli" />
+                        </button>
+                        <div id="brushDropdown" class="dropdown-content">
+                            <button class="brush-option" data="Basic">Basic</button>
+                            <button class="brush-option" data="Smooth">Smooth</button>
+                            <button class="brush-option" data="Thick">Thick</button>
+                            <button class="brush-option" data="Spray">Spray</button>
+                            <button class="brush-option" data="Dotted">Dotted</button>
+                            <button class="brush-option" data="Calligraphy">Calligraphy</button>
+                        </div>
+                    </div>
+                    <input type="color" id="colorInput" class="color-picker" title="Colore pennello" />
 
-                  <!-- 🎯 POINTER -->
-                  <button id="pointerToggleBtn" title="Pointer">
-                      <img id="pointerIcon" src="./images/pointer-icon.png" alt="Pointer Icon" />
-                  </button>
-        
-                  <!-- ⬛ SHAPES -->
-                  <div class="dropdown-wrapper">
-                      <button id="shapes_tab" title="Forme">
-                          <img src="./images/square.png" alt="Forme" />
-                      </button>
-                      <div id="shapeDropdown" class="dropdown-content">
-                          <button class="shape-option" data-shape="rect">Rettangolo</button>
-                          <button class="shape-option" data-shape="circle">Cerchio</button>
-                          <button class="shape-option" data-shape="line">Linea</button>
-                      </div>
-                  </div>
-        
-                  <!-- ✏️ TEXT -->
-                  <button id="text_tab" title="Testo">
-                      <img src="./images/text.png" alt="Testo" />
-                  </button>
-              </div>
-              <h1 class="logo">MuseBrush</h1>
-              <div class="menu-right">
-                  <!-- ⬇️ DOWNLOAD + LAYERS -->
-                  <div class="dropdown-wrapper">
-                      <button id="download_tab" title="Download">
-                          <img src="./images/downloads.png" alt="Download" />
-                      </button>
-                      <div id="downloadDropdown" class="dropdown-content">
-                          <button class="download-option" value="jpeg">JPEG</button>
-                          <button class="download-option" value="png">PNG</button>
-                      </div>
-                  </div>
-                  <button id="layers_tab" title="Livelli">
-                      <img src="./images/layers.png" alt="Livelli" />
-                  </button>
-        
-                  <!-- ↩️ UNDO / REDO / CLEAR -->
-                  <button id="undoBtn" title="Annulla">
-                      <img src="./images/undo.png" alt="Undo" />
-                  </button>
-                  <button id="redoBtn" title="Ripeti">
-                      <img src="./images/arrow.png" alt="Redo" />
-                  </button>
-                  <button id="clearBtn" title="Pulisci">
-                      <img src="https://icons.veryicon.com/png/o/miscellaneous/flat-wireframe-library/trash-bin-3.png" alt="Pulisci" />
-                  </button>
-              </div>
-          </div>
-      </header>
-      <div class="slider-container">
-          <input type="range" id="thicknessSlider" min="1" max="20" value="5" title="Spessore" class="slider" />
-      </div>
+                    <!-- 🎯 POINTER -->
+                    <button id="pointerToggleBtn" title="Pointer">
+                        <img id="pointerIcon" src="./images/pointer-icon.png" alt="Pointer Icon" />
+                    </button>
+            
+                    <!-- ⬛ SHAPES -->
+                    <div class="dropdown-wrapper">
+                        <button id="shapes_tab" title="Forme">
+                            <img src="./images/square.png" alt="Forme" />
+                        </button>
+                        <div id="shapeDropdown" class="dropdown-content">
+                            <button class="shape-option" data-shape="rect">Rettangolo</button>
+                            <button class="shape-option" data-shape="circle">Cerchio</button>
+                            <button class="shape-option" data-shape="line">Linea</button>
+                        </div>
+                    </div>
+            
+                    <!-- ✏️ TEXT -->
+                    <button id="text_tab" title="Testo">
+                        <img src="./images/text.png" alt="Testo" />
+                    </button>
+                    <!-- 🧽 RUBBER -->
+                    <button id="eraser_tab" title="Gomma">
+                        <img src="./images/eraser.png" alt="Gomma" />
+                    </button>
+                    <button class="brush-option" data="PixelEraser">
+                        Pixel Eraser
+                    </button>
+                </div>
+                <h1 class="logo">MuseBrush</h1>
+                <div class="menu-right">
+                    <!-- ⬇️ DOWNLOAD + LAYERS -->
+                    <div class="dropdown-wrapper">
+                        <button id="download_tab" title="Download">
+                            <img src="./images/downloads.png" alt="Download" />
+                        </button>
+                        <div id="downloadDropdown" class="dropdown-content">
+                            <button class="download-option" value="jpeg">JPEG</button>
+                            <button class="download-option" value="png">PNG</button>
+                        </div>
+                    </div>
+                    <button id="layers_tab" title="Livelli">
+                        <img src="./images/layers.png" alt="Livelli" />
+                    </button>
+            
+                    <!-- ↩️ UNDO / REDO / CLEAR -->
+                    <button id="undoBtn" title="Annulla">
+                        <img src="./images/undo.png" alt="Undo" />
+                    </button>
+                    <button id="redoBtn" title="Ripeti">
+                        <img src="./images/arrow.png" alt="Redo" />
+                    </button>
+                    <button id="clearBtn" title="Pulisci">
+                        <img src="https://icons.veryicon.com/png/o/miscellaneous/flat-wireframe-library/trash-bin-3.png" alt="Pulisci" />
+                    </button>
+                </div>
+            </div>
+        </header>
+        <div class="slider-container">
+            <input type="range" id="thicknessSlider" min="1" max="20" value="5" title="Spessore" class="slider" />
+        </div>
 
-      <main>
-          <div class="canvas-container">
+        <main>
+            <div class="canvas-container">
 
-          </div>
-          <aside id="layersPanel" class="panel">
-              <h3>Livelli</h3>
-              <ul id="layersList"></ul>
-          </aside>
-      </main>
-      <script src="script.js"></script>
-  </body>
+            </div>
+            <aside id="layersPanel" class="panel">
+                <h3>Livelli</h3>
+                <ul id="layersList"></ul>
+            </aside>
+        </main>
+        <script src="script.js"></script>
+    </body>
 </html>
