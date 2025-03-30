@@ -398,6 +398,7 @@ shapesButton.onclick = () => shapeDropdown.style.display = shapeDropdown.style.d
 document.querySelectorAll(".shape-option").forEach(button => {
   button.addEventListener("click", () => {
     drawingShape = button.getAttribute("data-shape");
+    highlightTool('shapes_tab');
     previousDrawingMode = globalDrawingMode;
     setDrawingMode(false);
     shapeDropdown.style.display = "none";
@@ -424,6 +425,7 @@ document.querySelectorAll(".brush-option").forEach(button => {
       setDrawingMode(true);
       document.getElementById('pointerIcon').src = "./images/pencil-icon.png";
     }
+    highlightTool('brushes_tab');
 
     brushDropdown.style.display = "none";
   });
@@ -493,12 +495,27 @@ document.getElementById("text_tab").onclick = () => {
   disableDrawingSilently();
   drawingShape = null;
   isInsertingText = true;
+  highlightTool('text_tab');
 };
+
 document.getElementById('eraser_tab').onclick = () => {
   globalDrawingMode = true;
   setDrawingMode(true);
   setBrush("Eraser");
+  highlightTool('eraser_tab');
 };
+
+function highlightTool(buttonId) {
+  // Rimuove lo stato attivo da tutti i tool
+  document.querySelectorAll(".menu-left button").forEach(btn => {
+    btn.classList.remove("tool-active");
+  });
+
+  // Aggiunge lo stato attivo al selezionato
+  const btn = document.getElementById(buttonId);
+  if (btn) btn.classList.add("tool-active");
+}
+
 
 // ================================
 // 🗂️ 6. Gestione Livelli: Aggiunta, Selezione, Visibilità, Elimina

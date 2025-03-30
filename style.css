@@ -88,6 +88,11 @@ button img {
 .layer-controls button:hover {
   background-color: #ddd;
 }
+button.tool-active {
+  border: 2px solid #007bff;
+  box-shadow: 0 0 0 2px #cce5ff;
+}
+
 
 /* =====================================
    COLOR PICKER
