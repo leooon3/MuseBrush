@@ -129,6 +129,29 @@ button img {
 .color-picker::-moz-focus-inner {
   border: 0;
 }
+.color-history {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.color-history button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  background: transparent;
+  transition: transform 0.2s ease;
+}
+
+.color-history button:hover {
+  transform: scale(1.2);
+  border-color: #666;
+}
 
 
 /* =====================================
@@ -285,6 +308,63 @@ button img {
   background-color: #d0e6ff;
   font-weight: bold;
 }
+/* =====================================
+   GALLERY
+====================================== */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  width: 80%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+}
+
+.modal-content h2 {
+  margin-top: 0;
+}
+
+.project-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.project-list .project {
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 6px;
+  width: 150px;
+  cursor: pointer;
+  text-align: center;
+  background: #f9f9f9;
+}
+
+.project-list .project:hover {
+  background: #e0f0ff;
+}
+
+
 
 /* =====================================
    RESPONSIVE

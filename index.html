@@ -27,6 +27,8 @@
                         </div>
                     </div>
                     <input type="color" id="colorInput" class="color-picker" title="Colore pennello" />
+                    <!-- 🔁 Color History -->
+                    <div id="recentColors" class="color-history"></div>
 
                     <!-- 🎯 POINTER -->
                     <button id="pointerToggleBtn" title="Pointer">
@@ -72,6 +74,13 @@
                     <button id="layers_tab" title="Livelli">
                         <img src="./images/layers.png" alt="Livelli" />
                     </button>
+                    <!-- GALLERY -->
+                    <button id="galleryBtn" title="Galleria">
+                        <img src="https://icons.veryicon.com/png/o/miscellaneous/linear-icon-1/folder-open-15.png" alt="Galleria" />
+                    </button>
+                    <button id="newCanvasBtn" title="Nuovo Canvas">
+                        <img src="https://icons.veryicon.com/png/o/miscellaneous/flat-linear-icon/new-file-4.png" alt="Nuovo Canvas" />
+                    </button>                      
             
                     <!-- ↩️ UNDO / REDO / CLEAR -->
                     <button id="undoBtn" title="Annulla">
@@ -99,6 +108,15 @@
                 <ul id="layersList"></ul>
             </aside>
         </main>
+        <div id="galleryModal" class="modal hidden">
+            <div class="modal-content">
+              <h2>🎨 Galleria Progetti</h2>
+              <button id="saveCanvasBtn">💾 Salva progetto attuale</button>
+              <input type="text" id="projectNameInput" placeholder="Nome progetto" />
+              <div id="projectList" class="project-list"></div>
+              <button id="closeGalleryBtn">Chiudi</button>
+            </div>
+          </div>          
         <script src="script.js"></script>
     </body>
 </html>

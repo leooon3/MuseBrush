@@ -15,6 +15,9 @@ let previousDrawingMode = false;
 let shapeOrigin = { x: 0, y: 0 };
 let shapeObject = null;
 let globalDrawingMode = true;
+const recentColors = [];
+const maxRecentColors = 6;
+let lastSavedState = null;
 
 function getActiveLayer() {
   return layers[activeLayerIndex];
@@ -141,16 +144,11 @@ function setBrush(type) {
       brush.color = realColor;
       break;
 
-    
-      case 'PixelEraser':
+    case 'PixelEraser':
       brush = new fabric.PencilBrush(layer.canvas);
       brush.width = brushSize;
       brush.color = 'white';
       break;
-      
-
-
-      
 
     case 'Eraser':
       brush = new fabric.PencilBrush(layer.canvas);
@@ -312,7 +310,8 @@ function attachCanvasEvents(canvas) {
 
   canvas.on('mouse:move', function(opt) {
     const overlay = document.getElementById('eraser-preview');
-    const ctxOverlay = overlay.getContext('2d');
+    if (!overlay) return; // PREVIENE L’ERRORE
+    const ctxOverlay = overlay.getContext('2d');    
     ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
     if (currentBrush === 'PixelEraser') {
       const p = canvas.getPointer(opt.e);
@@ -437,7 +436,36 @@ document.getElementById('thicknessSlider').addEventListener('input', function ()
 document.getElementById('colorInput').addEventListener('input', function () {
   brushColor = this.value;
   setBrush(currentBrush);
+  addRecentColor(brushColor); // <-- AGGIUNTA
 });
+function addRecentColor(color) {
+  if (recentColors.includes(color)) {
+    // Sposta in cima se già esistente
+    recentColors.splice(recentColors.indexOf(color), 1);
+  }
+  recentColors.unshift(color);
+  if (recentColors.length > maxRecentColors) {
+    recentColors.pop();
+  }
+  renderRecentColors();
+}
+
+function renderRecentColors() {
+  const container = document.getElementById('recentColors');
+  container.innerHTML = '';
+  recentColors.forEach(color => {
+    const btn = document.createElement('button');
+    btn.style.backgroundColor = color;
+    btn.title = color;
+    btn.onclick = () => {
+      brushColor = color;
+      document.getElementById('colorInput').value = color;
+      setBrush(currentBrush);
+      addRecentColor(color); // <-- FIX QUI
+    };
+    container.appendChild(btn);
+  });
+}
 
 document.getElementById('pointerToggleBtn').onclick = () => {
   globalDrawingMode = !globalDrawingMode;
@@ -611,6 +639,234 @@ document.querySelectorAll(".download-option").forEach(button => {
     link.click();
   });
 });
+// ================================
+// 8. GALLERY
+// ================================
+// === Galleria Progetti ===
+const galleryBtn = document.getElementById("galleryBtn");
+const galleryModal = document.getElementById("galleryModal");
+const closeGalleryBtn = document.getElementById("closeGalleryBtn");
+const saveCanvasBtn = document.getElementById("saveCanvasBtn");
+const projectList = document.getElementById("projectList");
+const projectNameInput = document.getElementById("projectNameInput");
+
+galleryBtn.onclick = () => {
+  galleryModal.classList.remove("hidden");
+  renderProjectList();
+};
+
+closeGalleryBtn.onclick = () => {
+  galleryModal.classList.add("hidden");
+};
+
+saveCanvasBtn.onclick = () => {
+  const name = projectNameInput.value.trim();
+  if (!name) return alert("Inserisci un nome per il progetto.");
+
+  const width = window.innerWidth;
+  const height = window.innerHeight * 0.85;
+  const mergedCanvas = document.createElement("canvas");
+  mergedCanvas.width = width;
+  mergedCanvas.height = height;
+  const ctx = mergedCanvas.getContext("2d");
+
+  layers.forEach(layer => {
+    if (!layer.visible) return;
+    ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
+  });
+
+  const dataURL = mergedCanvas.toDataURL("image/png");
+  const layerData = layers.map(layer => ({
+    name: layer.name,
+    visible: layer.visible,
+    json: layer.canvas.toJSON()
+  }));
+
+  const projects = JSON.parse(localStorage.getItem("savedProjects") || "[]");
+
+  // Controlla se esiste già
+  const exists = projects.find(p => p.name === name);
+  if (exists && !confirm(`Esiste già un progetto chiamato "${name}". Vuoi sovrascriverlo?`)) return;
+  
+  // Rimuovi quello vecchio se c'è
+  const updatedProjects = projects.filter(p => p.name !== name);
+  updatedProjects.unshift({ name, image: dataURL, layers: layerData });
+  localStorage.setItem("savedProjects", JSON.stringify(updatedProjects));
+  renderProjectList();
+  projectNameInput.value = "";
+  lastSavedState = getCurrentCanvasState();
+};
+
+function renderProjectList() {
+  const projects = JSON.parse(localStorage.getItem("savedProjects") || "[]");
+  projectList.innerHTML = "";
+  projects.forEach((proj, index) => {
+    const div = document.createElement("div");
+    div.className = "project";
+    div.innerHTML = `
+  <strong>${proj.name}</strong>
+  <br><img src="${proj.image}" width="100" />
+  <br><button onclick="deleteProject(${index})">🗑️ Elimina</button>
+`;
+    div.onclick = () => {
+      const container = document.querySelector('.canvas-container');
+      if (!confirm(`Vuoi caricare il progetto "${proj.name}"?`)) return;
+      loadProject(proj);
+    };    
+    projectList.appendChild(div);
+  });
+}
+function loadProject(proj) {
+  // Pulisce i layer esistenti
+  const container = document.querySelector('.canvas-container');
+  container.innerHTML = '';
+  const overlay = document.createElement('canvas');
+  overlay.id = 'eraser-preview';
+  overlay.style.position = 'absolute';
+  overlay.style.top = 0;
+  overlay.style.left = 0;
+  overlay.style.pointerEvents = 'none';
+  overlay.width = window.innerWidth;
+  overlay.height = window.innerHeight * 0.85;
+  overlay.style.zIndex = 9999;
+  container.appendChild(overlay);
+
+  container.appendChild(overlay);
+  layers.length = 0;
+  activeLayerIndex = 0;
+
+  proj.layers.forEach((layerData, index) => {
+    const layerCanvasEl = document.createElement('canvas');
+    layerCanvasEl.classList.add('layer-canvas');
+    layerCanvasEl.width = window.innerWidth;
+    layerCanvasEl.height = window.innerHeight * 0.85;
+
+    const canvas = new fabric.Canvas(layerCanvasEl, {
+      backgroundColor: index === 0 ? 'white' : 'transparent',
+      width: layerCanvasEl.width,
+      height: layerCanvasEl.height
+    });
+
+    container.appendChild(canvas.lowerCanvasEl);
+    container.appendChild(canvas.upperCanvasEl);
+
+    layers.push({
+      canvas: canvas,
+      undoStack: [],
+      redoStack: [],
+      name: layerData.name,
+      visible: layerData.visible
+    });
+
+    canvas.loadFromJSON(layerData.json, () => {
+      canvas.renderAll();
+      canvas.setZoom(window.devicePixelRatio || 1);
+      attachCanvasEvents(canvas);
+    });
+  });
+
+  updateCanvasVisibility();
+  renderLayerList();
+  setDrawingMode(globalDrawingMode);
+  setBrush(currentBrush);
+}
+function deleteProject(index) {
+  if (!confirm("Vuoi davvero eliminare questo progetto?")) return;
+  const projects = JSON.parse(localStorage.getItem("savedProjects") || "[]");
+  projects.splice(index, 1);
+  localStorage.setItem("savedProjects", JSON.stringify(projects));
+  renderProjectList();
+}
+document.getElementById("newCanvasBtn").onclick = () => {
+  const currentState = getCurrentCanvasState();
+  if (JSON.stringify(currentState) !== JSON.stringify(lastSavedState)) {
+    const saveNow = confirm("Hai modifiche non salvate. Vuoi salvarle prima di creare un nuovo canvas?");
+    if (saveNow) {
+      galleryModal.classList.remove("hidden");
+      return; // Interrompe per aspettare il salvataggio manuale
+    }
+  }
+
+  const width = prompt("Inserisci la larghezza del nuovo canvas (px):", window.innerWidth);
+  const height = prompt("Inserisci l'altezza del nuovo canvas (px):", Math.floor(window.innerHeight * 0.85));
+  if (!width || !height) return;
+
+  // Procedi con reset
+  const container = document.querySelector(".canvas-container");
+  container.innerHTML = "";
+
+  // Eraser preview
+  const overlay = document.createElement("canvas");
+  overlay.id = "eraser-preview";
+  overlay.style.position = "absolute";
+  overlay.style.top = 0;
+  overlay.style.left = 0;
+  overlay.style.pointerEvents = "none";
+  overlay.width = width;
+  overlay.height = height;
+  overlay.style.zIndex = 9999;
+  container.appendChild(overlay);
+
+  // Ricrea layer iniziale
+  layers.length = 0;
+  activeLayerIndex = 0;
+  createLayer(container, 1);
+  updateCanvasVisibility();
+  renderLayerList();
+  setDrawingMode(true);
+  setBrush(currentBrush);
+
+  lastSavedState = getCurrentCanvasState(); // nuova baseline
+};
+function getCurrentCanvasState() {
+  return layers.map(layer => ({
+    json: layer.canvas.toJSON(),
+    visible: layer.visible,
+    name: layer.name
+  }));
+}
+window.addEventListener("beforeunload", () => {
+  const currentState = getCurrentCanvasState();
+  if (!lastSavedState || JSON.stringify(currentState) !== JSON.stringify(lastSavedState)) {
+    const width = window.innerWidth;
+    const height = window.innerHeight * 0.85;
+    const mergedCanvas = document.createElement("canvas");
+    mergedCanvas.width = width;
+    mergedCanvas.height = height;
+    const ctx = mergedCanvas.getContext("2d");
+
+    layers.forEach(layer => {
+      if (!layer.visible) return;
+      ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
+    });
+
+    const dataURL = mergedCanvas.toDataURL("image/png");
+    const layerData = layers.map(layer => ({
+      name: layer.name,
+      visible: layer.visible,
+      json: layer.canvas.toJSON()
+    }));
+
+    const autosave = {
+      name: "Autosave",
+      image: dataURL,
+      layers: layerData,
+      timestamp: new Date().toISOString()
+    };
+
+    localStorage.setItem("autosaveProject", JSON.stringify(autosave));
+  }
+});
+
+
+
+
+
 window.onload = () => {
   initLayers();
+  const autosave = JSON.parse(localStorage.getItem("autosaveProject") || "null");
+if (autosave && confirm("Hai un salvataggio automatico. Vuoi ripristinarlo?")) {
+  loadProject(autosave);
+}
+  addRecentColor(brushColor); // mostra il colore iniziale tra i recenti
 };
