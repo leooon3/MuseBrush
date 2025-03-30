@@ -695,6 +695,10 @@ saveCanvasBtn.onclick = () => {
   renderProjectList();
   projectNameInput.value = "";
   lastSavedState = getCurrentCanvasState();
+  const confirmation = document.getElementById("saveConfirmation");
+  confirmation.classList.remove("hidden");
+  setTimeout(() => confirmation.classList.add("hidden"), 2000);
+
 };
 
 function renderProjectList() {

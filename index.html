@@ -111,8 +111,11 @@
         <div id="galleryModal" class="modal hidden">
             <div class="modal-content">
               <h2>🎨 Galleria Progetti</h2>
-              <button id="saveCanvasBtn">💾 Salva progetto attuale</button>
-              <input type="text" id="projectNameInput" placeholder="Nome progetto" />
+              <div class="save-controls">
+                <input type="text" id="projectNameInput" placeholder="Nome progetto" />
+                <button id="saveCanvasBtn">💾 Salva</button>
+              </div>
+              <div id="saveConfirmation" class="save-confirmation hidden">✅ Progetto salvato!</div>              
               <div id="projectList" class="project-list"></div>
               <button id="closeGalleryBtn">Chiudi</button>
             </div>

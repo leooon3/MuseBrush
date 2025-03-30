@@ -363,6 +363,49 @@ button img {
 .project-list .project:hover {
   background: #e0f0ff;
 }
+/* ===============================
+   MODALE GALLERIA - SAVE CONTROLS
+================================== */
+.save-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+#projectNameInput {
+  flex-grow: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+#saveCanvasBtn {
+  padding: 10px 16px;
+  background-color: #007bff;
+  color: white;
+  border-radius: 8px;
+  font-weight: bold;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+#saveCanvasBtn:hover {
+  background-color: #0056b3;
+}
+
+.save-confirmation {
+  color: green;
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 14px;
+  transition: opacity 0.3s ease;
+}
+
+.save-confirmation.hidden {
+  display: none;
+}
 
 
 
