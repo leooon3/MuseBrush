@@ -406,6 +406,19 @@ button img {
 .save-confirmation.hidden {
   display: none;
 }
+#updateProjectBtn {
+  padding: 10px 16px;
+  background-color: #28a745;
+  color: white;
+  border-radius: 8px;
+  font-weight: bold;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+#updateProjectBtn:hover {
+  background-color: #218838;
+}
 
 
 

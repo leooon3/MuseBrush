@@ -18,6 +18,8 @@ let globalDrawingMode = true;
 const recentColors = [];
 const maxRecentColors = 6;
 let lastSavedState = null;
+let currentProjectName = null;
+
 
 function getActiveLayer() {
   return layers[activeLayerIndex];
@@ -647,12 +649,14 @@ const galleryBtn = document.getElementById("galleryBtn");
 const galleryModal = document.getElementById("galleryModal");
 const closeGalleryBtn = document.getElementById("closeGalleryBtn");
 const saveCanvasBtn = document.getElementById("saveCanvasBtn");
+const updateProjectBtn = document.getElementById("updateProjectBtn");
 const projectList = document.getElementById("projectList");
 const projectNameInput = document.getElementById("projectNameInput");
 
 galleryBtn.onclick = () => {
   galleryModal.classList.remove("hidden");
   renderProjectList();
+  updateProjectBtn.classList.toggle("hidden", !currentProjectName);
 };
 
 closeGalleryBtn.onclick = () => {
@@ -700,6 +704,44 @@ saveCanvasBtn.onclick = () => {
   setTimeout(() => confirmation.classList.add("hidden"), 2000);
 
 };
+updateProjectBtn.onclick = () => {
+  if (!currentProjectName) return;
+
+  const width = window.innerWidth;
+  const height = window.innerHeight * 0.85;
+  const mergedCanvas = document.createElement("canvas");
+  mergedCanvas.width = width;
+  mergedCanvas.height = height;
+  const ctx = mergedCanvas.getContext("2d");
+
+  layers.forEach(layer => {
+    if (!layer.visible) return;
+    ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
+  });
+
+  const dataURL = mergedCanvas.toDataURL("image/png");
+  const layerData = layers.map(layer => ({
+    name: layer.name,
+    visible: layer.visible,
+    json: layer.canvas.toJSON()
+  }));
+
+  const projects = JSON.parse(localStorage.getItem("savedProjects") || "[]");
+  const updatedProjects = projects.filter(p => p.name !== currentProjectName);
+  updatedProjects.unshift({ name: currentProjectName, image: dataURL, layers: layerData });
+  localStorage.setItem("savedProjects", JSON.stringify(updatedProjects));
+  renderProjectList();
+  lastSavedState = getCurrentCanvasState();
+
+  const confirmation = document.getElementById("saveConfirmation");
+  confirmation.textContent = "✅ Progetto aggiornato!";
+  confirmation.classList.remove("hidden");
+  setTimeout(() => {
+    confirmation.classList.add("hidden");
+    confirmation.textContent = "✅ Progetto salvato!";
+  }, 2000);
+};
+
 
 function renderProjectList() {
   const projects = JSON.parse(localStorage.getItem("savedProjects") || "[]");
@@ -716,6 +758,7 @@ function renderProjectList() {
       const container = document.querySelector('.canvas-container');
       if (!confirm(`Vuoi caricare il progetto "${proj.name}"?`)) return;
       loadProject(proj);
+      currentProjectName = proj.name;
     };    
     projectList.appendChild(div);
   });
@@ -738,6 +781,7 @@ function loadProject(proj) {
   container.appendChild(overlay);
   layers.length = 0;
   activeLayerIndex = 0;
+  currentProjectName = proj.name;
 
   proj.layers.forEach((layerData, index) => {
     const layerCanvasEl = document.createElement('canvas');
