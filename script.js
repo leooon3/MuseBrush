@@ -19,29 +19,25 @@ const recentColors = [];
 const maxRecentColors = 6;
 let lastSavedState = null;
 let currentProjectName = null;
-
-
+const DEFAULT_CANVAS_WIDTH = 1920;
+const DEFAULT_CANVAS_HEIGHT = 1080;
 function getActiveLayer() {
   return layers[activeLayerIndex];
 }
-
 function createLayer(container, index) {
   const layerCanvasEl = document.createElement('canvas');
   layerCanvasEl.classList.add('layer-canvas');
-  layerCanvasEl.width = window.innerWidth;
-  layerCanvasEl.height = window.innerHeight * 0.85;
-
+  layerCanvasEl.width = DEFAULT_CANVAS_WIDTH;
+  layerCanvasEl.height = DEFAULT_CANVAS_HEIGHT;  
   const layerCanvas = new fabric.Canvas(layerCanvasEl, {
     isDrawingMode: index === 1,
     backgroundColor: index === 0 ? 'white' : 'transparent',
     width: layerCanvasEl.width,
     height: layerCanvasEl.height
   });
-
   layerCanvas.setZoom(window.devicePixelRatio || 1);
   container.appendChild(layerCanvas.lowerCanvasEl);
   container.appendChild(layerCanvas.upperCanvasEl);
-
   layers.push({
     canvas: layerCanvas,
     undoStack: [JSON.stringify(layerCanvas)],
@@ -49,30 +45,26 @@ function createLayer(container, index) {
     name: `Livello ${layers.length + 1}`,
     visible: true
   });
-
   attachCanvasEvents(layerCanvas);
+  fitCanvasToContainer(layerCanvas);
 }
-
 function initLayers() {
-  // Create eraser overlay canvas
   const overlay = document.createElement('canvas');
   overlay.id = 'eraser-preview';
   overlay.style.position = 'absolute';
   overlay.style.top = 0;
   overlay.style.left = 0;
   overlay.style.pointerEvents = 'none';
-  overlay.width = window.innerWidth;
-  overlay.height = window.innerHeight * 0.85;
+  overlay.width = DEFAULT_CANVAS_WIDTH;
+  overlay.height = DEFAULT_CANVAS_HEIGHT;  
   overlay.style.zIndex = 9999;
   document.querySelector('.canvas-container').appendChild(overlay);
-
   const container = document.querySelector('.canvas-container');
   createLayer(container, 1);
   updateCanvasVisibility();
   setDrawingMode(true);
   setBrush(currentBrush);
 }
-
 function updateCanvasVisibility() {
   layers.forEach((layer, i) => {
     const canvas = layer.canvas;
@@ -91,21 +83,15 @@ function updateCanvasVisibility() {
     canvas.skipTargetFind = !isActive;
   });
 }
-
 // ================================
 // 🎨 2. Brush e Modalità Disegno
 // ================================
 function setBrush(type) {
   const layer = getActiveLayer();
-
-  // ✅ Aggiorna flag
   isEraserMode = type === 'Eraser';
   currentBrush = type;
-
   if (!layer.canvas.isDrawingMode) return;
-
   let brush = null;
-
   const realColor = isEraserMode ? 'rgba(0,0,0,0)' : brushColor;
   switch (type) {
     case 'Basic':
@@ -113,58 +99,48 @@ function setBrush(type) {
       brush.width = brushSize;
       brush.color = brushColor;
       break;
-
     case 'Smooth':
       brush = new fabric.PencilBrush(layer.canvas);
       brush.width = brushSize * 1.5;
       brush.color = brushColor;
       break;
-
     case 'Thick':
       brush = new fabric.PencilBrush(layer.canvas);
       brush.width = brushSize * 3;
       brush.color = brushColor;
       break;
-
     case 'Spray':
       brush = new fabric.SprayBrush(layer.canvas);
       brush.width = brushSize;
       brush.density = 20;
       brush.color = realColor;
       break;
-
     case 'Calligraphy':
       brush = new fabric.PencilBrush(layer.canvas);
       brush.width = brushSize * (type === 'Smooth' ? 1.5 : type === 'Thick' ? 3 : 1);
       brush.color = realColor;
       brush.strokeLineCap = type === 'Calligraphy' ? 'square' : 'round';
       break;
-
     case 'Dotted':
       brush = new fabric.CircleBrush(layer.canvas);
       brush.width = brushSize;
       brush.color = realColor;
       break;
-
     case 'PixelEraser':
       brush = new fabric.PencilBrush(layer.canvas);
       brush.width = brushSize;
       brush.color = 'white';
       break;
-
     case 'Eraser':
       brush = new fabric.PencilBrush(layer.canvas);
       brush.width = brushSize;
       brush.color = "transparent"; // invisibile davvero
       break;
   }
-
   if (brush) {
     layer.canvas.freeDrawingBrush = brush;
   }
 }
-
-
 function setDrawingMode(active) {
   layers.forEach((layer, i) => {
     const isActive = i === activeLayerIndex;
@@ -172,11 +148,9 @@ function setDrawingMode(active) {
   });
   document.getElementById('pointerIcon').src = active ? "./images/pencil-icon.png" : "./images/pointer-icon.png";
 }
-
 function disableDrawingSilently() {
   layers.forEach(layer => layer.canvas.isDrawingMode = false);
 }
-
 // ================================
 // 🔁 3. Undo, Redo e Stato
 // ================================
@@ -188,7 +162,6 @@ function saveState() {
     layer.redoStack.length = 0;
   }
 }
-
 function undo() {
   const layer = getActiveLayer();
   if (layer.undoStack.length > 1) {
@@ -197,7 +170,6 @@ function undo() {
     layer.canvas.loadFromJSON(previous, () => layer.canvas.renderAll());
   }
 }
-
 function redo() {
   const layer = getActiveLayer();
   if (layer.redoStack.length > 0) {
@@ -206,18 +178,15 @@ function redo() {
     layer.canvas.loadFromJSON(next, () => layer.canvas.renderAll());
   }
 }
-
 // ================================
 // ✏️ 4. Eventi Canvas: Disegno, Testo, Forme
 // ================================
 function attachCanvasEvents(canvas) {
   canvas.on('path:created', (opt) => {
     const path = opt.path;
-  
     if (isEraserMode) {
       path.set({ erasable: false });
       const pathBounds = path.getBoundingRect();
-  
       const toDelete = canvas.getObjects().filter(obj => {
         if (!obj.erasable || obj === path) return false;
         const objBounds = obj.getBoundingRect();
@@ -229,14 +198,12 @@ function attachCanvasEvents(canvas) {
         );
         return overlap;
       });
-  
       toDelete.forEach(obj => canvas.remove(obj));
       canvas.remove(path);
       canvas.renderAll();
       saveState();
       return;
     }
-  
     // Solo per path validi
     if (path && typeof path.set === 'function') {
       path.set({ erasable: true });
@@ -244,15 +211,12 @@ function attachCanvasEvents(canvas) {
     canvas.renderAll();
     saveState();
   });
-
-  
   canvas.on('mouse:down', function(opt) {
     if (currentBrush === 'PixelEraser') {
       canvas.contextTop.globalCompositeOperation = 'destination-out';
       canvas._isErasing = true;
     }
     const pointer = canvas.getPointer(opt.e);
-
     if (isInsertingText) {
       const text = new fabric.IText("Testo", {
         left: pointer.x,
@@ -271,11 +235,9 @@ function attachCanvasEvents(canvas) {
       if (previousDrawingMode) setBrush(currentBrush);
       return;
     }
-
     if (!drawingShape) return;
     isDrawingShape = true;
     shapeOrigin = { x: pointer.x, y: pointer.y };
-
     switch (drawingShape) {
       case 'rect':
         shapeObject = new fabric.Rect({
@@ -309,7 +271,6 @@ function attachCanvasEvents(canvas) {
     }
     if (shapeObject) canvas.add(shapeObject);
   });
-
   canvas.on('mouse:move', function(opt) {
     const overlay = document.getElementById('eraser-preview');
     if (!overlay) return; // PREVIENE L’ERRORE
@@ -325,7 +286,6 @@ function attachCanvasEvents(canvas) {
     if (currentBrush === 'PixelEraser' && canvas._isErasing) {
       const ctx = canvas.contextTop;
       const p = canvas.getPointer(opt.e);
-
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
       ctx.arc(p.x, p.y, brushSize / 2, 0, 2 * Math.PI);
@@ -335,7 +295,6 @@ function attachCanvasEvents(canvas) {
     }
     if (!isDrawingShape || !shapeObject) return;
     const pointer = canvas.getPointer(opt.e);
-
     switch (drawingShape) {
       case 'rect':
         shapeObject.set({
@@ -359,7 +318,6 @@ function attachCanvasEvents(canvas) {
     }
     canvas.renderAll();
   });
-
   canvas.on('mouse:up', function() {
     if (currentBrush === 'PixelEraser') {
       canvas._isErasing = false;
@@ -392,9 +350,7 @@ const downloadBtn = document.getElementById("download_tab");
 const downloadDropdown = document.getElementById("downloadDropdown");
 const shapesButton = document.getElementById("shapes_tab");
 const shapeDropdown = document.getElementById("shapeDropdown");
-
 shapesButton.onclick = () => shapeDropdown.style.display = shapeDropdown.style.display === "block" ? "none" : "block";
-
 document.querySelectorAll(".shape-option").forEach(button => {
   button.addEventListener("click", () => {
     drawingShape = button.getAttribute("data-shape");
@@ -404,21 +360,16 @@ document.querySelectorAll(".shape-option").forEach(button => {
     shapeDropdown.style.display = "none";
   });
 });
-
 brushButton.onclick = () => brushDropdown.style.display = brushDropdown.style.display === "block" ? "none" : "block";
-
 document.querySelectorAll(".brush-option").forEach(button => {
   button.addEventListener("click", () => {
     const selectedBrush = button.getAttribute("data");
-
     // Se non è gomma, aggiorno il currentBrush per i prossimi setBrush()
     if (selectedBrush !== "Eraser") {
       currentBrush = selectedBrush;
     }
-
     // Applico comunque il pennello selezionato (anche se è "Eraser")
     setBrush(selectedBrush);
-
     // Se esco dalla gomma, aggiorno l'icona del cursore
     if (selectedBrush !== "Eraser") {
       globalDrawingMode = true;
@@ -426,17 +377,13 @@ document.querySelectorAll(".brush-option").forEach(button => {
       document.getElementById('pointerIcon').src = "./images/pencil-icon.png";
     }
     highlightTool('brushes_tab');
-
     brushDropdown.style.display = "none";
   });
 });
-
-
 document.getElementById('thicknessSlider').addEventListener('input', function () {
   brushSize = parseInt(this.value);
   setBrush(currentBrush);
 });
-
 document.getElementById('colorInput').addEventListener('input', function () {
   brushColor = this.value;
   setBrush(currentBrush);
@@ -453,7 +400,6 @@ function addRecentColor(color) {
   }
   renderRecentColors();
 }
-
 function renderRecentColors() {
   const container = document.getElementById('recentColors');
   container.innerHTML = '';
@@ -470,17 +416,14 @@ function renderRecentColors() {
     container.appendChild(btn);
   });
 }
-
 document.getElementById('pointerToggleBtn').onclick = () => {
   globalDrawingMode = !globalDrawingMode;
   setDrawingMode(globalDrawingMode);
   setBrush(currentBrush);
   drawingShape = null;
 };
-
 document.getElementById('undoBtn').onclick = undo;
 document.getElementById('redoBtn').onclick = redo;
-
 document.getElementById("clearBtn").onclick = () => {
   layers.forEach((layer, i) => {
     layer.canvas.clear();
@@ -489,7 +432,6 @@ document.getElementById("clearBtn").onclick = () => {
     layer.canvas.renderAll();
   });
 };
-
 document.getElementById("text_tab").onclick = () => {
   previousDrawingMode = getActiveLayer().canvas.isDrawingMode;
   disableDrawingSilently();
@@ -497,40 +439,32 @@ document.getElementById("text_tab").onclick = () => {
   isInsertingText = true;
   highlightTool('text_tab');
 };
-
 document.getElementById('eraser_tab').onclick = () => {
   globalDrawingMode = true;
   setDrawingMode(true);
   setBrush("Eraser");
   highlightTool('eraser_tab');
 };
-
 function highlightTool(buttonId) {
   // Rimuove lo stato attivo da tutti i tool
   document.querySelectorAll(".menu-left button").forEach(btn => {
     btn.classList.remove("tool-active");
   });
-
   // Aggiunge lo stato attivo al selezionato
   const btn = document.getElementById(buttonId);
   if (btn) btn.classList.add("tool-active");
 }
-
-
 // ================================
 // 🗂️ 6. Gestione Livelli: Aggiunta, Selezione, Visibilità, Elimina
 // ================================
 const layersTab = document.getElementById('layers_tab');
 const layersPanel = document.getElementById('layersPanel');
-
 function renderLayerList() {
   const list = document.getElementById("layersList");
   list.innerHTML = '';
-
   layers.forEach((layer, index) => {
     const li = document.createElement('li');
     li.className = index === activeLayerIndex ? 'active' : '';
-
     const nameSpan = document.createElement('span');
     nameSpan.textContent = layer.name;
     nameSpan.style.flexGrow = '1';
@@ -543,10 +477,8 @@ function renderLayerList() {
         renderLayerList();
       }
     };
-
     const controls = document.createElement('div');
     controls.className = 'layer-controls';
-
     const visibilityBtn = document.createElement('button');
     visibilityBtn.textContent = layer.visible ? '👁️' : '🚫';
     visibilityBtn.onclick = (e) => {
@@ -555,7 +487,6 @@ function renderLayerList() {
       updateCanvasVisibility();
       renderLayerList();
     };
-
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = '🗑️';
     deleteBtn.onclick = (e) => {
@@ -573,12 +504,10 @@ function renderLayerList() {
         setTimeout(() => setBrush(currentBrush), 0);
       }
     };
-
     controls.appendChild(visibilityBtn);
     controls.appendChild(deleteBtn);
     li.appendChild(nameSpan);
     li.appendChild(controls);
-
     li.onclick = () => {
       activeLayerIndex = index;
       updateCanvasVisibility();
@@ -586,10 +515,8 @@ function renderLayerList() {
       setDrawingMode(globalDrawingMode && layers[index].visible);
       setTimeout(() => setBrush(currentBrush), 0);
     };
-
     list.appendChild(li);
   });
-
   const addBtn = document.createElement('button');
   addBtn.textContent = "+ Nuovo Livello";
   addBtn.style.marginTop = "10px";
@@ -608,10 +535,8 @@ function renderLayerList() {
     setDrawingMode(globalDrawingMode);
     setTimeout(() => setBrush(currentBrush), 0);
   };
-
   list.appendChild(addBtn);
 }
-
 layersTab.onclick = () => {
   layersPanel.classList.toggle("visible");
   renderLayerList();
@@ -623,7 +548,6 @@ layersTab.onclick = () => {
 // ================================
 // 💾 7. Download Immagine Unificata
 // ================================
-
 downloadBtn.onclick = function () {
   downloadDropdown.style.display = (downloadDropdown.style.display === "block") ? "none" : "block";
 };
@@ -634,7 +558,6 @@ document.addEventListener("click", function(e) {
     downloadDropdown.style.display = "none";
   }
 });
-
 document.querySelectorAll(".download-option").forEach(button => {
   button.addEventListener("click", function () {
     const format = this.getAttribute("value");
@@ -644,13 +567,11 @@ document.querySelectorAll(".download-option").forEach(button => {
     mergedCanvas.width = width;
     mergedCanvas.height = height;
     const ctx = mergedCanvas.getContext("2d");
-
     layers.forEach(layer => {
       if (!layer.visible) return;
       const layerEl = layer.canvas.lowerCanvasEl;
       ctx.drawImage(layerEl, 0, 0);
     });
-
     const dataURL = mergedCanvas.toDataURL(`image/${format}`, 1.0);
     const link = document.createElement('a');
     link.href = dataURL;
@@ -661,7 +582,6 @@ document.querySelectorAll(".download-option").forEach(button => {
 // ================================
 // 8. GALLERY
 // ================================
-// === Galleria Progetti ===
 const galleryBtn = document.getElementById("galleryBtn");
 const galleryModal = document.getElementById("galleryModal");
 const closeGalleryBtn = document.getElementById("closeGalleryBtn");
@@ -669,46 +589,53 @@ const saveCanvasBtn = document.getElementById("saveCanvasBtn");
 const updateProjectBtn = document.getElementById("updateProjectBtn");
 const projectList = document.getElementById("projectList");
 const projectNameInput = document.getElementById("projectNameInput");
-
 galleryBtn.onclick = () => {
   galleryModal.classList.remove("hidden");
   renderProjectList();
   updateProjectBtn.classList.toggle("hidden", !currentProjectName);
 };
-
 closeGalleryBtn.onclick = () => {
   galleryModal.classList.add("hidden");
 };
+function fitCanvasToContainer(canvas) {
+  const container = document.querySelector('.canvas-container');
+  const canvasWidth = canvas.getWidth();
+  const canvasHeight = canvas.getHeight();
+  const containerWidth = container.clientWidth;
+  const containerHeight = container.clientHeight;
+  const scale = Math.min(
+    containerWidth / canvasWidth,
+    containerHeight / canvasHeight
+  );
+  canvas.setZoom(scale);
+  canvas.setViewportTransform([scale, 0, 0, scale, 0, 0]);
+}
 
 saveCanvasBtn.onclick = () => {
   const name = projectNameInput.value.trim();
   if (!name) return alert("Inserisci un nome per il progetto.");
-
   const width = window.innerWidth;
   const height = window.innerHeight * 0.85;
   const mergedCanvas = document.createElement("canvas");
   mergedCanvas.width = width;
   mergedCanvas.height = height;
   const ctx = mergedCanvas.getContext("2d");
-
   layers.forEach(layer => {
     if (!layer.visible) return;
     ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
   });
-
   const dataURL = mergedCanvas.toDataURL("image/png");
   const layerData = layers.map(layer => ({
     name: layer.name,
     visible: layer.visible,
-    json: layer.canvas.toJSON()
+    json: layer.canvas.toJSON(),
+    width: layer.canvas.getWidth(),
+    height: layer.canvas.getHeight()
   }));
-
   const projects = JSON.parse(localStorage.getItem("savedProjects") || "[]");
-
   // Controlla se esiste già
   const exists = projects.find(p => p.name === name);
   if (exists && !confirm(`Esiste già un progetto chiamato "${name}". Vuoi sovrascriverlo?`)) return;
-  
   // Rimuovi quello vecchio se c'è
   const updatedProjects = projects.filter(p => p.name !== name);
   updatedProjects.unshift({ name, image: dataURL, layers: layerData });
@@ -719,37 +646,31 @@ saveCanvasBtn.onclick = () => {
   const confirmation = document.getElementById("saveConfirmation");
   confirmation.classList.remove("hidden");
   setTimeout(() => confirmation.classList.add("hidden"), 2000);
-
 };
 updateProjectBtn.onclick = () => {
   if (!currentProjectName) return;
-
   const width = window.innerWidth;
   const height = window.innerHeight * 0.85;
   const mergedCanvas = document.createElement("canvas");
   mergedCanvas.width = width;
   mergedCanvas.height = height;
   const ctx = mergedCanvas.getContext("2d");
-
   layers.forEach(layer => {
     if (!layer.visible) return;
     ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
   });
-
   const dataURL = mergedCanvas.toDataURL("image/png");
   const layerData = layers.map(layer => ({
     name: layer.name,
     visible: layer.visible,
     json: layer.canvas.toJSON()
   }));
-
   const projects = JSON.parse(localStorage.getItem("savedProjects") || "[]");
   const updatedProjects = projects.filter(p => p.name !== currentProjectName);
   updatedProjects.unshift({ name: currentProjectName, image: dataURL, layers: layerData });
   localStorage.setItem("savedProjects", JSON.stringify(updatedProjects));
   renderProjectList();
   lastSavedState = getCurrentCanvasState();
-
   const confirmation = document.getElementById("saveConfirmation");
   confirmation.textContent = "✅ Progetto aggiornato!";
   confirmation.classList.remove("hidden");
@@ -758,19 +679,13 @@ updateProjectBtn.onclick = () => {
     confirmation.textContent = "✅ Progetto salvato!";
   }, 2000);
 };
-
-
 function renderProjectList() {
   const projects = JSON.parse(localStorage.getItem("savedProjects") || "[]");
   projectList.innerHTML = "";
   projects.forEach((proj, index) => {
     const div = document.createElement("div");
     div.className = "project";
-    div.innerHTML = `
-  <strong>${proj.name}</strong>
-  <br><img src="${proj.image}" width="100" />
-  <br><button onclick="deleteProject(${index})">🗑️ Elimina</button>
-`;
+    div.innerHTML = `<strong>${proj.name}</strong><br><img src="${proj.image}" width="100" /><br><button onclick="deleteProject(${index})">🗑️ Elimina</button>`;
     div.onclick = () => {
       const container = document.querySelector('.canvas-container');
       if (!confirm(`Vuoi caricare il progetto "${proj.name}"?`)) return;
@@ -794,27 +709,25 @@ function loadProject(proj) {
   overlay.height = window.innerHeight * 0.85;
   overlay.style.zIndex = 9999;
   container.appendChild(overlay);
-
   container.appendChild(overlay);
   layers.length = 0;
   activeLayerIndex = 0;
   currentProjectName = proj.name;
-
   proj.layers.forEach((layerData, index) => {
     const layerCanvasEl = document.createElement('canvas');
     layerCanvasEl.classList.add('layer-canvas');
-    layerCanvasEl.width = window.innerWidth;
-    layerCanvasEl.height = window.innerHeight * 0.85;
-
+    const layerJSON = layerData.json;
+    const originalWidth = layerJSON.width || DEFAULT_CANVAS_WIDTH;
+    const originalHeight = layerJSON.height || DEFAULT_CANVAS_HEIGHT;
+    layerCanvasEl.width = originalWidth;
+    layerCanvasEl.height = originalHeight;       
     const canvas = new fabric.Canvas(layerCanvasEl, {
       backgroundColor: index === 0 ? 'white' : 'transparent',
       width: layerCanvasEl.width,
       height: layerCanvasEl.height
     });
-
     container.appendChild(canvas.lowerCanvasEl);
     container.appendChild(canvas.upperCanvasEl);
-
     layers.push({
       canvas: canvas,
       undoStack: [],
@@ -822,14 +735,12 @@ function loadProject(proj) {
       name: layerData.name,
       visible: layerData.visible
     });
-
     canvas.loadFromJSON(layerData.json, () => {
       canvas.renderAll();
-      canvas.setZoom(window.devicePixelRatio || 1);
+      fitCanvasToContainer(canvas);
       attachCanvasEvents(canvas);
     });
   });
-
   updateCanvasVisibility();
   renderLayerList();
   setDrawingMode(globalDrawingMode);
@@ -851,15 +762,12 @@ document.getElementById("newCanvasBtn").onclick = () => {
       return; // Interrompe per aspettare il salvataggio manuale
     }
   }
-
   const width = prompt("Inserisci la larghezza del nuovo canvas (px):", window.innerWidth);
   const height = prompt("Inserisci l'altezza del nuovo canvas (px):", Math.floor(window.innerHeight * 0.85));
   if (!width || !height) return;
-
   // Procedi con reset
   const container = document.querySelector(".canvas-container");
   container.innerHTML = "";
-
   // Eraser preview
   const overlay = document.createElement("canvas");
   overlay.id = "eraser-preview";
@@ -871,7 +779,6 @@ document.getElementById("newCanvasBtn").onclick = () => {
   overlay.height = height;
   overlay.style.zIndex = 9999;
   container.appendChild(overlay);
-
   // Ricrea layer iniziale
   layers.length = 0;
   activeLayerIndex = 0;
@@ -919,14 +826,14 @@ window.addEventListener("beforeunload", () => {
       timestamp: new Date().toISOString()
     };
 
-    localStorage.setItem("autosaveProject", JSON.stringify(autosave));
+    try {
+      localStorage.setItem("autosaveProject", JSON.stringify(autosave));
+    } catch (e) {
+      console.warn("Autosave fallito:", e.message);
+    }
+    
   }
 });
-
-
-
-
-
 window.onload = () => {
   initLayers();
   const autosave = JSON.parse(localStorage.getItem("autosaveProject") || "null");
