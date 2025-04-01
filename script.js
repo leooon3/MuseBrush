@@ -639,7 +639,15 @@ saveCanvasBtn.onclick = () => {
   // Rimuovi quello vecchio se c'è
   const updatedProjects = projects.filter(p => p.name !== name);
   updatedProjects.unshift({ name, image: dataURL, layers: layerData });
-  localStorage.setItem("savedProjects", JSON.stringify(updatedProjects));
+  sessionStorage.setItem("recentProjects", JSON.stringify(updatedProjects.map(p => ({
+    name: p.name,
+    image: p.image,
+    data: {
+      name: p.name,
+      layers: p.layers
+    }
+  }))));
+  
   renderProjectList();
   projectNameInput.value = "";
   lastSavedState = getCurrentCanvasState();
@@ -680,21 +688,23 @@ updateProjectBtn.onclick = () => {
   }, 2000);
 };
 function renderProjectList() {
-  const projects = JSON.parse(localStorage.getItem("savedProjects") || "[]");
+  const recent = JSON.parse(sessionStorage.getItem("recentProjects") || "[]");
   projectList.innerHTML = "";
-  projects.forEach((proj, index) => {
+  recent.forEach(({ name, image, data }) => {
     const div = document.createElement("div");
     div.className = "project";
-    div.innerHTML = `<strong>${proj.name}</strong><br><img src="${proj.image}" width="100" /><br><button onclick="deleteProject(${index})">🗑️ Elimina</button>`;
+    div.innerHTML = `<strong>${name}</strong><br><img src="${image}" width="100" />`;
     div.onclick = () => {
-      const container = document.querySelector('.canvas-container');
-      if (!confirm(`Vuoi caricare il progetto "${proj.name}"?`)) return;
-      loadProject(proj);
-      currentProjectName = proj.name;
-    };    
+      if (confirm(`Vuoi caricare il progetto "${name}"?`)) {
+        loadProject(data);
+        currentProjectName = name;
+        galleryModal.classList.add("hidden");
+      }
+    };
     projectList.appendChild(div);
   });
 }
+
 function loadProject(proj) {
   // Pulisce i layer esistenti
   const container = document.querySelector('.canvas-container');
@@ -745,6 +755,32 @@ function loadProject(proj) {
   renderLayerList();
   setDrawingMode(globalDrawingMode);
   setBrush(currentBrush);
+  const width = window.innerWidth;
+const height = window.innerHeight * 0.85;
+const mergedCanvas = document.createElement("canvas");
+mergedCanvas.width = width;
+mergedCanvas.height = height;
+const ctx = mergedCanvas.getContext("2d");
+layers.forEach(layer => {
+  if (!layer.visible) return;
+  ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
+});
+const dataURL = mergedCanvas.toDataURL("image/png");
+
+// aggiorna galleria (evita duplicati)
+const recent = JSON.parse(sessionStorage.getItem("recentProjects") || "[]").filter(p => p.name !== proj.name);
+recent.unshift({
+  name: proj.name,
+  image: dataURL,
+  data: {
+    name: proj.name,
+    layers: proj.layers
+  }
+});
+
+sessionStorage.setItem("recentProjects", JSON.stringify(recent));
+renderProjectList();
+
 }
 function deleteProject(index) {
   if (!confirm("Vuoi davvero eliminare questo progetto?")) return;
@@ -797,6 +833,48 @@ function getCurrentCanvasState() {
     name: layer.name
   }));
 }
+document.getElementById("exportProjectBtn").onclick = () => {
+  const name = prompt("Nome file da esportare:", currentProjectName || "progetto-musebrush");
+  if (!name) return;
+
+  const data = {
+    name: name,
+    layers: layers.map(layer => ({
+      name: layer.name,
+      visible: layer.visible,
+      json: layer.canvas.toJSON(),
+      width: layer.canvas.getWidth(),
+      height: layer.canvas.getHeight()
+    }))
+  };
+
+  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = name + ".musebrush.json";
+  link.click();
+};
+document.getElementById("importProjectInput").onchange = function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (event) {
+    try {
+      const proj = JSON.parse(event.target.result);
+      if (!proj.layers) throw new Error("Formato non valido");
+
+      if (confirm(`Vuoi caricare il progetto "${proj.name}"?`)) {
+        loadProject(proj);
+        currentProjectName = proj.name;
+      }
+    } catch (err) {
+      alert("Errore nel caricamento del file: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+};
+
 window.addEventListener("beforeunload", () => {
   const currentState = getCurrentCanvasState();
   if (!lastSavedState || JSON.stringify(currentState) !== JSON.stringify(lastSavedState)) {
