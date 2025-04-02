@@ -125,7 +125,19 @@
               <div id="projectList" class="project-list"></div>
               <button id="closeGalleryBtn">Chiudi</button>
             </div>
-        </div>          
+        </div>   
+        <div id="exitModal" class="modal hidden">
+            <div class="modal-content">
+              <h3>⚠️ Uscita senza salvare</h3>
+              <p>Hai modifiche non salvate. Vuoi salvarle prima di uscire?</p>
+              <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="confirmSaveExitBtn">💾 Salva</button>
+                <button id="exitWithoutSavingBtn">❌ Esci senza salvare</button>
+                <button id="cancelExitBtn">Annulla</button>
+              </div>
+            </div>
+          </div>
+                 
         <script src="script.js"></script>
     </body>
 </html>

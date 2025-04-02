@@ -695,12 +695,12 @@ function renderProjectList() {
     div.className = "project";
     div.innerHTML = `<strong>${name}</strong><br><img src="${image}" width="100" />`;
     div.onclick = () => {
-      if (confirm(`Vuoi caricare il progetto "${name}"?`)) {
-        loadProject(data);
-        currentProjectName = name;
-        galleryModal.classList.add("hidden");
-      }
-    };
+      const confirmLoad = confirm(`Vuoi caricare il progetto "${name}"?`);
+      if (!confirmLoad) return; // 🛑 Se annulla, non fare nulla
+      loadProject(data);
+      currentProjectName = name;
+      galleryModal.classList.add("hidden");
+    };    
     projectList.appendChild(div);
   });
 }
@@ -874,44 +874,41 @@ document.getElementById("importProjectInput").onchange = function (e) {
   };
   reader.readAsText(file);
 };
+let pendingUnload = false;
+let unloadEvent = null;
 
-window.addEventListener("beforeunload", () => {
+window.addEventListener("beforeunload", (e) => {
   const currentState = getCurrentCanvasState();
   if (!lastSavedState || JSON.stringify(currentState) !== JSON.stringify(lastSavedState)) {
-    const width = window.innerWidth;
-    const height = window.innerHeight * 0.85;
-    const mergedCanvas = document.createElement("canvas");
-    mergedCanvas.width = width;
-    mergedCanvas.height = height;
-    const ctx = mergedCanvas.getContext("2d");
-
-    layers.forEach(layer => {
-      if (!layer.visible) return;
-      ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
-    });
-
-    const dataURL = mergedCanvas.toDataURL("image/png");
-    const layerData = layers.map(layer => ({
-      name: layer.name,
-      visible: layer.visible,
-      json: layer.canvas.toJSON()
-    }));
-
-    const autosave = {
-      name: "Autosave",
-      image: dataURL,
-      layers: layerData,
-      timestamp: new Date().toISOString()
-    };
-
-    try {
-      localStorage.setItem("autosaveProject", JSON.stringify(autosave));
-    } catch (e) {
-      console.warn("Autosave fallito:", e.message);
-    }
-    
+    e.preventDefault();
+    e.returnValue = "";
+    pendingUnload = true;
+    unloadEvent = e;
+    document.getElementById("exitModal").classList.remove("hidden");
+    return "";
   }
 });
+document.getElementById("confirmSaveExitBtn").onclick = () => {
+  galleryModal.classList.remove("hidden");
+  document.getElementById("exitModal").classList.add("hidden");
+};
+
+document.getElementById("exitWithoutSavingBtn").onclick = () => {
+  document.getElementById("exitModal").classList.add("hidden");
+  pendingUnload = false;
+  unloadEvent = null;
+  window.onbeforeunload = null;
+  window.location.href = window.location.href;
+  // forza uscita
+};
+
+document.getElementById("cancelExitBtn").onclick = () => {
+  document.getElementById("exitModal").classList.add("hidden");
+  pendingUnload = false;
+  unloadEvent = null;
+};
+
+
 window.onload = () => {
   initLayers();
   const autosave = JSON.parse(localStorage.getItem("autosaveProject") || "null");

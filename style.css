@@ -365,6 +365,29 @@ button.tool-active {
 .project-list .project:hover {
   background: #e0f0ff;
 }
+#exitModal .modal-content button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+#exitModal .modal-content button:nth-child(1) {
+  background-color: #007bff;
+  color: white;
+}
+
+#exitModal .modal-content button:nth-child(2) {
+  background-color: #dc3545;
+  color: white;
+}
+
+#exitModal .modal-content button:nth-child(3) {
+  background-color: #6c757d;
+  color: white;
+}
+
 /* ===============================
    MODALE GALLERIA - SAVE CONTROLS
 ================================== */
