@@ -1,3 +1,4 @@
+
 // ================================
 // 🖼️ 1. Inizializzazione Canvas e Layers
 // ================================
@@ -264,6 +265,7 @@ function attachCanvasEvents(canvas) {
         shapeObject = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
           stroke: brushColor,
           strokeWidth: brushSize,
+          fill: null,
           selectable: true
         });
         shapeObject.set({ erasable: true });
@@ -389,6 +391,19 @@ document.getElementById('colorInput').addEventListener('input', function () {
   setBrush(currentBrush);
   addRecentColor(brushColor); // <-- AGGIUNTA
 });
+document.getElementById("authToggleBtn").onclick = () => {
+  const modal = document.getElementById("authModal");
+  modal.classList.toggle("hidden");
+};
+document.getElementById("logoutBtn").onclick = () => {
+  auth.signOut();
+};
+window.onclick = function (event) {
+  const modal = document.getElementById("authModal");
+  if (event.target === modal) {
+    modal.classList.add("hidden");
+  }
+};
 function addRecentColor(color) {
   if (recentColors.includes(color)) {
     // Sposta in cima se già esistente
@@ -590,10 +605,38 @@ const updateProjectBtn = document.getElementById("updateProjectBtn");
 const projectList = document.getElementById("projectList");
 const projectNameInput = document.getElementById("projectNameInput");
 galleryBtn.onclick = () => {
+  const user = firebase.auth().currentUser;
+
+  if (user?.isAnonymous) {
+    alert("🔒 Per accedere alla galleria, effettua prima il login o la registrazione.");
+    return;
+  }
+
   galleryModal.classList.remove("hidden");
-  renderProjectList();
-  updateProjectBtn.classList.toggle("hidden", !currentProjectName);
+  projectList.innerHTML = '';
+
+  caricaProgettiFirebase(progetti => {
+    if (!progetti) return projectList.innerHTML = '<p>Nessun progetto trovato.</p>';
+    Object.values(progetti).forEach(progetto => {
+      const div = document.createElement("div");
+      div.className = "project";
+      div.innerHTML = `
+        <strong>${progetto.nome}</strong><br>
+        <em>${new Date(progetto.dataCreazione).toLocaleString()}</em>
+      `;
+      div.onclick = () => {
+        if (confirm(`Vuoi caricare "${progetto.nome}"?`)) {
+          loadProjectFirebase(progetto);
+          galleryModal.classList.add("hidden");
+        }
+      };
+      projectList.appendChild(div);
+    });
+  });
 };
+
+
+
 closeGalleryBtn.onclick = () => {
   galleryModal.classList.add("hidden");
 };
@@ -610,51 +653,20 @@ function fitCanvasToContainer(canvas) {
   canvas.setZoom(scale);
   canvas.setViewportTransform([scale, 0, 0, scale, 0, 0]);
 }
-
 saveCanvasBtn.onclick = () => {
-  const name = projectNameInput.value.trim();
-  if (!name) return alert("Inserisci un nome per il progetto.");
-  const width = window.innerWidth;
-  const height = window.innerHeight * 0.85;
-  const mergedCanvas = document.createElement("canvas");
-  mergedCanvas.width = width;
-  mergedCanvas.height = height;
-  const ctx = mergedCanvas.getContext("2d");
-  layers.forEach(layer => {
-    if (!layer.visible) return;
-    ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
-  });
-  const dataURL = mergedCanvas.toDataURL("image/png");
+  const nomeProgetto = projectNameInput.value.trim();
+  if (!nomeProgetto) return alert("Inserisci un nome!");
+
   const layerData = layers.map(layer => ({
     name: layer.name,
     visible: layer.visible,
-    json: layer.canvas.toJSON(),
-    width: layer.canvas.getWidth(),
-    height: layer.canvas.getHeight()
+    json: layer.canvas.toJSON()
   }));
-  const projects = JSON.parse(localStorage.getItem("savedProjects") || "[]");
-  // Controlla se esiste già
-  const exists = projects.find(p => p.name === name);
-  if (exists && !confirm(`Esiste già un progetto chiamato "${name}". Vuoi sovrascriverlo?`)) return;
-  // Rimuovi quello vecchio se c'è
-  const updatedProjects = projects.filter(p => p.name !== name);
-  updatedProjects.unshift({ name, image: dataURL, layers: layerData });
-  sessionStorage.setItem("recentProjects", JSON.stringify(updatedProjects.map(p => ({
-    name: p.name,
-    image: p.image,
-    data: {
-      name: p.name,
-      layers: p.layers
-    }
-  }))));
-  
-  renderProjectList();
-  projectNameInput.value = "";
-  lastSavedState = getCurrentCanvasState();
-  const confirmation = document.getElementById("saveConfirmation");
-  confirmation.classList.remove("hidden");
-  setTimeout(() => confirmation.classList.add("hidden"), 2000);
+
+  salvaProgettoFirebase(nomeProgetto, layerData);
 };
+
+
 updateProjectBtn.onclick = () => {
   if (!currentProjectName) return;
   const width = window.innerWidth;
@@ -688,7 +700,6 @@ updateProjectBtn.onclick = () => {
   }, 2000);
 };
 function renderProjectList() {
-  const recent = JSON.parse(sessionStorage.getItem("recentProjects") || "[]");
   projectList.innerHTML = "";
   recent.forEach(({ name, image, data }) => {
     const div = document.createElement("div");
@@ -746,10 +757,17 @@ function loadProject(proj) {
       visible: layerData.visible
     });
     canvas.loadFromJSON(layerData.json, () => {
+      // 🔧 FIX: forza tutte le linee ad avere fill null
+      canvas.getObjects().forEach(obj => {
+        if (obj.type === 'line') {
+          obj.set({ fill: null });  // ✅ rimuove eventuale riempimento
+        }
+      });
       canvas.renderAll();
       fitCanvasToContainer(canvas);
       attachCanvasEvents(canvas);
     });
+    
   });
   updateCanvasVisibility();
   renderLayerList();
@@ -782,6 +800,97 @@ sessionStorage.setItem("recentProjects", JSON.stringify(recent));
 renderProjectList();
 
 }
+// ================================
+// 📥 Salva progetto su Firebase (SOLO JSON)
+// ================================
+function salvaProgettoFirebase(nomeProgetto, layerData) {
+  const progettoRef = database.ref('progetti/' + nomeProgetto);
+
+  progettoRef.set({
+    nome: nomeProgetto,
+    layers: layerData,
+    dataCreazione: new Date().toISOString()
+  })
+  .then(() => {
+    alert('✅ Progetto salvato su Firebase (solo dati)!');
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Errore nel salvataggio su Firebase.');
+  });
+}
+
+
+// ================================
+// 📤 Carica progetti da Firebase
+// ================================
+function caricaProgettiFirebase(callback) {
+  database.ref('progetti').once('value').then(snapshot => {
+    const progetti = snapshot.val();
+    callback(progetti);
+  }).catch(err => console.error('Errore caricamento da Firebase:', err));
+}
+
+// ================================
+// 🔄 Carica progetto specifico da Firebase
+// ================================
+function caricaProgettoFirebase(nomeProgetto, callback) {
+  database.ref('progetti/' + nomeProgetto).once('value').then(snapshot => {
+    const progetto = snapshot.val();
+    callback(progetto);
+  }).catch(err => console.error('Errore caricamento progetto:', err));
+}
+
+function loadProjectFirebase(progetto) {
+  document.querySelector('.canvas-container').innerHTML = '';
+  layers.length = 0;
+  activeLayerIndex = 0;
+
+  progetto.layers.forEach((layerData, index) => {
+    const layerCanvasEl = document.createElement('canvas');
+    layerCanvasEl.classList.add('layer-canvas');
+    layerCanvasEl.width = DEFAULT_CANVAS_WIDTH;
+    layerCanvasEl.height = DEFAULT_CANVAS_HEIGHT;
+
+    const canvas = new fabric.Canvas(layerCanvasEl, {
+      backgroundColor: index === 0 ? 'white' : 'transparent',
+      width: DEFAULT_CANVAS_WIDTH,
+      height: DEFAULT_CANVAS_HEIGHT
+    });
+
+    document.querySelector('.canvas-container').appendChild(canvas.lowerCanvasEl);
+    document.querySelector('.canvas-container').appendChild(canvas.upperCanvasEl);
+
+    layers.push({
+      canvas,
+      undoStack: [],
+      redoStack: [],
+      name: layerData.name,
+      visible: layerData.visible
+    });
+
+    canvas.loadFromJSON(layerData.json, () => {
+      // ✅ FIX 1: rimuove fill anche da oggetti path
+      canvas.getObjects().forEach(obj => {
+        if (obj.type === 'line' || obj.type === 'path') {
+          obj.set({ fill: null });
+        }
+      });
+
+      canvas.renderAll();
+      fitCanvasToContainer(canvas);
+      attachCanvasEvents(canvas);
+    });
+  });
+
+  updateCanvasVisibility();
+  renderLayerList();
+  setDrawingMode(true);
+  setBrush(currentBrush);
+}
+
+
+
 function deleteProject(index) {
   if (!confirm("Vuoi davvero eliminare questo progetto?")) return;
   const projects = JSON.parse(localStorage.getItem("savedProjects") || "[]");
@@ -907,8 +1016,6 @@ document.getElementById("cancelExitBtn").onclick = () => {
   pendingUnload = false;
   unloadEvent = null;
 };
-
-
 window.onload = () => {
   initLayers();
   const autosave = JSON.parse(localStorage.getItem("autosaveProject") || "null");
