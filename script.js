@@ -30,6 +30,30 @@ function enableFullAccess() {
     if (el) el.disabled = false;
   });
 }
+document.getElementById("resendVerificationBtn").onclick = () => {
+  const user = auth.currentUser;
+  if (user && !user.emailVerified) {
+    user.sendEmailVerification()
+      .then(() => alert("📨 Email di verifica inviata di nuovo!"))
+      .catch(err => alert("Errore: " + err.message));
+  } else {
+    alert("✅ La tua email è già verificata oppure non sei loggato.");
+  }
+};
+document.getElementById("forgotPasswordBtn").onclick = () => {
+  const email = document.getElementById("emailInput").value.trim();
+  if (!email) {
+    return alert("📧 Inserisci l'email con cui ti sei registrato.");
+  }
+
+  auth.sendPasswordResetEmail(email)
+    .then(() => {
+      alert("📬 Ti abbiamo inviato un'email per reimpostare la password.");
+    })
+    .catch(error => {
+      alert("Errore: " + error.message);
+    });
+};
 
 // 👤 Login/Registrazione UI
 window.addEventListener("DOMContentLoaded", () => {
@@ -37,6 +61,13 @@ window.addEventListener("DOMContentLoaded", () => {
     const authIcon = document.getElementById("authIcon");
   
     if (user) {
+      if (!user.emailVerified && !user.isAnonymous) {
+        alert("⚠️ Devi verificare la tua email prima di poter usare l'app.");
+        disableSaveAndCollab();
+        auth.signOut(); // logout automatico se non verificato
+        return;
+      }
+      
       const isAnon = user.isAnonymous;
       if (isAnon) {
         console.log("👤 Utente anonimo");
@@ -67,9 +98,16 @@ window.addEventListener("DOMContentLoaded", () => {
     const email = document.getElementById("emailInput").value;
     const password = document.getElementById("passwordInput").value;
     auth.createUserWithEmailAndPassword(email, password)
-      .then(() => alert("✅ Registrazione completata!"))
+      .then(userCredential => {
+        const user = userCredential.user;
+        user.sendEmailVerification().then(() => {
+          alert("📩 Registrazione completata! Ti abbiamo inviato un'email di verifica. Controlla la tua posta.");
+          auth.signOut(); // Disconnette finché non verifica
+        });
+      })
       .catch(error => alert("Errore registrazione: " + error.message));
   };
+  
   document.getElementById("googleLoginBtn").onclick = () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider)
@@ -370,22 +408,16 @@ function attachCanvasEvents(canvas) {
     const ctxOverlay = overlay.getContext('2d');    
     ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
     if (currentBrush === 'PixelEraser') {
-      const p = canvas.getPointer(opt.e);
+      const pointer = canvas.getPointer(opt.e, true); // 🧠 true = coordinate assolute
+      const overlay = document.getElementById('eraser-preview');
+      const ctxOverlay = overlay.getContext('2d');
+      ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
       ctxOverlay.beginPath();
-      ctxOverlay.arc(p.x, p.y, brushSize / 2, 0, 2 * Math.PI);
+      ctxOverlay.arc(pointer.x, pointer.y, brushSize / 2, 0, 2 * Math.PI);
       ctxOverlay.fillStyle = 'rgba(0,0,0,0.2)';
       ctxOverlay.fill();
     }
-    if (currentBrush === 'PixelEraser' && canvas._isErasing) {
-      const ctx = canvas.contextTop;
-      const p = canvas.getPointer(opt.e);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, brushSize / 2, 0, 2 * Math.PI);
-      ctx.fillStyle = 'rgba(0,0,0,0.2)';
-      ctx.fill();
-      lastEraserPoint = p;
-    }
+    
     if (!isDrawingShape || !shapeObject) return;
     const pointer = canvas.getPointer(opt.e);
     switch (drawingShape) {
@@ -443,6 +475,12 @@ const downloadBtn = document.getElementById("download_tab");
 const downloadDropdown = document.getElementById("downloadDropdown");
 const shapesButton = document.getElementById("shapes_tab");
 const shapeDropdown = document.getElementById("shapeDropdown");
+const eraserButton = document.getElementById("eraser_tab");
+const eraserDropdown = document.getElementById("eraserDropdown");
+
+eraserButton.onclick = () => {
+  eraserDropdown.style.display = eraserDropdown.style.display === "block" ? "none" : "block";
+};
 shapesButton.onclick = () => shapeDropdown.style.display = shapeDropdown.style.display === "block" ? "none" : "block";
 document.querySelectorAll(".shape-option").forEach(button => {
   button.addEventListener("click", () => {
@@ -473,6 +511,22 @@ document.querySelectorAll(".brush-option").forEach(button => {
     brushDropdown.style.display = "none";
   });
 });
+document.querySelectorAll(".eraser-option").forEach(button => {
+  button.addEventListener("click", () => {
+    const selected = button.getAttribute("data");
+    globalDrawingMode = true;
+    setDrawingMode(true);
+    setBrush(selected);
+    highlightTool("eraser_tab");
+    eraserDropdown.style.display = "none";
+  });
+});
+document.addEventListener("click", function (e) {
+  if (!eraserButton.contains(e.target) && !eraserDropdown.contains(e.target)) {
+    eraserDropdown.style.display = "none";
+  }
+});
+
 document.getElementById('thicknessSlider').addEventListener('input', function () {
   brushSize = parseInt(this.value);
   setBrush(currentBrush);
@@ -544,12 +598,6 @@ document.getElementById("text_tab").onclick = () => {
   drawingShape = null;
   isInsertingText = true;
   highlightTool('text_tab');
-};
-document.getElementById('eraser_tab').onclick = () => {
-  globalDrawingMode = true;
-  setDrawingMode(true);
-  setBrush("Eraser");
-  highlightTool('eraser_tab');
 };
 function highlightTool(buttonId) {
   // Rimuove lo stato attivo da tutti i tool
@@ -667,24 +715,44 @@ document.addEventListener("click", function(e) {
 document.querySelectorAll(".download-option").forEach(button => {
   button.addEventListener("click", function () {
     const format = this.getAttribute("value");
-    const width = window.innerWidth;
-    const height = window.innerHeight * 0.85;
-    const mergedCanvas = document.createElement("canvas");
-    mergedCanvas.width = width;
-    mergedCanvas.height = height;
-    const ctx = mergedCanvas.getContext("2d");
-    layers.forEach(layer => {
-      if (!layer.visible) return;
-      const layerEl = layer.canvas.lowerCanvasEl;
-      ctx.drawImage(layerEl, 0, 0);
-    });
-    const dataURL = mergedCanvas.toDataURL(`image/${format}`, 1.0);
-    const link = document.createElement('a');
-    link.href = dataURL;
-    link.download = `drawing.${format}`;
-    link.click();
+
+    if (format === "svg") {
+      // 🎯 Unisce tutti i livelli in un unico SVG
+      const mergedCanvas = new fabric.Canvas(null, { width: DEFAULT_CANVAS_WIDTH, height: DEFAULT_CANVAS_HEIGHT });
+      layers.forEach(layer => {
+        if (!layer.visible) return;
+        const json = layer.canvas.toJSON();
+        mergedCanvas.loadFromJSON(json, () => {
+          const svg = mergedCanvas.toSVG();
+          const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = "drawing.svg";
+          link.click();
+        });
+      });
+    } else {
+      // PNG o JPEG (già esistente)
+      const width = window.innerWidth;
+      const height = window.innerHeight * 0.85;
+      const mergedCanvas = document.createElement("canvas");
+      mergedCanvas.width = width;
+      mergedCanvas.height = height;
+      const ctx = mergedCanvas.getContext("2d");
+      layers.forEach(layer => {
+        if (!layer.visible) return;
+        const layerEl = layer.canvas.lowerCanvasEl;
+        ctx.drawImage(layerEl, 0, 0);
+      });
+      const dataURL = mergedCanvas.toDataURL(`image/${format}`, 1.0);
+      const link = document.createElement('a');
+      link.href = dataURL;
+      link.download = `drawing.${format}`;
+      link.click();
+    }
   });
 });
+
 // ================================
 // 8. GALLERY
 // ================================
@@ -837,7 +905,6 @@ function loadProject(proj) {
   overlay.width = window.innerWidth;
   overlay.height = window.innerHeight * 0.85;
   overlay.style.zIndex = 9999;
-  container.appendChild(overlay);
   container.appendChild(overlay);
   layers.length = 0;
   activeLayerIndex = 0;

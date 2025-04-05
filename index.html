@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MuseBrush</title>
-    <link rel="icon" type="image/png" href="./images/favicon.ico" />
+    <link rel="icon" type="image/x-ico" href="./images/favicon.ico" />
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
   </head>
@@ -51,11 +51,17 @@
           <button id="text_tab" title="Testo">
             <img src="./images/text.png" alt="Testo" />
           </button>
-          <!-- 🧽 RUBBER -->
-          <button id="eraser_tab" title="Gomma">
-            <img src="./images/eraser.png" alt="Gomma" />
-          </button>
-          <button class="brush-option" data="PixelEraser">Pixel Eraser</button>
+          <!-- 🧽 GOMMA con dropdown -->
+          <div class="dropdown-wrapper">
+            <button id="eraser_tab" title="Gomma">
+              <img src="./images/eraser.png" alt="Gomma" />
+            </button>
+            <div id="eraserDropdown" class="dropdown-content">
+              <button class="eraser-option" data="Eraser">Gomma Base</button>
+              <button class="eraser-option" data="PixelEraser">Pixel Eraser</button>
+            </div>
+          </div>
+
         </div>
         <h1 class="logo">MuseBrush</h1>
         <div class="menu-right">
@@ -67,6 +73,7 @@
             <div id="downloadDropdown" class="dropdown-content">
               <button class="download-option" value="jpeg">JPEG</button>
               <button class="download-option" value="png">PNG</button>
+              <button class="download-option" value="svg">SVG</button>
             </div>
           </div>
           <button id="layers_tab" title="Livelli">
@@ -115,6 +122,9 @@
         <h2>👤 Accedi o Registrati</h2>
         <input type="email" id="emailInput" placeholder="Email" />
         <input type="password" id="passwordInput" placeholder="Password" />
+        <button id="forgotPasswordBtn" style="margin-top: 10px; background: none; color: #007bff; border: none; text-decoration: underline; cursor: pointer;">
+          Password dimenticata?
+        </button>
         <div style="display:flex; gap:10px; margin-top:10px;">
           <button id="loginBtn">🔓 Accedi</button>
           <button id="googleLoginBtn" style="background-color: #fff; border: 1px solid #ccc;">
@@ -123,6 +133,7 @@
           </button>
           <button id="signupBtn">📝 Registrati</button>
           <button id="logoutBtn">🚪 Esci</button>
+          <button id="resendVerificationBtn">🔁 Reinvia Email di Verifica</button>          
         </div>
       </div>
     </div>
