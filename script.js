@@ -14,22 +14,6 @@ const auth = firebase.auth();
 
 
 // 🔐 Controllo stato autenticazione
-auth.onAuthStateChanged(user => {
-  if (user) {
-    const isAnon = user.isAnonymous;
-    if (isAnon) {
-      console.log("👤 Utente anonimo");
-      disableSaveAndCollab();
-    } else {
-      console.log("👤 Utente autenticato:", user.email);
-      enableFullAccess();
-    }
-    document.getElementById("authModal").classList.add("hidden");
-  } else {
-    // Auto-login anonimo se nessun utente
-    auth.signInAnonymously().catch(err => console.error("Errore login anonimo:", err));
-  }
-});
 
 // 🛑 Blocca funzioni per anonimi
 function disableSaveAndCollab() {
@@ -49,6 +33,28 @@ function enableFullAccess() {
 
 // 👤 Login/Registrazione UI
 window.addEventListener("DOMContentLoaded", () => {
+  auth.onAuthStateChanged(user => {
+    const authIcon = document.getElementById("authIcon");
+  
+    if (user) {
+      const isAnon = user.isAnonymous;
+      if (isAnon) {
+        console.log("👤 Utente anonimo");
+        disableSaveAndCollab();
+        authIcon.src = "./images/user.png";
+        authIcon.alt = "Account";
+      } else {
+        console.log("👤 Utente autenticato:", user.email);
+        enableFullAccess();
+        authIcon.src = "./images/user-auth.png"; // <-- icona per autenticati
+        authIcon.alt = "Utente autenticato";
+      }
+      document.getElementById("authModal").classList.add("hidden");
+    } else {
+      auth.signInAnonymously().catch(err => console.error("Errore login anonimo:", err));
+    }
+  });
+  
   document.getElementById("loginBtn").onclick = () => {
     const email = document.getElementById("emailInput").value;
     const password = document.getElementById("passwordInput").value;
