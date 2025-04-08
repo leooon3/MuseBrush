@@ -128,6 +128,7 @@ let previousDrawingMode = false;
 let shapeOrigin = { x: 0, y: 0 };
 let shapeObject = null;
 let globalDrawingMode = true;
+let isBucketActive = false;
 const recentColors = [];
 const maxRecentColors = 6;
 let lastSavedState = null;
@@ -151,6 +152,7 @@ function createLayer(container, index) {
   const layerCanvas = new fabric.Canvas(layerCanvasEl, {
     isDrawingMode: index === 1,
     backgroundColor: index === 0 ? 'white' : 'transparent',
+    preserveObjectStacking: true,
     width: layerCanvasEl.width,
     height: layerCanvasEl.height
   });
@@ -287,13 +289,28 @@ function setBrush(type) {
 function setDrawingMode(active) {
   layers.forEach((layer, i) => {
     const isActive = i === activeLayerIndex;
-    layer.canvas.isDrawingMode = isActive && active && layer.visible;
+    const canvas = layer.canvas;
+    canvas.isDrawingMode = isActive && active && layer.visible;
+    canvas.selection = active; // 👈 disattiva selezione quando disegno OFF
+    canvas.skipTargetFind = !active; // 👈 ignora oggetti cliccabili
   });
-  document.getElementById('pointerIcon').src = active ? "./images/pencil-icon.png" : "./images/pointer-icon.png";
+
+  document.getElementById('pointerIcon').src = active
+    ? "./images/pencil-icon.png"
+    : "./images/pointer-icon.png";
 }
+
 
 function disableDrawingSilently() {
   layers.forEach(layer => layer.canvas.isDrawingMode = false);
+}
+function isPathClosed(path) {
+  if (!path.path || path.path.length < 2) return false;
+  const first = path.path[0];
+  const last = path.path[path.path.length - 1];
+  const dx = Math.abs(first[1] - last[1]);
+  const dy = Math.abs(first[2] - last[2]);
+  return dx < 10 && dy < 10; // distanza tra inizio/fine per considerarlo chiuso
 }
 
 function saveState() {
@@ -322,6 +339,13 @@ function redo() {
     layer.canvas.loadFromJSON(next, () => layer.canvas.renderAll());
   }
 }
+function fabricToCanvasCoords(canvas, pointer) {
+  const vt = canvas.viewportTransform;
+  const zoom = canvas.getZoom();
+  const x = (pointer.x * zoom + vt[4]) / zoom;
+  const y = (pointer.y * zoom + vt[5]) / zoom;
+  return { x: Math.floor(x), y: Math.floor(y) };
+}
 
 function attachCanvasEvents(canvas) {
   canvas.on('path:created', (opt) => {
@@ -346,9 +370,7 @@ function attachCanvasEvents(canvas) {
       saveState();
       return;
     }
-    if (path && typeof path.set === 'function') {
-      path.set({ erasable: true });
-    }
+
     canvas.renderAll();
     saveState();
   });
@@ -359,6 +381,27 @@ function attachCanvasEvents(canvas) {
       canvas.contextTop.globalCompositeOperation = 'destination-out';
       canvas._isErasing = true;
     }
+    if (isBucketActive) {
+      const rawPointer = canvas.getPointer(opt.e);
+      const { x, y } = fabricToCanvasCoords(canvas, rawPointer);
+      const ctx = canvas.lowerCanvasEl.getContext("2d");
+    
+      if (!brushColor) {
+        alert("⚠️ Seleziona un colore prima di usare il secchiello.");
+        return;
+      }
+    
+      const rgba = hexToRgba(brushColor);
+      floodFill(canvas.lowerCanvasEl, x, y, rgba);
+    
+      canvas.requestRenderAll();
+      saveState();
+    
+      isBucketActive = false;
+      setDrawingMode(globalDrawingMode);
+      setBrush(currentBrush);
+      return;
+    }    
     if (isInsertingText) {
       const text = new fabric.IText("Testo", {
         left: pointer.x,
@@ -387,26 +430,31 @@ function attachCanvasEvents(canvas) {
           top: pointer.y,
           width: 0,
           height: 0,
-          fill: brushColor,
+          fill: 'transparent',
+          stroke: brushColor || '#000000',
+          strokeWidth: brushSize || 2,
           selectable: true
-        });
+        });        
         break;
       case 'circle':
         shapeObject = new fabric.Circle({
           left: pointer.x,
           top: pointer.y,
           radius: 0,
-          fill: brushColor,
+          fill: 'transparent',
+          stroke: brushColor || '#000000',
+          strokeWidth: brushSize || 2,
           selectable: true
-        });
+        });        
         break;
       case 'line':
         shapeObject = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
-          stroke: brushColor,
-          strokeWidth: brushSize,
-          fill: null,
+          stroke: brushColor || '#000000',
+          strokeWidth: brushSize || 2,
+          fill: 'transparent',
           selectable: true
         });
+        
         break;
     }
     if (shapeObject) {
@@ -498,6 +546,9 @@ eraserButton.onclick = () => {
   eraserDropdown.style.display = eraserDropdown.style.display === "block" ? "none" : "block";
 };
 
+downloadBtn.onclick = () => {
+  downloadDropdown.style.display=downloadDropdown.style.display === "block" ? "none" : "block";
+}
 shapesButton.onclick = () => shapeDropdown.style.display = shapeDropdown.style.display === "block" ? "none" : "block";
 
 document.querySelectorAll(".shape-option").forEach(button => {
@@ -583,6 +634,13 @@ document.getElementById("text_tab").onclick = () => {
   isInsertingText = true;
   highlightTool('text_tab');
 };
+document.getElementById("bucket_tab").onclick = () => {
+  isBucketActive = true;
+  drawingShape = null;
+  isInsertingText = false;
+  setDrawingMode(false);
+  highlightTool("bucket_tab");
+};
 
 function highlightTool(buttonId) {
   document.querySelectorAll(".menu-left button").forEach(btn => {
@@ -619,7 +677,33 @@ function renderRecentColors() {
     container.appendChild(btn);
   });
 }
+document.addEventListener("click", function(e) {
 
+  if (!downloadBtn.contains(e.target) && !downloadDropdown.contains(e.target)) {
+    downloadDropdown.style.display = "none";
+  }
+});
+document.querySelectorAll(".download-option").forEach(button => {
+  button.addEventListener("click", function () {
+    const format = this.getAttribute("value");
+    const width = window.innerWidth;
+    const height = window.innerHeight * 0.85;
+    const mergedCanvas = document.createElement("canvas");
+    mergedCanvas.width = width;
+    mergedCanvas.height = height;
+    const ctx = mergedCanvas.getContext("2d");
+    layers.forEach(layer => {
+      if (!layer.visible) return;
+      const layerEl = layer.canvas.lowerCanvasEl;
+      ctx.drawImage(layerEl, 0, 0);
+    });
+    const dataURL = mergedCanvas.toDataURL(`image/${format}`, 1.0);
+    const link = document.createElement('a');
+    link.href = dataURL;
+    link.download = `drawing.${format}`;
+    link.click();
+  });
+})
 // ================================
 // 5. Layers: Add, Select, Rename, Delete
 // ================================
@@ -969,67 +1053,157 @@ document.getElementById("updateProjectBtn").onclick = () => {
 
 
 galleryBtn.onclick = () => {
-  const utente = firebase.auth().currentUser;
-  if (!utente || utente.isAnonymous) {
-    alert("⚠️ Devi essere autenticato per vedere la galleria.");
+  const user = firebase.auth().currentUser;
+
+  if (!user || user.isAnonymous) {
+    alert("🔒 Per accedere alla galleria, effettua prima il login o la registrazione.");
     return;
   }
 
   galleryModal.classList.remove("hidden");
-  galleryContent.innerHTML = "<p>Caricamento in corso...</p>";
+  projectList.innerHTML = '<p>⏳ Caricamento...</p>';
 
-  firebase.database().ref("progetti/" + utente.uid).once("value")
+  firebase.database().ref("progetti/" + user.uid).once("value")
     .then(snapshot => {
       const progetti = snapshot.val();
-      galleryContent.innerHTML = "";
+      projectList.innerHTML = '';
 
       if (!progetti) {
-        galleryContent.innerHTML = "<p>Nessun progetto salvato.</p>";
+        projectList.innerHTML = '<p>📭 Nessun progetto trovato.</p>';
         return;
       }
 
-      Object.entries(progetti).forEach(([id, proj]) => {
+      Object.entries(progetti).forEach(([id, progetto]) => {
         const div = document.createElement("div");
-        div.className = "gallery-item";
+        div.className = "project";
 
-        const name = document.createElement("p");
-        name.textContent = proj.nome;
-
-        const timestamp = document.createElement("p");
-        const data = new Date(proj.timestamp);
-        timestamp.textContent = data.toLocaleString();
+        div.innerHTML = `
+          <img src="${progetto.preview || 'https://via.placeholder.com/150'}"
+               width="100" height="75"
+               style="border-radius:6px; margin-bottom:5px; object-fit:cover;" />
+          <strong>${progetto.nome}</strong><br>
+          <em>${new Date(progetto.timestamp).toLocaleString()}</em>
+        `;
 
         const loadBtn = document.createElement("button");
-        loadBtn.textContent = "Carica";
+        loadBtn.textContent = "📂 Apri";
         loadBtn.onclick = () => {
-          if (confirm(`Caricare il progetto \"${proj.nome}\"?`)) {
-            loadProject(proj);
-            currentProjectName = proj.nome;
+          if (confirm(`Vuoi caricare "${progetto.nome}"?`)) {
+            loadProject(progetto);
+            currentProjectName = progetto.nome;
             galleryModal.classList.add("hidden");
           }
         };
 
         const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "Elimina";
+        deleteBtn.textContent = "🗑️ Elimina";
         deleteBtn.onclick = () => {
-          if (confirm(`Eliminare il progetto \"${proj.nome}\"?`)) {
-            firebase.database().ref("progetti/" + utente.uid + "/" + id).remove()
+          if (confirm(`Eliminare il progetto "${progetto.nome}"?`)) {
+            firebase.database().ref("progetti/" + user.uid + "/" + id).remove()
               .then(() => {
-                alert("🗑️ Progetto eliminato.");
-                galleryBtn.click();
+                alert("✅ Progetto eliminato.");
+                galleryBtn.click(); // ricarica lista
               });
           }
         };
 
-        div.appendChild(name);
-        div.appendChild(timestamp);
         div.appendChild(loadBtn);
         div.appendChild(deleteBtn);
 
-        galleryContent.appendChild(div);
+        projectList.appendChild(div);
       });
     });
 };
+function loadProject(proj) {
+  // Pulisce i layer esistenti
+  const container = document.querySelector('.canvas-container');
+  container.innerHTML = '';
+  const overlay = document.createElement('canvas');
+  overlay.id = 'eraser-preview';
+  overlay.style.position = 'absolute';
+  overlay.style.top = 0;
+  overlay.style.left = 0;
+  overlay.style.pointerEvents = 'none';
+  overlay.width = window.innerWidth;
+  overlay.height = window.innerHeight * 0.85;
+  overlay.style.zIndex = 9999;
+  container.appendChild(overlay);
+  container.appendChild(overlay);
+  layers.length = 0;
+  activeLayerIndex = 0;
+  currentProjectName = proj.name;
+  proj.layers.forEach((layerData, index) => {
+    const layerCanvasEl = document.createElement('canvas');
+    layerCanvasEl.classList.add('layer-canvas');
+    const layerJSON = layerData.json;
+    const originalWidth = layerJSON.width || DEFAULT_CANVAS_WIDTH;
+    const originalHeight = layerJSON.height || DEFAULT_CANVAS_HEIGHT;
+    layerCanvasEl.width = originalWidth;
+    layerCanvasEl.height = originalHeight;       
+    const canvas = new fabric.Canvas(layerCanvasEl, {
+      backgroundColor: index === 0 ? 'white' : 'transparent',
+      width: layerCanvasEl.width,
+      height: layerCanvasEl.height
+    });
+    container.appendChild(canvas.lowerCanvasEl);
+    container.appendChild(canvas.upperCanvasEl);
+    layers.push({
+      canvas: canvas,
+      undoStack: [],
+      redoStack: [],
+      name: layerData.name,
+      visible: layerData.visible
+    });
+    canvas.loadFromJSON(layerData.json, () => {
+      // 🔧 FIX: forza tutte le linee ad avere fill null
+      canvas.getObjects().forEach(obj => {
+        if (obj.type === 'line' && obj.fill === null) {
+          obj.set({ fill: 'transparent' });
+        }        
+      });
+      canvas.renderAll();
+      fitCanvasToContainer(canvas);
+      attachCanvasEvents(canvas);
+    });
+    canvas.getObjects().forEach(obj => {
+      if (obj.type === 'path') {
+        obj.set({ fill: null }); // 💡 assicura che resti trasparente
+      }
+    });    
+
+  });
+
+  updateCanvasVisibility();
+  renderLayerList();
+  setDrawingMode(globalDrawingMode);
+  setBrush(currentBrush);
+  const width = window.innerWidth;
+const height = window.innerHeight * 0.85;
+const mergedCanvas = document.createElement("canvas");
+mergedCanvas.width = width;
+mergedCanvas.height = height;
+const ctx = mergedCanvas.getContext("2d");
+layers.forEach(layer => {
+  if (!layer.visible) return;
+  ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
+});
+const dataURL = mergedCanvas.toDataURL("image/png");
+
+// aggiorna galleria (evita duplicati)
+const recent = JSON.parse(sessionStorage.getItem("recentProjects") || "[]").filter(p => p.name !== proj.name);
+recent.unshift({
+  name: proj.name,
+  image: dataURL,
+  data: {
+    name: proj.name,
+    layers: proj.layers
+  }
+});
+
+sessionStorage.setItem("recentProjects", JSON.stringify(recent));
+renderProjectList();
+
+}
 
 galleryCloseBtn.onclick = () => galleryModal.classList.add("hidden");
 function caricaProgettiFirebase() {
@@ -1112,6 +1286,63 @@ document.getElementById("galleryBtn").onclick = () => {
   caricaProgettiFirebase();
 };
 
+function hexToRgba(hex) {
+  const bigint = parseInt(hex.replace('#', ''), 16);
+  return [
+    (bigint >> 16) & 255,
+    (bigint >> 8) & 255,
+    bigint & 255,
+    255
+  ];
+}
+
+function getPixelColor(imgData, x, y) {
+  const index = (y * imgData.width + x) * 4;
+  return imgData.data.slice(index, index + 4);
+}
+
+function setPixelColor(imgData, x, y, [r, g, b, a]) {
+  const index = (y * imgData.width + x) * 4;
+  imgData.data[index] = r;
+  imgData.data[index + 1] = g;
+  imgData.data[index + 2] = b;
+  imgData.data[index + 3] = a;
+}
+
+function colorsMatch(a, b, tolerance = 32) {
+  return Math.abs(a[0] - b[0]) < tolerance &&
+         Math.abs(a[1] - b[1]) < tolerance &&
+         Math.abs(a[2] - b[2]) < tolerance &&
+         Math.abs(a[3] - b[3]) < tolerance;
+}
+
+function floodFill(canvasEl, x, y, fillColor) {
+  const ctx = canvasEl.getContext("2d");
+  const imgData = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
+  const targetColor = getPixelColor(imgData, x, y);
+
+  if (colorsMatch(targetColor, fillColor)) return;
+
+  const stack = [[x, y]];
+  const visited = new Set();
+
+  while (stack.length) {
+    const [px, py] = stack.pop();
+    const key = px + "," + py;
+    if (visited.has(key)) continue;
+    visited.add(key);
+
+    if (px < 0 || py < 0 || px >= imgData.width || py >= imgData.height) continue;
+
+    const currentColor = getPixelColor(imgData, px, py);
+    if (!colorsMatch(currentColor, targetColor)) continue;
+
+    setPixelColor(imgData, px, py, fillColor);
+    stack.push([px + 1, py], [px - 1, py], [px, py + 1], [px, py - 1]);
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+}
 
 // ================================
 // 9. Exit Modal & Window Events
