@@ -1,189 +1,139 @@
-/* =====================================
-   BASE STYLES
-====================================== */
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+body { 
+  font-family: 'Poppins', sans-serif;
+  background-color: #1e1e2f;
+  color: #f0f0f0;
   margin: 0;
   padding: 0;
-  background-color: #f8f9fa;
-  color: #333;
+  text-align: center;
 }
 
-/* =====================================
-   HEADER & MENU
-====================================== */
-header#menu {
-  background-color: #ffffffcc;
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid #ddd;
-  display: flex;
-  flex-direction: column;
-  padding: 10px 20px;
+h1 {
+  font-weight: 600;
+  font-size: 28px;
+  color: #f9f9f9;
+  margin: 0 auto;
+}
+
+canvas {
+  border-radius: 15px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+  background: transparent;
+  width: 100%;  /* Adattamento automatico */
+  max-width: 95%;  /* Imposta un limite massimo per evitare che diventi troppo largo */
+  margin: 20px auto;
+  display: block;
+}
+
+#menu {
   position: sticky;
   top: 0;
-  z-index: 1000;
-}
-
-.menu-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   width: 100%;
-  gap: 20px;
-  position: relative;
-}
-
-.menu-left,
-.menu-right {
+  background-color: #2e2e3e;
+  z-index: 1000;
   display: flex;
-  gap: 12px;
+  justify-content: space-between;
   align-items: center;
+  padding: 10px 20px;
+  border-bottom: 2px solid #444;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
 
-.logo {
-  font-size: 1.8em;
-  font-weight: bold;
-  color: #3a3a3a;
-  margin: 0 auto 10px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-}
-
-/* =====================================
-   BUTTONS & ICONS
-====================================== */
 button {
-  background-color: #f0f0f0;
+  background-color: #393953;
+  color: #f0f0f0;
+  padding: 10px 14px;
+  font-size: 15px;
   border: none;
-  padding: 8px;
   border-radius: 8px;
+  margin: 0 5px;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: all 0.2s ease;
 }
 
 button:hover {
-  background-color: #e0e0e0;
-  transform: scale(1.05);
+  background-color: #ff5722;
+  color: white;
 }
 
-button img {
-  width: 24px;
-  height: 24px;
-}
-
-.layer-controls button {
-  padding: 4px 6px;
-  font-size: 14px;
-  border: none;
-  border-radius: 3px;
-  background-color: #eee;
-  cursor: pointer;
-}
-
-.layer-controls button:hover {
-  background-color: #ddd;
-}
-button.tool-active {
-  border: 2px solid #007bff;
-  box-shadow: 0 0 0 2px #cce5ff;
-}
-
-
-/* =====================================
-   COLOR PICKER
-====================================== */
-.color-picker {
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  appearance: none;
+#clearBtn,
+#undoBtn,
+#redoBtn {
   background: none;
-  padding: 0;
-  overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.color-picker:hover {
-  transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.color-picker::-webkit-color-swatch-wrapper {
-  padding: 0;
-  border-radius: 50%;
-}
-
-.color-picker::-webkit-color-swatch {
   border: none;
-  border-radius: 50%;
 }
 
-.color-picker::-moz-color-swatch {
-  border: none;
-  border-radius: 50%;
-}
-
-.color-picker::-moz-focus-inner {
-  border: 0;
-}
-.color-history {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-}
-
-.color-history button {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid #ccc;
-  cursor: pointer;
-  padding: 0;
-  outline: none;
-  background: transparent;
+#clearBtn img,
+#undoBtn img,
+#redoBtn img,
+#brushes_tab img {
+  filter: invert(100%);
   transition: transform 0.2s ease;
 }
 
-.color-history button:hover {
-  transform: scale(1.2);
-  border-color: #666;
+#clearBtn img:hover,
+#undoBtn img:hover,
+#redoBtn img:hover,
+#brushes_tab img:hover {
+  transform: scale(1.1);
 }
 
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
 
-/* =====================================
-   SLIDER (THICKNESS)
-====================================== */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 50px;
+  background-color: #2e2e3e;
+  border: 1px solid #555;
+  padding: 8px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  z-index: 1001;
+}
+
+.dropdown-content button {
+  background: none;
+  border: none;
+  color: #f0f0f0;
+  text-align: left;
+  padding: 8px 12px;
+  width: 100%;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.dropdown-content button:hover {
+  background-color: #ff5722;
+  color: white;
+}
+
 .slider-container {
   position: fixed;
   right: 20px;
   top: 50%;
-  transform: translateY(-50%) rotate(180deg);
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
+  height: auto;
   justify-content: center;
-  z-index: 1001;
 }
 
+/* Slider */
 .slider {
-  appearance: none;
-  writing-mode: vertical-lr;
-  width: 8px;
-  height: 150px;
-  background: linear-gradient(to bottom, #3f3f3f, #1f1f1f);
-  border-radius: 5px;
-  outline: none;
-  opacity: 0.8;
-  transition: opacity 0.3s;
+  -webkit-appearance: none;
+  writing-mode: vertical-rl;
+  direction: rtl;
+  width: 10px;
+  height: 160px;
+  background: linear-gradient(to bottom, #ff5722, #ff784e);
+  border-radius: 10px;
   cursor: pointer;
+  transition: opacity 0.3s ease;
+  opacity: 0.8;
 }
 
 .slider:hover {
@@ -191,246 +141,166 @@ button.tool-active {
 }
 
 .slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
-  background: linear-gradient(to bottom, #252525, #141414);
+  width: 22px;
+  height: 22px;
+  background: white;
+  border: 2px solid #ff5722;
   border-radius: 50%;
   cursor: pointer;
+  transition: background 0.3s ease;
 }
 
-/* =====================================
-   DROPDOWNS
-====================================== */
-.dropdown-wrapper {
-  position: relative;
-  display: inline-block;
+.slider::-webkit-slider-thumb:hover {
+  background: #ffe7df;
 }
 
-.dropdown-content {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background-color: white;
-  border: 1px solid #ccc;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
-  display: none;
-  z-index: 1000;
-  padding: 5px;
-}
-
-.dropdown-content button {
-  padding: 8px 12px;
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-}
-
-.dropdown-content button:hover {
-  background-color: #f4f4f4;
-}
-
-/* =====================================
-   CANVAS AREA
-====================================== */
-.canvas-container {
-  position: relative;
-  width: 100%;
-  height: calc(100vh - 120px); /* spazio sotto al menu */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #fff;
-  overflow: hidden; /* 🔥 niente scroll */
-}
-
-.layer-canvas {
-  transform-origin: top left;
-  position: absolute;
+#menu {
+  position: sticky;
   top: 0;
-  left: 0;
-}
-
-.layer-canvas.active {
-  pointer-events: auto;
-}
-
-/* =====================================
-   PANEL: LAYERS
-====================================== */
-#layersPanel {
-  position: fixed;
-  top: 80px;
-  right: -300px;
-  width: 250px;
-  height: 60vh;
-  background-color: #fff;
-  border-left: 1px solid #ccc;
-  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.05);
-  padding: 15px;
-  border-radius: 8px 0 0 8px;
-  overflow-y: auto;
-  transition: right 0.3s ease;
-  z-index: 2000;
-}
-
-#layersPanel.visible {
-  right: 0;
-}
-
-#layersPanel h3 {
-  margin-top: 0;
-  font-size: 1.2em;
-  color: #444;
-  text-align: left;
-}
-
-#layersList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-#layersList li {
-  padding: 6px 10px;
-  background: #f9f9f9;
-  margin-bottom: 6px;
-  border-radius: 6px;
+  width: 100%;
+  height: 70px;
+  background-color: #2e2e3e;
+  z-index: 1000;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 2px solid #444;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+#menu-left,
+#menu-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#menu-left {
+  justify-content: flex-start;
+}
+
+#menu-right {
+  justify-content: flex-end;
+}
+
+#menu h1 {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  flex-grow: 1;
+  font-size: 20px;
+}
+
+@media (max-width: 768px) {
+#menu {
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  cursor: pointer;
-  border: 1px solid #ccc;
+  height: 70px;
 }
 
-#layersList li.active {
-  background-color: #d0e6ff;
-  font-weight: bold;
+#menu-left,
+#menu-right {
+  position: static;
+  flex-direction: row;
+  gap: 10px;
 }
-/* =====================================
-   GALLERY
-====================================== */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0,0,0,0.5);
+
+#menu h1 {
+  font-size: 20px;
+  margin: 0;
+  flex-grow: 1;
+  text-align: center;
+}
+
+.menu-toggle {
+  background-color: #393953;
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
-}
-
-.modal.hidden {
-  display: none;
-}
-
-.modal-content {
-  background: #fff;
-  padding: 20px;
-  border-radius: 12px;
-  width: 80%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
-}
-
-.modal-content h2 {
-  margin-top: 0;
-}
-
-.project-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.project-list .project {
-  border: 1px solid #ccc;
-  padding: 10px;
-  border-radius: 6px;
-  width: 150px;
   cursor: pointer;
-  text-align: center;
-  background: #f9f9f9;
 }
 
-.project-list .project:hover {
-  background: #e0f0ff;
-}
-/* ===============================
-   MODALE GALLERIA - SAVE CONTROLS
-================================== */
-.save-controls {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  align-items: center;
-}
-
-#projectNameInput {
-  flex-grow: 1;
+.menu-panel {
+  display: none;
+  background-color: #2e2e3e;
   padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 16px;
+  border-radius: 10px;
+  margin-top: 5px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
 }
 
-#saveCanvasBtn {
-  padding: 10px 16px;
-  background-color: #007bff;
-  color: white;
-  border-radius: 8px;
-  font-weight: bold;
-  border: none;
-  transition: background-color 0.2s ease;
+.menu-panel.active {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1002;
+}
 }
 
-#saveCanvasBtn:hover {
-  background-color: #0056b3;
+@media (min-width: 769px) {
+.menu-panel {
+  display: flex !important;
+  flex-direction: row;
+  gap: 10px;
 }
 
-.save-confirmation {
-  color: green;
-  font-weight: bold;
-  margin-bottom: 10px;
-  font-size: 14px;
-  transition: opacity 0.3s ease;
-}
-
-.save-confirmation.hidden {
+.menu-toggle {
   display: none;
 }
-#updateProjectBtn {
-  padding: 10px 16px;
-  background-color: #28a745;
-  color: white;
-  border-radius: 8px;
-  font-weight: bold;
-  border: none;
-  transition: background-color 0.2s ease;
 }
 
-#updateProjectBtn:hover {
-  background-color: #218838;
+/* Desktop: mostra menu inline */
+@media (min-width: 769px) {
+.menu-inline {
+  display: flex;
+  gap: 10px;
+}
+.menu-toggle {
+  display: none;
+}
+.menu-panel-flyout {
+  display: none !important;
+}
 }
 
+/* Mobile: mostra solo pulsanti toggle, pannelli esterni */
+@media (max-width: 768px) {
+.menu-inline {
+  display: none;
+}
 
+.menu-panel-flyout {
+  position: fixed;
+  top: 80px;
+  background-color: #2e2e3e;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.4);
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1002;
+}
 
-/* =====================================
-   RESPONSIVE
-====================================== */
-@media screen and (max-width: 768px) {
-  .slider-container {
-    position: static;
-    transform: rotate(180deg);
-    margin: 10px 0;
-  }
+.menu-panel-flyout.active {
+  display: flex;
+}
+
+#leftMenu {
+  left: 20px;
+}
+
+#rightMenu {
+  right: 20px;
+}
 }
