@@ -252,6 +252,9 @@ button.tool-active {
   position: absolute;
   top: 0;
   left: 0;
+  z-index: 0; /* 🔧 assicura che sia sotto */
+  pointer-events: none;
+  opacity: 1;
 }
 
 .layer-canvas.active {

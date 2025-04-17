@@ -12,90 +12,86 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+function handleAuthState(user) {
+  const authIcon = document.getElementById("authIcon");
+  if (!user) {
+    auth.signInAnonymously().catch(err => console.error("Errore login anonimo:", err));
+    return;
+  }
+  if (!user.emailVerified && !user.isAnonymous) {
+    alert("⚠️ Devi verificare la tua email prima di poter usare l'app.");
+    disableSaveAndCollab();
+    auth.signOut();
+    return;
+  }
+
+  if (user.isAnonymous) {
+    disableSaveAndCollab();
+    authIcon.src = "./images/user.png";
+    authIcon.alt = "Account";
+  } else {
+    enableFullAccess();
+    authIcon.src = "./images/user-auth.png";
+    authIcon.alt = "Utente autenticato";
+  }
+
+  document.getElementById("authModal").classList.add("hidden");
+}
+function loginWithEmail() {
+  const email = document.getElementById("emailInput").value;
+  const password = document.getElementById("passwordInput").value;
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => alert("✅ Accesso effettuato!"))
+    .catch(error => alert("Errore login: " + error.message));
+}
+function registerWithEmail() {
+  const email = document.getElementById("emailInput").value;
+  const password = document.getElementById("passwordInput").value;
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(userCredential => {
+      const user = userCredential.user;
+      user.sendEmailVerification().then(() => {
+        alert("📩 Registrazione completata! Controlla la tua email.");
+        auth.signOut();
+      });
+    })
+    .catch(error => alert("Errore registrazione: " + error.message));
+}
+function loginWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider)
+    .then(result => {
+      alert("✅ Accesso con Google riuscito: " + result.user.displayName);
+      document.getElementById("authModal").classList.add("hidden");
+    })
+    .catch(error => {
+      console.error(error);
+      alert("Errore login con Google: " + error.message);
+    });
+}
+function logoutUser() {
+  auth.signOut();
+}
+
+
 const auth = firebase.auth();
 const database = firebase.database();
 
 window.addEventListener("DOMContentLoaded", () => {
-  auth.onAuthStateChanged(user => {
-    const authIcon = document.getElementById("authIcon");
-
-    if (user) {
-      if (!user.emailVerified && !user.isAnonymous) {
-        alert("⚠️ Devi verificare la tua email prima di poter usare l'app.");
-        disableSaveAndCollab();
-        auth.signOut(); // logout automatico se non verificato
-        return;
-      }
-
-      const isAnon = user.isAnonymous;
-      if (isAnon) {
-        console.log("👤 Utente anonimo");
-        disableSaveAndCollab();
-        authIcon.src = "./images/user.png";
-        authIcon.alt = "Account";
-      } else {
-        console.log("👤 Utente autenticato:", user.email);
-        enableFullAccess();
-        authIcon.src = "./images/user-auth.png";
-        authIcon.alt = "Utente autenticato";
-      }
-      document.getElementById("authModal").classList.add("hidden");
-    } else {
-      auth.signInAnonymously().catch(err => console.error("Errore login anonimo:", err));
-    }
-  });
-
-  document.getElementById("loginBtn").onclick = () => {
-    const email = document.getElementById("emailInput").value;
-    const password = document.getElementById("passwordInput").value;
-    auth.signInWithEmailAndPassword(email, password)
-      .then(() => alert("✅ Accesso effettuato!"))
-      .catch(error => alert("Errore login: " + error.message));
+  auth.onAuthStateChanged(handleAuthState);
+  document.getElementById("loginBtn").onclick = loginWithEmail;
+  document.getElementById("signupBtn").onclick = registerWithEmail;
+  document.getElementById("googleLoginBtn").onclick = loginWithGoogle;
+  document.getElementById("logoutBtn").onclick = logoutUser;
+  document.getElementById("authToggleBtn").onclick = () => {
+    document.getElementById("authModal").classList.toggle("hidden");
   };
-
-  document.getElementById("signupBtn").onclick = () => {
-    const email = document.getElementById("emailInput").value;
-    const password = document.getElementById("passwordInput").value;
-    auth.createUserWithEmailAndPassword(email, password)
-      .then(userCredential => {
-        const user = userCredential.user;
-        user.sendEmailVerification().then(() => {
-          alert("📩 Registrazione completata! Ti abbiamo inviato un'email di verifica. Controlla la tua posta.");
-          auth.signOut(); // Disconnette finché non verifica
-        });
-      })
-      .catch(error => alert("Errore registrazione: " + error.message));
-  };
-
-  document.getElementById("googleLoginBtn").onclick = () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider)
-      .then(result => {
-        alert("✅ Accesso con Google riuscito: " + result.user.displayName);
-        document.getElementById("authModal").classList.add("hidden");
-      })
-      .catch(error => {
-        console.error(error);
-        alert("Errore login con Google: " + error.message);
-      });
-  };
-
-  document.getElementById("logoutBtn").onclick = () => {
-    auth.signOut();
+  window.onclick = (e) => {
+    const modal = document.getElementById("authModal");
+    if (e.target === modal) modal.classList.add("hidden");
   };
 });
 
-document.getElementById("authToggleBtn").onclick = () => {
-  const modal = document.getElementById("authModal");
-  modal.classList.toggle("hidden");
-};
-
-window.onclick = function (event) {
-  const modal = document.getElementById("authModal");
-  if (event.target === modal) {
-    modal.classList.add("hidden");
-  }
-};
 
 function disableSaveAndCollab() {
   ["saveCanvasBtn", "updateProjectBtn", "exportProjectBtn", "newCanvasBtn"].forEach(id => {
@@ -129,6 +125,7 @@ let shapeOrigin = { x: 0, y: 0 };
 let shapeObject = null;
 let globalDrawingMode = true;
 let isBucketActive = false;
+let isFilling = false; 
 const recentColors = [];
 const maxRecentColors = 6;
 let lastSavedState = null;
@@ -145,20 +142,20 @@ function createLayer(container, index) {
     console.error("❌ .canvas-container not found!");
     return;
   }
-  const layerCanvasEl = document.createElement('canvas');
-  layerCanvasEl.classList.add('layer-canvas');
-  layerCanvasEl.width = DEFAULT_CANVAS_WIDTH;
-  layerCanvasEl.height = DEFAULT_CANVAS_HEIGHT;
-  const layerCanvas = new fabric.Canvas(layerCanvasEl, {
+  const layerCanvas = new fabric.Canvas(document.createElement('canvas'), {
     isDrawingMode: index === 1,
     backgroundColor: index === 0 ? 'white' : 'transparent',
     preserveObjectStacking: true,
-    width: layerCanvasEl.width,
-    height: layerCanvasEl.height
+    width: DEFAULT_CANVAS_WIDTH,
+    height: DEFAULT_CANVAS_HEIGHT
   });
-  layerCanvas.setZoom(window.devicePixelRatio || 1);
+  
+  // 👇 Fondamentale: aggiungi entrambe le canvas al DOM
+  layerCanvas.lowerCanvasEl.classList.add('layer-canvas');
+  layerCanvas.upperCanvasEl.classList.add('layer-canvas');
   container.appendChild(layerCanvas.lowerCanvasEl);
   container.appendChild(layerCanvas.upperCanvasEl);
+
   layers.push({
     canvas: layerCanvas,
     undoStack: [JSON.stringify(layerCanvas)],
@@ -213,19 +210,39 @@ function updateCanvasVisibility() {
     const canvas = layer.canvas;
     const isActive = i === activeLayerIndex;
     const zBase = i * 2;
+
+    // Layer visivo
     canvas.lowerCanvasEl.style.zIndex = zBase;
     canvas.upperCanvasEl.style.zIndex = zBase + 1;
+
     canvas.lowerCanvasEl.style.display = layer.visible ? 'block' : 'none';
     canvas.upperCanvasEl.style.display = isActive ? 'block' : 'none';
+
     canvas.lowerCanvasEl.style.position = 'absolute';
     canvas.upperCanvasEl.style.position = 'absolute';
+
+    canvas.lowerCanvasEl.style.opacity = 1;
+    canvas.upperCanvasEl.style.opacity = 1;
+
     canvas.lowerCanvasEl.classList.toggle('active', isActive);
     canvas.upperCanvasEl.classList.toggle('active', isActive);
-    canvas.isDrawingMode = isActive && globalDrawingMode && layer.visible;
-    canvas.selection = isActive;
-    canvas.skipTargetFind = !isActive;
+
+    // 👇 Dinamico: se stai usando il secchiello, disabilita pointerEvents su upper
+    const isFillingNow = isFilling && isBucketActive;
+    canvas.upperCanvasEl.style.pointerEvents = isFillingNow ? 'none' : 'auto';
+
+    // Configurazione disegno e selezione
+    canvas.isDrawingMode = isActive && globalDrawingMode && layer.visible && !isFillingNow;
+    canvas.selection = isActive && !isFillingNow;
+    canvas.skipTargetFind = isFilling && isBucketActive ? false : !canvas.selection;
+    canvas.getObjects().forEach(obj => {
+      obj.selectable = canvas.selection;
+      obj.evented = true; // 👈 abilita sempre la risposta al click
+    });    
   });
 }
+
+
 
 // ================================
 // 3. Drawing Tools: Brush, Shapes, Text, Events
@@ -278,8 +295,8 @@ function setBrush(type) {
     case 'Eraser':
       brush = new fabric.PencilBrush(layer.canvas);
       brush.width = brushSize;
-      brush.color = 'transparent';
-      break;
+      brush.color = 'rgba(0,0,0,0)'; // invisibile, ma disegna path di contatto
+      break;      
   }
   if (brush) {
     layer.canvas.freeDrawingBrush = brush;
@@ -290,15 +307,28 @@ function setDrawingMode(active) {
   layers.forEach((layer, i) => {
     const isActive = i === activeLayerIndex;
     const canvas = layer.canvas;
-    canvas.isDrawingMode = isActive && active && layer.visible;
-    canvas.selection = active; // 👈 disattiva selezione quando disegno OFF
-    canvas.skipTargetFind = !active; // 👈 ignora oggetti cliccabili
+
+    // modalità disegno: brush attivo
+    const isDrawing = isActive && active && layer.visible;
+
+    // modalità secchiello: disegno OFF, selezione OFF
+    const isFillingNow = isFilling && isBucketActive;
+
+    canvas.isDrawingMode = isDrawing && !drawingShape && !isInsertingText;
+    canvas.selection = !(isDrawing || isFillingNow);
+    canvas.skipTargetFind = isDrawing || isFillingNow;
+
+    canvas.getObjects().forEach(obj => {
+      obj.selectable = !(isDrawing || isFillingNow);
+    });
   });
 
   document.getElementById('pointerIcon').src = active
     ? "./images/pencil-icon.png"
     : "./images/pointer-icon.png";
 }
+
+
 
 
 function disableDrawingSilently() {
@@ -350,19 +380,12 @@ function fabricToCanvasCoords(canvas, pointer) {
 function attachCanvasEvents(canvas) {
   canvas.on('path:created', (opt) => {
     const path = opt.path;
-    if (isEraserMode) {
+  
+    // 🧽 Gomma: cancella oggetti sovrapposti
+    if (isEraserMode && currentBrush === "Eraser") {
       path.set({ erasable: false });
-      const pathBounds = path.getBoundingRect();
       const toDelete = canvas.getObjects().filter(obj => {
-        if (!obj.erasable || obj === path) return false;
-        const objBounds = obj.getBoundingRect();
-        const overlap = !(
-          pathBounds.left > objBounds.left + objBounds.width ||
-          pathBounds.left + pathBounds.width < objBounds.left ||
-          pathBounds.top > objBounds.top + objBounds.height ||
-          pathBounds.top + pathBounds.height < objBounds.top
-        );
-        return overlap;
+        return obj.erasable !== false && path.intersectsWithObject(obj);
       });
       toDelete.forEach(obj => canvas.remove(obj));
       canvas.remove(path);
@@ -370,10 +393,12 @@ function attachCanvasEvents(canvas) {
       saveState();
       return;
     }
-
+  
+    // 🎨 Brush normale
     canvas.renderAll();
     saveState();
   });
+  
 
   canvas.on('mouse:down', function(opt) {
     const pointer = canvas.getPointer(opt.e);
@@ -381,33 +406,30 @@ function attachCanvasEvents(canvas) {
       canvas.contextTop.globalCompositeOperation = 'destination-out';
       canvas._isErasing = true;
     }
-    if (isBucketActive) {
-      const rawPointer = canvas.getPointer(opt.e);
-      const { x, y } = fabricToCanvasCoords(canvas, rawPointer);
-      const ctx = canvas.lowerCanvasEl.getContext("2d");
+    if (isFilling && isBucketActive) {
+      const pointer = canvas.getPointer(opt.e, true); // true = coordinate canvas
+      const pixel = fabricToCanvasCoords(canvas, pointer);
     
-      if (!brushColor) {
-        alert("⚠️ Seleziona un colore prima di usare il secchiello.");
-        return;
-      }
+      floodFillFromPoint(canvas, pixel.x, pixel.y, brushColor);
     
-      const rgba = hexToRgba(brushColor);
-      floodFill(canvas.lowerCanvasEl, x, y, rgba);
-    
-      canvas.requestRenderAll();
-      saveState();
-    
+      isFilling = false;
       isBucketActive = false;
       setDrawingMode(globalDrawingMode);
       setBrush(currentBrush);
       return;
-    }    
+    }
+    
+    
+    
+    
     if (isInsertingText) {
       const text = new fabric.IText("Testo", {
         left: pointer.x,
         top: pointer.y,
         fontFamily: 'Arial',
         fontSize: 24,
+        erasable: true,
+        selectable: true,
         fill: brushColor
       });
       text.set({ erasable: true });
@@ -420,65 +442,77 @@ function attachCanvasEvents(canvas) {
       if (previousDrawingMode) setBrush(currentBrush);
       return;
     }
+    const strokeCol = brushColor || "#000000";
+    const strokeW = brushSize > 0 ? brushSize : 2;
+    const fillCol = brushColor || "#000000";
     if (!drawingShape) return;
     isDrawingShape = true;
     shapeOrigin = { x: pointer.x, y: pointer.y };
+    
     switch (drawingShape) {
-      case 'rect':
-        shapeObject = new fabric.Rect({
-          left: pointer.x,
-          top: pointer.y,
-          width: 0,
-          height: 0,
-          fill: 'transparent',
-          stroke: brushColor || '#000000',
-          strokeWidth: brushSize || 2,
-          selectable: true
-        });        
-        break;
-      case 'circle':
-        shapeObject = new fabric.Circle({
-          left: pointer.x,
-          top: pointer.y,
-          radius: 0,
-          fill: 'transparent',
-          stroke: brushColor || '#000000',
-          strokeWidth: brushSize || 2,
-          selectable: true
-        });        
-        break;
+        case 'rect':
+          shapeObject = new fabric.Rect({
+            left: pointer.x,
+            top: pointer.y,
+            width: 1,
+            height: 1,
+            fill:null,
+            stroke: strokeCol,
+            strokeWidth: strokeW,
+            erasable: true,
+            selectable: true
+          });
+          break;
+      
+        case 'circle':
+          shapeObject = new fabric.Circle({
+            left: pointer.x,
+            top: pointer.y,
+            radius: 1,
+            fill: null, // 🔧 niente riempimento
+            stroke: strokeCol,
+            strokeWidth: strokeW,
+            erasable: true,
+            selectable: true
+          });
+          break;      
+    
       case 'line':
-        shapeObject = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
-          stroke: brushColor || '#000000',
-          strokeWidth: brushSize || 2,
-          fill: 'transparent',
+        shapeObject = new fabric.Line([pointer.x, pointer.y, pointer.x + 1, pointer.y + 1], {
+          stroke: strokeCol,
+          strokeWidth: strokeW,
+          fill: null,
+          erasable: true,
           selectable: true
         });
-        
         break;
     }
     if (shapeObject) {
       shapeObject.set({ erasable: true });
       canvas.add(shapeObject);
+      canvas.setActiveObject(shapeObject);
+      canvas.requestRenderAll();
     }
   });
 
   canvas.on('mouse:move', function(opt) {
+    const pointer = canvas.getPointer(opt.e); // 👈 spostalo subito qui
+  
     const overlay = document.getElementById('eraser-preview');
     if (!overlay) return;
+  
     const ctxOverlay = overlay.getContext('2d');
     ctxOverlay.clearRect(0, 0, overlay.width, overlay.height);
-
+  
     if (currentBrush === 'PixelEraser') {
-      const pointer = canvas.getPointer(opt.e, true);
+      const pointerOverlay = canvas.getPointer(opt.e, true);
       ctxOverlay.beginPath();
-      ctxOverlay.arc(pointer.x, pointer.y, brushSize / 2, 0, 2 * Math.PI);
+      ctxOverlay.arc(pointerOverlay.x, pointerOverlay.y, brushSize / 2, 0, 2 * Math.PI);
       ctxOverlay.fillStyle = 'rgba(0,0,0,0.2)';
       ctxOverlay.fill();
-    }
-
+    }  
     if (!isDrawingShape || !shapeObject) return;
-    const pointer = canvas.getPointer(opt.e);
+
     switch (drawingShape) {
       case 'rect':
         shapeObject.set({
@@ -488,23 +522,31 @@ function attachCanvasEvents(canvas) {
           top: Math.min(pointer.y, shapeOrigin.y)
         });
         break;
+    
       case 'circle':
-        const radius = Math.sqrt(
-          Math.pow(pointer.x - shapeOrigin.x, 2) +
-          Math.pow(pointer.y - shapeOrigin.y, 2)
-        ) / 2;
+        const dx = pointer.x - shapeOrigin.x;
+        const dy = pointer.y - shapeOrigin.y;
+        const radius = Math.sqrt(dx * dx + dy * dy) / 2;
         shapeObject.set({
           radius: radius,
           left: (pointer.x + shapeOrigin.x) / 2 - radius,
           top: (pointer.y + shapeOrigin.y) / 2 - radius
         });
         break;
+    
       case 'line':
-        shapeObject.set({ x2: pointer.x, y2: pointer.y });
+        shapeObject.set({
+          x2: pointer.x,
+          y2: pointer.y
+        });
         break;
     }
-    canvas.renderAll();
+    
+    shapeObject.setCoords(); // 👈 ESSENZIALE!
+    canvas.requestRenderAll();
+    
   });
+  
 
   canvas.on('mouse:up', function() {
     if (currentBrush === 'PixelEraser') {
@@ -520,7 +562,7 @@ function attachCanvasEvents(canvas) {
     if (isDrawingShape) {
       isDrawingShape = false;
       shapeObject = null;
-      drawingShape = null;
+      drawingShape = null;      
       setDrawingMode(previousDrawingMode);
       if (previousDrawingMode) setBrush(currentBrush);
       canvas.discardActiveObject();
@@ -550,13 +592,16 @@ downloadBtn.onclick = () => {
   downloadDropdown.style.display=downloadDropdown.style.display === "block" ? "none" : "block";
 }
 shapesButton.onclick = () => shapeDropdown.style.display = shapeDropdown.style.display === "block" ? "none" : "block";
-
 document.querySelectorAll(".shape-option").forEach(button => {
   button.addEventListener("click", () => {
-    drawingShape = button.getAttribute("data-shape");
-    highlightTool('shapes_tab');
+    drawingShape = button.getAttribute("data-shape"); // ✅ assegna correttamente
+    console.log("✅ drawingShape:", drawingShape);
     previousDrawingMode = globalDrawingMode;
-    setDrawingMode(false);
+    isFilling = false;
+    isInsertingText = false;
+    setDrawingMode(false); // 🔧 questo è ESSENZIALE per disattivare isDrawingMode
+
+    highlightTool('shapes_tab');
     shapeDropdown.style.display = "none";
   });
 });
@@ -566,6 +611,7 @@ brushButton.onclick = () => brushDropdown.style.display = brushDropdown.style.di
 document.querySelectorAll(".brush-option").forEach(button => {
   button.addEventListener("click", () => {
     const selectedBrush = button.getAttribute("data");
+    isFilling = false;
     if (selectedBrush !== "Eraser") {
       currentBrush = selectedBrush;
     }
@@ -584,6 +630,7 @@ document.querySelectorAll(".eraser-option").forEach(button => {
   button.addEventListener("click", () => {
     const selected = button.getAttribute("data");
     globalDrawingMode = true;
+    isFilling = false;
     setDrawingMode(true);
     setBrush(selected);
     highlightTool("eraser_tab");
@@ -610,6 +657,7 @@ document.getElementById('colorInput').addEventListener('input', function () {
 
 document.getElementById('pointerToggleBtn').onclick = () => {
   globalDrawingMode = !globalDrawingMode;
+  isFilling = false;
   setDrawingMode(globalDrawingMode);
   setBrush(currentBrush);
   drawingShape = null;
@@ -632,15 +680,20 @@ document.getElementById("text_tab").onclick = () => {
   disableDrawingSilently();
   drawingShape = null;
   isInsertingText = true;
+  isFilling = false;
   highlightTool('text_tab');
 };
 document.getElementById("bucket_tab").onclick = () => {
+  isFilling = true;
   isBucketActive = true;
+  globalDrawingMode = false;
+
   drawingShape = null;
   isInsertingText = false;
-  setDrawingMode(false);
+  setDrawingMode(false); // 🔁 disattiva selezione e disegno
   highlightTool("bucket_tab");
 };
+
 
 function highlightTool(buttonId) {
   document.querySelectorAll(".menu-left button").forEach(btn => {
@@ -799,9 +852,18 @@ layersTab.onclick = () => {
   layersPanel.classList.toggle("visible");
   renderLayerList();
   const disable = layersPanel.classList.contains("visible");
+
   document.querySelectorAll(".layer-canvas").forEach(c => {
     c.style.pointerEvents = disable ? "none" : "auto";
   });
+  
+  // 🔧 Fix: ripristina modalità disegno dopo chiusura pannello
+  if (!disable) {
+    updateCanvasVisibility();
+    setDrawingMode(globalDrawingMode);
+    setBrush(currentBrush);
+  }
+  
 };
 
 // ================================
@@ -886,100 +948,6 @@ document.getElementById("forgotPasswordBtn").onclick = () => {
       alert("Errore: " + error.message);
     });
 };
-
-auth.onAuthStateChanged(user => {
-  const authIcon = document.getElementById("authIcon");
-
-  if (user) {
-    if (!user.emailVerified && !user.isAnonymous) {
-      alert("⚠️ Devi verificare la tua email prima di poter usare l'app.");
-      disableSaveAndCollab();
-      auth.signOut();
-      return;
-    }
-
-    if (user.isAnonymous) {
-      console.log("👤 Utente anonimo");
-      disableSaveAndCollab();
-      authIcon.src = "./images/user.png";
-      authIcon.alt = "Account";
-    } else {
-      console.log("👤 Utente autenticato:", user.email);
-      enableFullAccess();
-      authIcon.src = "./images/user-auth.png";
-      authIcon.alt = "Utente autenticato";
-    }
-    document.getElementById("authModal").classList.add("hidden");
-  } else {
-    auth.signInAnonymously().catch(err => console.error("Errore login anonimo:", err));
-  }
-});
-
-document.getElementById("loginBtn").onclick = () => {
-  const email = document.getElementById("emailInput").value;
-  const password = document.getElementById("passwordInput").value;
-  auth.signInWithEmailAndPassword(email, password)
-    .then(() => alert("✅ Accesso effettuato!"))
-    .catch(error => alert("Errore login: " + error.message));
-};
-
-document.getElementById("signupBtn").onclick = () => {
-  const email = document.getElementById("emailInput").value;
-  const password = document.getElementById("passwordInput").value;
-  auth.createUserWithEmailAndPassword(email, password)
-    .then(userCredential => {
-      const user = userCredential.user;
-      user.sendEmailVerification().then(() => {
-        alert("📩 Registrazione completata! Ti abbiamo inviato un'email di verifica. Controlla la tua posta.");
-        auth.signOut();
-      });
-    })
-    .catch(error => alert("Errore registrazione: " + error.message));
-};
-
-document.getElementById("googleLoginBtn").onclick = () => {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider)
-    .then(result => {
-      alert("✅ Accesso con Google riuscito: " + result.user.displayName);
-      document.getElementById("authModal").classList.add("hidden");
-    })
-    .catch(error => {
-      console.error(error);
-      alert("Errore login con Google: " + error.message);
-    });
-};
-
-document.getElementById("logoutBtn").onclick = () => {
-  auth.signOut();
-};
-
-document.getElementById("authToggleBtn").onclick = () => {
-  const modal = document.getElementById("authModal");
-  modal.classList.toggle("hidden");
-};
-
-window.onclick = function (event) {
-  const modal = document.getElementById("authModal");
-  if (event.target === modal) {
-    modal.classList.add("hidden");
-  }
-};
-
-function disableSaveAndCollab() {
-  ["saveCanvasBtn", "updateProjectBtn", "exportProjectBtn", "newCanvasBtn"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.disabled = true;
-  });
-}
-
-function enableFullAccess() {
-  ["saveCanvasBtn", "updateProjectBtn", "exportProjectBtn", "newCanvasBtn"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.disabled = false;
-  });
-}
-
 // ================================
 // 8. Gallery UI
 // ================================
@@ -1187,25 +1155,55 @@ layers.forEach(layer => {
   if (!layer.visible) return;
   ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
 });
-const dataURL = mergedCanvas.toDataURL("image/png");
+}/*
+function renderProjectList() {
+  const list = document.getElementById("projectList");
+  if (!list) return;
 
-// aggiorna galleria (evita duplicati)
-const recent = JSON.parse(sessionStorage.getItem("recentProjects") || "[]").filter(p => p.name !== proj.name);
-recent.unshift({
-  name: proj.name,
-  image: dataURL,
-  data: {
-    name: proj.name,
-    layers: proj.layers
+  list.innerHTML = '';
+
+  const recent = JSON.parse(sessionStorage.getItem("recentProjects") || "[]");
+  if (recent.length === 0) {
+    list.innerHTML = "<p>📭 Nessun progetto recente disponibile.</p>";
+    return;
   }
-});
 
-sessionStorage.setItem("recentProjects", JSON.stringify(recent));
-renderProjectList();
+  recent.forEach((proj, i) => {
+    const div = document.createElement("div");
+    div.className = "project";
 
-}
+    div.innerHTML = `
+      <img src="${proj.image}" width="100" height="75"
+        style="border-radius:6px; margin-bottom:5px; object-fit:cover;" />
+      <strong>${proj.name}</strong><br>
+    `;
 
-galleryCloseBtn.onclick = () => galleryModal.classList.add("hidden");
+    const openBtn = document.createElement("button");
+    openBtn.textContent = "📂 Apri";
+    openBtn.onclick = () => {
+      if (confirm(`Vuoi caricare il progetto "${proj.name}"?`)) {
+        loadProject(proj.data);
+        currentProjectName = proj.name;
+        document.getElementById("galleryModal").classList.add("hidden");
+      }
+    };
+
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "❌ Rimuovi";
+    delBtn.onclick = () => {
+      const updated = recent.filter(p => p.name !== proj.name);
+      sessionStorage.setItem("recentProjects", JSON.stringify(updated));
+      renderProjectList();
+    };
+
+    div.appendChild(openBtn);
+    div.appendChild(delBtn);
+    list.appendChild(div);
+  });
+}*/
+
+
+closeGalleryBtn.onclick = () => galleryModal.classList.add("hidden");
 function caricaProgettiFirebase() {
   const utente = firebase.auth().currentUser;
   if (!utente || utente.isAnonymous) return;
@@ -1213,45 +1211,50 @@ function caricaProgettiFirebase() {
   const ref = firebase.database().ref("progetti/" + utente.uid);
   ref.once("value", (snapshot) => {
     const progetti = snapshot.val();
-    const content = document.getElementById("galleryContent");
-    content.innerHTML = "";
+    const list = document.getElementById("projectList");
+    list.innerHTML = "";
 
     if (!progetti) {
-      content.innerHTML = "<p>Nessun progetto trovato.</p>";
+      list.innerHTML = "<p>📭 Nessun progetto trovato.</p>";
       return;
     }
 
     Object.entries(progetti).forEach(([id, proj]) => {
       const div = document.createElement("div");
-      div.classList.add("gallery-item");
+      div.className = "project";
 
-      const preview = document.createElement("img");
-      preview.src = proj.preview || "./images/placeholder.png";
-      preview.alt = proj.nome;
-      preview.style.maxWidth = "100%";
+      div.innerHTML = `
+        <img src="${proj.preview || 'https://via.placeholder.com/150'}" 
+             width="100" height="75" 
+             style="border-radius:6px; margin-bottom:5px; object-fit:cover;" />
+        <strong>${proj.nome}</strong><br>
+      `;
 
-      const name = document.createElement("p");
-      name.textContent = proj.nome;
-
-      const timestamp = document.createElement("p");
-      const date = new Date(proj.timestamp);
-      timestamp.textContent = date.toLocaleString();
-
-      const loadBtn = document.createElement("button");
-      loadBtn.textContent = "Carica";
-      loadBtn.onclick = () => loadProjectFirebase(id, proj);
+      const openBtn = document.createElement("button");
+      openBtn.textContent = "📂 Apri";
+      openBtn.onclick = () => {
+        if (confirm(`Vuoi caricare il progetto "${proj.nome}"?`)) {
+          loadProject(proj);
+          currentProjectName = proj.nome;
+          document.getElementById("galleryModal").classList.add("hidden");
+        }
+      };
 
       const delBtn = document.createElement("button");
-      delBtn.textContent = "Elimina";
-      delBtn.onclick = () => deleteProjectFirebase(id, proj.nome);
+      delBtn.textContent = "🗑️ Elimina";
+      delBtn.onclick = () => {
+        if (confirm(`Eliminare il progetto "${proj.nome}"?`)) {
+          firebase.database().ref("progetti/" + utente.uid + "/" + id).remove()
+            .then(() => {
+              alert("✅ Progetto eliminato.");
+              caricaProgettiFirebase();
+            });
+        }
+      };
 
-      div.appendChild(preview);
-      div.appendChild(name);
-      div.appendChild(timestamp);
-      div.appendChild(loadBtn);
+      div.appendChild(openBtn);
       div.appendChild(delBtn);
-
-      content.appendChild(div);
+      list.appendChild(div);
     });
   });
 }
@@ -1264,6 +1267,7 @@ function loadProjectFirebase(id, proj) {
     document.getElementById("galleryModal").classList.add("hidden");
   }
 }
+
 
 function deleteProjectFirebase(id, name) {
   const utente = firebase.auth().currentUser;
@@ -1295,11 +1299,152 @@ function hexToRgba(hex) {
     255
   ];
 }
+function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
+  const lowerCtx = fabricCanvas.lowerCanvasEl.getContext("2d");
+  const width = fabricCanvas.getWidth();
+  const height = fabricCanvas.getHeight();
+
+  const originalImgData = lowerCtx.getImageData(0, 0, width, height);
+  const imgData = lowerCtx.getImageData(0, 0, width, height);
+  const startColor = getPixelColor(imgData, x, y);
+  const fillColor = hexToRgba(fillColorHex);
+
+  if (colorsMatch(startColor, fillColor)) return;
+
+  const queue = [[x, y]];
+  const visited = new Set();
+
+  while (queue.length > 0) {
+    const [cx, cy] = queue.shift();
+    const key = `${cx},${cy}`;
+    if (visited.has(key)) continue;
+
+    const currentColor = getPixelColor(imgData, cx, cy);
+    if (!colorsMatch(currentColor, startColor)) continue;
+
+    setPixelColor(imgData, cx, cy, fillColor);
+    visited.add(key);
+
+    queue.push([cx + 1, cy]);
+    queue.push([cx - 1, cy]);
+    queue.push([cx, cy + 1]);
+    queue.push([cx, cy - 1]);
+  }
+
+  // Crea filledData solo con pixel modificati
+  const filledData = new ImageData(width, height);
+  for (let i = 0; i < imgData.data.length; i += 4) {
+    const r1 = originalImgData.data[i];
+    const g1 = originalImgData.data[i + 1];
+    const b1 = originalImgData.data[i + 2];
+    const a1 = originalImgData.data[i + 3];
+    const r2 = imgData.data[i];
+    const g2 = imgData.data[i + 1];
+    const b2 = imgData.data[i + 2];
+    const a2 = imgData.data[i + 3];
+
+    if (r1 !== r2 || g1 !== g2 || b1 !== b2 || a1 !== a2) {
+      filledData.data[i] = r2;
+      filledData.data[i + 1] = g2;
+      filledData.data[i + 2] = b2;
+      filledData.data[i + 3] = a2;
+    } else {
+      filledData.data[i + 3] = 0; // trasparente
+    }
+  }
+
+  // Calcola bounding box del fill
+  let minX = width, minY = height, maxX = 0, maxY = 0;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4 + 3;
+      if (filledData.data[i] !== 0) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  const fillWidth = maxX - minX + 1;
+  const fillHeight = maxY - minY + 1;
+
+  const croppedCanvas = document.createElement("canvas");
+  croppedCanvas.width = fillWidth;
+  croppedCanvas.height = fillHeight;
+  const croppedCtx = croppedCanvas.getContext("2d");
+  croppedCtx.putImageData(filledData, -minX, -minY);
+
+  // Inserisci come immagine nel canvas Fabric
+  fabric.Image.fromURL(croppedCanvas.toDataURL(), (fillImg) => {
+    const zoom = fabricCanvas.getZoom();
+    const vt = fabricCanvas.viewportTransform;
+    const realX = minX / zoom;
+    const realY = minY / zoom;
+
+    fillImg.set({
+      left: realX,
+      top: realY,
+      scaleX: 1 / zoom,
+      scaleY: 1 / zoom,
+      selectable: true,
+      evented: true
+    });
+
+    const target = fabricCanvas.findTarget({ x, y }, false);
+
+    if (target) {
+      // Raggruppa oggetto + fill
+      fabricCanvas.remove(target);
+// 1. Calcola offset del fill rispetto al target
+const offsetX = realX - target.left;
+const offsetY = realY - target.top;
+
+// 2. Sposta il fillImg relativamente al target
+
+fillImg.set({
+  left: offsetX,
+  top: offsetY,
+  scaleX: 1 / zoom,
+  scaleY: 1 / zoom,
+  selectable: true,
+  evented: true
+});
+
+// 3. Sposta anche il target all'origine del gruppo
+target.set({
+  left: 0,
+  top: 0,
+  originX: 'left',
+  originY: 'top'
+});
+
+
+// 4. Crea il gruppo con entrambi
+const group = new fabric.Group([target, fillImg], {
+  left: realX,
+  top: realY,
+  selectable: true,
+  evented: true
+});
+
+      fabricCanvas.add(group);
+      fabricCanvas.setActiveObject(group);
+    } else {
+      fabricCanvas.add(fillImg);
+    }
+
+    fabricCanvas.requestRenderAll();
+    saveState();
+  });
+}
 
 function getPixelColor(imgData, x, y) {
   const index = (y * imgData.width + x) * 4;
   return imgData.data.slice(index, index + 4);
 }
+
 
 function setPixelColor(imgData, x, y, [r, g, b, a]) {
   const index = (y * imgData.width + x) * 4;
@@ -1314,34 +1459,6 @@ function colorsMatch(a, b, tolerance = 32) {
          Math.abs(a[1] - b[1]) < tolerance &&
          Math.abs(a[2] - b[2]) < tolerance &&
          Math.abs(a[3] - b[3]) < tolerance;
-}
-
-function floodFill(canvasEl, x, y, fillColor) {
-  const ctx = canvasEl.getContext("2d");
-  const imgData = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
-  const targetColor = getPixelColor(imgData, x, y);
-
-  if (colorsMatch(targetColor, fillColor)) return;
-
-  const stack = [[x, y]];
-  const visited = new Set();
-
-  while (stack.length) {
-    const [px, py] = stack.pop();
-    const key = px + "," + py;
-    if (visited.has(key)) continue;
-    visited.add(key);
-
-    if (px < 0 || py < 0 || px >= imgData.width || py >= imgData.height) continue;
-
-    const currentColor = getPixelColor(imgData, px, py);
-    if (!colorsMatch(currentColor, targetColor)) continue;
-
-    setPixelColor(imgData, px, py, fillColor);
-    stack.push([px + 1, py], [px - 1, py], [px, py + 1], [px, py - 1]);
-  }
-
-  ctx.putImageData(imgData, 0, 0);
 }
 
 // ================================
