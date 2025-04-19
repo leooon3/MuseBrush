@@ -94,14 +94,14 @@ window.addEventListener("DOMContentLoaded", () => {
 
 
 function disableSaveAndCollab() {
-  ["saveCanvasBtn", "updateProjectBtn", "exportProjectBtn", "newCanvasBtn"].forEach(id => {
+  ["saveCanvasBtn", "updateProjectBtn", "exportProjectBtn"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.disabled = true;
   });
 }
 
 function enableFullAccess() {
-  ["saveCanvasBtn", "updateProjectBtn", "exportProjectBtn", "newCanvasBtn"].forEach(id => {
+  ["saveCanvasBtn", "updateProjectBtn", "exportProjectBtn"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.disabled = false;
   });
@@ -570,6 +570,14 @@ function attachCanvasEvents(canvas) {
       saveState();
     }
   });
+  canvas.on('selection:created', function (e) {
+    const selected = e.selected[0];
+    if (selected && selected.group && selected.group.type === 'group') {
+      canvas.setActiveObject(selected.group);
+    }
+  });
+  
+  
 }
 
 // ================================
@@ -583,6 +591,7 @@ const shapesButton = document.getElementById("shapes_tab");
 const shapeDropdown = document.getElementById("shapeDropdown");
 const eraserButton = document.getElementById("eraser_tab");
 const eraserDropdown = document.getElementById("eraserDropdown");
+const newCanvasBtn = document.getElementById("newCanvasBtn");
 
 eraserButton.onclick = () => {
   eraserDropdown.style.display = eraserDropdown.style.display === "block" ? "none" : "block";
@@ -595,7 +604,6 @@ shapesButton.onclick = () => shapeDropdown.style.display = shapeDropdown.style.d
 document.querySelectorAll(".shape-option").forEach(button => {
   button.addEventListener("click", () => {
     drawingShape = button.getAttribute("data-shape"); // ✅ assegna correttamente
-    console.log("✅ drawingShape:", drawingShape);
     previousDrawingMode = globalDrawingMode;
     isFilling = false;
     isInsertingText = false;
@@ -674,7 +682,31 @@ document.getElementById("clearBtn").onclick = () => {
     layer.canvas.renderAll();
   });
 };
+document.getElementById('newCanvasBtn').onclick = () => {
+const user = firebase.auth().currentUser;
+if (!user || user.isAnonymous) {
+  alert("🔒 Devi essere autenticato per creare un nuovo canvas.");
+  return;
+}
+  const confirmReset = confirm("⚠️ Vuoi davvero creare un nuovo canvas? Tutte le modifiche attuali andranno perse.");
+  if (confirmReset) {
+    const container = document.querySelector('.canvas-container');
+    if (container) {
+      container.innerHTML = '';
+    } else {
+      console.warn("❌ canvas-container non trovato!");
+    }
+    layers.length = 0;
+    activeLayerIndex = 0;
+    currentProjectName = null;
+    initLayers(1);
+    renderLayerList();
+    setDrawingMode(globalDrawingMode);
+    setBrush(currentBrush);
 
+    alert("🆕 Nuovo canvas creato!");
+  }
+}
 document.getElementById("text_tab").onclick = () => {
   previousDrawingMode = getActiveLayer().canvas.isDrawingMode;
   disableDrawingSilently();
@@ -1300,144 +1332,160 @@ function hexToRgba(hex) {
   ];
 }
 function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
-  const lowerCtx = fabricCanvas.lowerCanvasEl.getContext("2d");
   const width = fabricCanvas.getWidth();
   const height = fabricCanvas.getHeight();
 
-  const originalImgData = lowerCtx.getImageData(0, 0, width, height);
-  const imgData = lowerCtx.getImageData(0, 0, width, height);
-  const startColor = getPixelColor(imgData, x, y);
-  const fillColor = hexToRgba(fillColorHex);
+  // 1. Crea canvas trasparente per lavorare solo sul fill
+  const fillCanvas = document.createElement("canvas");
+  fillCanvas.width = width;
+  fillCanvas.height = height;
+  const fillCtx = fillCanvas.getContext("2d");
 
-  if (colorsMatch(startColor, fillColor)) return;
+  // 2. Renderizza la canvas visivamente in una seconda per leggere il punto cliccato
+  const renderCanvas = document.createElement("canvas");
+  renderCanvas.width = width;
+  renderCanvas.height = height;
+  const renderCtx = renderCanvas.getContext("2d");
 
-  const queue = [[x, y]];
-  const visited = new Set();
+  const renderDataUrl = fabricCanvas.toDataURL({ format: 'png' });
+  const img = new Image();
+  img.onload = () => {
+    renderCtx.drawImage(img, 0, 0);
+    const renderData = renderCtx.getImageData(0, 0, width, height);
+    const fillData = fillCtx.getImageData(0, 0, width, height);
 
-  while (queue.length > 0) {
-    const [cx, cy] = queue.shift();
-    const key = `${cx},${cy}`;
-    if (visited.has(key)) continue;
+    const startColor = getPixelColor(renderData, x, y);
+    const fillColor = hexToRgba(fillColorHex);
 
-    const currentColor = getPixelColor(imgData, cx, cy);
-    if (!colorsMatch(currentColor, startColor)) continue;
+    if (colorsMatch(startColor, fillColor)) return;
 
-    setPixelColor(imgData, cx, cy, fillColor);
-    visited.add(key);
+    const queue = [[x, y]];
+    const visited = new Set();
 
-    queue.push([cx + 1, cy]);
-    queue.push([cx - 1, cy]);
-    queue.push([cx, cy + 1]);
-    queue.push([cx, cy - 1]);
-  }
+    while (queue.length > 0) {
+      const [cx, cy] = queue.shift();
+      const key = `${cx},${cy}`;
+      if (visited.has(key)) continue;
 
-  // Crea filledData solo con pixel modificati
-  const filledData = new ImageData(width, height);
-  for (let i = 0; i < imgData.data.length; i += 4) {
-    const r1 = originalImgData.data[i];
-    const g1 = originalImgData.data[i + 1];
-    const b1 = originalImgData.data[i + 2];
-    const a1 = originalImgData.data[i + 3];
-    const r2 = imgData.data[i];
-    const g2 = imgData.data[i + 1];
-    const b2 = imgData.data[i + 2];
-    const a2 = imgData.data[i + 3];
+      const currentColor = getPixelColor(renderData, cx, cy);
+      if (!colorsMatch(currentColor, startColor)) continue;
 
-    if (r1 !== r2 || g1 !== g2 || b1 !== b2 || a1 !== a2) {
-      filledData.data[i] = r2;
-      filledData.data[i + 1] = g2;
-      filledData.data[i + 2] = b2;
-      filledData.data[i + 3] = a2;
-    } else {
-      filledData.data[i + 3] = 0; // trasparente
+      setPixelColor(fillData, cx, cy, fillColor);
+      visited.add(key);
+
+      queue.push([cx + 1, cy]);
+      queue.push([cx - 1, cy]);
+      queue.push([cx, cy + 1]);
+      queue.push([cx, cy - 1]);
     }
-  }
 
-  // Calcola bounding box del fill
-  let minX = width, minY = height, maxX = 0, maxY = 0;
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const i = (y * width + x) * 4 + 3;
-      if (filledData.data[i] !== 0) {
-        if (x < minX) minX = x;
-        if (y < minY) minY = y;
-        if (x > maxX) maxX = x;
-        if (y > maxY) maxY = y;
+    // Ritaglia solo l’area modificata
+    let minX = width, minY = height, maxX = 0, maxY = 0;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4 + 3;
+        if (fillData.data[i] !== 0) {
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
       }
     }
-  }
 
-  const fillWidth = maxX - minX + 1;
-  const fillHeight = maxY - minY + 1;
+    const fillWidth = maxX - minX + 1;
+    const fillHeight = maxY - minY + 1;
 
-  const croppedCanvas = document.createElement("canvas");
-  croppedCanvas.width = fillWidth;
-  croppedCanvas.height = fillHeight;
-  const croppedCtx = croppedCanvas.getContext("2d");
-  croppedCtx.putImageData(filledData, -minX, -minY);
+    const croppedCanvas = document.createElement("canvas");
+    croppedCanvas.width = fillWidth;
+    croppedCanvas.height = fillHeight;
+    const croppedCtx = croppedCanvas.getContext("2d");
 
-  // Inserisci come immagine nel canvas Fabric
-  fabric.Image.fromURL(croppedCanvas.toDataURL(), (fillImg) => {
-    const zoom = fabricCanvas.getZoom();
-    const vt = fabricCanvas.viewportTransform;
-    const realX = minX / zoom;
-    const realY = minY / zoom;
+    const croppedImageData = croppedCtx.createImageData(fillWidth, fillHeight);
 
-    fillImg.set({
-      left: realX,
-      top: realY,
-      scaleX: 1 / zoom,
-      scaleY: 1 / zoom,
-      selectable: true,
-      evented: true
-    });
-
-    const target = fabricCanvas.findTarget({ x, y }, false);
-
-    if (target) {
-      // Raggruppa oggetto + fill
-      fabricCanvas.remove(target);
-// 1. Calcola offset del fill rispetto al target
-const offsetX = realX - target.left;
-const offsetY = realY - target.top;
-
-// 2. Sposta il fillImg relativamente al target
-
-fillImg.set({
-  left: offsetX,
-  top: offsetY,
-  scaleX: 1 / zoom,
-  scaleY: 1 / zoom,
-  selectable: true,
-  evented: true
-});
-
-// 3. Sposta anche il target all'origine del gruppo
-target.set({
-  left: 0,
-  top: 0,
-  originX: 'left',
-  originY: 'top'
-});
-
-
-// 4. Crea il gruppo con entrambi
-const group = new fabric.Group([target, fillImg], {
-  left: realX,
-  top: realY,
-  selectable: true,
-  evented: true
-});
-
-      fabricCanvas.add(group);
-      fabricCanvas.setActiveObject(group);
-    } else {
-      fabricCanvas.add(fillImg);
+    for (let y = 0; y < fillHeight; y++) {
+      for (let x = 0; x < fillWidth; x++) {
+        const srcIndex = ((y + minY) * width + (x + minX)) * 4;
+        const dstIndex = (y * fillWidth + x) * 4;
+        croppedImageData.data[dstIndex]     = fillData.data[srcIndex];
+        croppedImageData.data[dstIndex + 1] = fillData.data[srcIndex + 1];
+        croppedImageData.data[dstIndex + 2] = fillData.data[srcIndex + 2];
+        croppedImageData.data[dstIndex + 3] = fillData.data[srcIndex + 3];
+      }
     }
 
-    fabricCanvas.requestRenderAll();
-    saveState();
-  });
+    croppedCtx.putImageData(croppedImageData, 0, 0);
+
+    // Inserisci solo il fill nel canvas
+    fabric.Image.fromURL(croppedCanvas.toDataURL(), (fillImg) => {
+      const zoom = fabricCanvas.getZoom();
+      const vt = fabricCanvas.viewportTransform;
+      const adjustedLeft = (minX - vt[4]) / zoom;
+      const adjustedTop = (minY - vt[5]) / zoom;
+    
+      fillImg.set({
+        left: adjustedLeft,
+        top: adjustedTop,
+        originX: 'left',
+        originY: 'top',
+        scaleX: 1 / zoom,
+        scaleY: 1 / zoom,
+        selectable: true,
+        evented: true
+      });
+
+      const point = new fabric.Point(x, y);
+      const target = fabricCanvas.getObjects().find(obj =>
+        obj.containsPoint(point)
+      );
+      if (target && fabricCanvas.getObjects().includes(target)) {
+        const originalLeft = target.left;
+        const originalTop = target.top;
+      
+        target.set({
+          left: 0,
+          top: 0,
+          originX: 'left',
+          originY: 'top'
+        });
+      
+        fillImg.set({
+          left: adjustedLeft - originalLeft,
+          top: adjustedTop - originalTop,
+          originX: 'left',
+          originY: 'top',
+          scaleX: 1 / zoom,
+          scaleY: 1 / zoom,
+          selectable: true,
+          evented: true
+        });
+      
+        // 👇 CREAZIONE GRUPPO
+        const group = new fabric.Group([target, fillImg], {
+          left: originalLeft,
+          top: originalTop,
+          originX: 'left',
+          originY: 'top',
+          selectable: true,
+          evented: true
+        });
+        fabricCanvas.remove(target);
+        fabricCanvas.add(group);
+        fabricCanvas.setActiveObject(group);
+      } else {
+        fabricCanvas.add(fillImg);
+        console.warn("⚠️ Gruppo NON creato, fill aggiunto da solo.");
+      }
+      
+      
+      fabricCanvas.requestRenderAll();
+      saveState();
+      
+    });
+    
+  };
+
+  img.src = renderDataUrl;
 }
 
 function getPixelColor(imgData, x, y) {
