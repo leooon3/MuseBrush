@@ -4,9 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MuseBrush</title>
-    <link rel="icon" type="image/x-ico" href="./images/favicon.ico" />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" type="image/x-icon" href="./images/favicon.ico" />
+    <link rel="stylesheet" href="./style.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+  
+    <!-- Firebase compat (per mantenere codice esistente) -->
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
   </head>
   <body>
     <header id="menu">
@@ -171,10 +176,7 @@
         </div>
       </div>
     </div>
-
-    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-    <script src="script.js" defer></script>
+    <script type="module" src="./public/js/main.js"></script>
+    <!--<script src="script.js" defer></script>--> <!--usare solamente in caso di problemi con i moduli-->
   </body>
 </html>
