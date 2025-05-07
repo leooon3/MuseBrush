@@ -1,5 +1,7 @@
 const admin = require('firebase-admin');
-const serviceAccount = require('./serviceAccountKey.json'); // scaricalo da Firebase Console
+
+// Leggi il JSON dalla variabile ambiente
+const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
