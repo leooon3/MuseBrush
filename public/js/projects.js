@@ -1,7 +1,8 @@
-import { layers, fitCanvasToContainer } from './canvas.js';
-import { updateCanvasVisibility } from './canvas.js';
+import { layers, fitCanvasToContainer, updateCanvasVisibility } from './canvas.js';
 import { attachCanvasEvents } from './events.js';
 import { setCurrentProjectName, setActiveLayerIndex } from './state.js';
+import { updateMenuHeight } from './ui.js';
+
 
 export function loadProject(proj) {
   const container = document.querySelector('.canvas-container');
@@ -13,8 +14,6 @@ export function loadProject(proj) {
   overlay.style.top = 0;
   overlay.style.left = 0;
   overlay.style.pointerEvents = 'none';
-  overlay.width = window.innerWidth;
-  overlay.height = window.innerHeight * 0.85;
   overlay.style.zIndex = 9999;
   container.appendChild(overlay);
 
@@ -39,6 +38,8 @@ export function loadProject(proj) {
 
     container.appendChild(canvas.lowerCanvasEl);
     container.appendChild(canvas.upperCanvasEl);
+    canvas.lowerCanvasEl.style.position = 'relative';
+    canvas.upperCanvasEl.style.position = 'relative';
 
     layers.push({
       canvas: canvas,
@@ -50,7 +51,14 @@ export function loadProject(proj) {
 
     canvas.loadFromJSON(layerData.json, () => {
       canvas.getObjects().forEach(obj => {
-        if (obj.type === 'line' && obj.fill === null) {
+        // Rimuoviamo fill errati da linee, rettangoli, cerchi e poligoni
+        if (
+          (obj.type === 'line' ||
+           obj.type === 'rect' ||
+           obj.type === 'circle' ||
+           obj.type === 'polygon') &&
+          (obj.fill === null || obj.fill === '' || obj.fill === 'rgba(0,0,0,1)')
+        ) {
           obj.set({ fill: 'transparent' });
         }
       });
@@ -58,8 +66,8 @@ export function loadProject(proj) {
       fitCanvasToContainer(canvas);
       attachCanvasEvents(canvas);
     });
+    
 
-    // Fallback di sicurezza
     canvas.getObjects().forEach(obj => {
       if (obj.type === 'path') {
         obj.set({ fill: null });
@@ -68,4 +76,6 @@ export function loadProject(proj) {
   });
 
   updateCanvasVisibility();
+updateMenuHeight();
+
 }

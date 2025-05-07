@@ -46,28 +46,36 @@ export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
 
   const renderDataUrl = fabricCanvas.toDataURL({ format: 'png' });
   const img = new Image();
+
   img.onload = () => {
     renderCtx.drawImage(img, 0, 0);
     const renderData = renderCtx.getImageData(0, 0, width, height);
     const fillData = fillCtx.getImageData(0, 0, width, height);
 
-    const startColor = getPixelColor(renderData, x, y);
+    const vt = fabricCanvas.viewportTransform;
+    const zoom = fabricCanvas.getZoom();
+    const rawX = Math.round(x * zoom + vt[4]);
+    const rawY = Math.round(y * zoom + vt[5]);
+
+    const startColor = getPixelColor(renderData, rawX, rawY);
     const fillColor = hexToRgba(fillColorHex);
     if (colorsMatch(startColor, fillColor)) return;
 
-    const queue = [[x, y]];
-    const visited = new Set();
+    const queue = [[rawX, rawY]];
+    const visited = new Uint8Array(width * height);
 
     while (queue.length > 0) {
       const [cx, cy] = queue.shift();
-      const key = `${cx},${cy}`;
-      if (visited.has(key)) continue;
+      if (cx < 0 || cy < 0 || cx >= width || cy >= height) continue;
+
+      const idx = cy * width + cx;
+      if (visited[idx]) continue;
 
       const currentColor = getPixelColor(renderData, cx, cy);
       if (!colorsMatch(currentColor, startColor)) continue;
 
       setPixelColor(fillData, cx, cy, fillColor);
-      visited.add(key);
+      visited[idx] = 1;
 
       queue.push([cx + 1, cy]);
       queue.push([cx - 1, cy]);
@@ -111,8 +119,6 @@ export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
     croppedCtx.putImageData(croppedImageData, 0, 0);
 
     fabric.Image.fromURL(croppedCanvas.toDataURL(), (fillImg) => {
-      const zoom = fabricCanvas.getZoom();
-      const vt = fabricCanvas.viewportTransform;
       const adjustedLeft = (minX - vt[4]) / zoom;
       const adjustedTop = (minY - vt[5]) / zoom;
 
@@ -127,12 +133,35 @@ export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
         evented: true
       });
 
-      const point = new fabric.Point(x, y);
-      const target = fabricCanvas.getObjects().find(obj =>
-        obj.containsPoint(point)
-      );
+      // 🔍 LOG DETTAGLIATO DEGLI OGGETTI
+      fabricCanvas.getObjects().forEach(obj => {
+        console.log({
+          type: obj.type,
+          left: obj.left,
+          top: obj.top,
+          width: obj.width,
+          height: obj.height,
+          selectable: obj.selectable,
+          aCoords: obj.aCoords
+        });
+      });
+
+      // ✅ FALLBACK usando bounding box diretto
+      let target = fabricCanvas.getObjects()
+        .filter(obj => obj.type !== 'image')
+        .find(obj => {
+          const bounds = obj.getBoundingRect(true);
+          return (
+            x >= bounds.left &&
+            x <= bounds.left + bounds.width &&
+            y >= bounds.top &&
+            y <= bounds.top + bounds.height
+          );
+        });
 
       if (target && fabricCanvas.getObjects().includes(target)) {
+        console.log("✅ Entriamo nel blocco GROUP");
+
         const originalLeft = target.left;
         const originalTop = target.top;
 
@@ -156,6 +185,7 @@ export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
         fabricCanvas.add(group);
         fabricCanvas.setActiveObject(group);
       } else {
+        console.warn("❌ target nullo o non presente nel canvas");
         fabricCanvas.add(fillImg);
         console.warn("⚠️ Gruppo NON creato, fill aggiunto da solo.");
       }

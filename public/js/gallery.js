@@ -1,9 +1,6 @@
 // ================================
 // 8. Gallery UI
 // ================================
-// ================================
-// 8. Gallery UI
-// ================================
 import { getActiveLayer, layers } from './canvas.js';
 import { getCurrentCanvasState } from './storage.js';
 import { loadProject } from './projects.js';
@@ -48,57 +45,13 @@ export function initGallery() {
     }
 
     document.getElementById("galleryModal").classList.remove("hidden");
-    const projectList = document.getElementById("projectList");
-    projectList.innerHTML = "<p>⏳ Caricamento...</p>";
-
-    firebase.database().ref("progetti/" + user.uid).once("value")
-      .then(snapshot => {
-        const progetti = snapshot.val();
-        projectList.innerHTML = '';
-        if (!progetti) return (projectList.innerHTML = "<p>📭 Nessun progetto trovato.</p>");
-
-        Object.entries(progetti).forEach(([id, progetto]) => {
-          const div = document.createElement("div");
-          div.className = "project";
-          div.innerHTML = `
-            <img src="${progetto.preview}" width="100" height="75" />
-            <strong>${progetto.nome}</strong><br>
-          `;
-
-          const openBtn = document.createElement("button");
-          openBtn.textContent = "📂 Apri";
-          openBtn.onclick = () => {
-            if (confirm(`Vuoi aprire "${progetto.nome}"?`)) {
-              loadProject(progetto);
-              setCurrentProjectName(progetto.nome);
-              document.getElementById("galleryModal").classList.add("hidden");
-            }
-          };
-
-          const delBtn = document.createElement("button");
-          delBtn.textContent = "🗑️ Elimina";
-          delBtn.onclick = () => {
-            if (confirm(`Eliminare "${progetto.nome}"?`)) {
-              firebase.database().ref("progetti/" + user.uid + "/" + id).remove()
-                .then(() => {
-                  alert("✅ Progetto eliminato.");
-                  document.getElementById("galleryBtn").click(); // ricarica lista
-                });
-            }
-          };
-
-          div.appendChild(openBtn);
-          div.appendChild(delBtn);
-          projectList.appendChild(div);
-        });
-      });
+    caricaProgettiFirebase(); // ✅ usa la nuova funzione modulare
   };
 
   document.getElementById("closeGalleryBtn").onclick = () => {
     document.getElementById("galleryModal").classList.add("hidden");
   };
 }
-
 export function salvaProgettoFirebase(nomeProgetto) {
   const user = firebase.auth().currentUser;
   if (!user || user.isAnonymous) return alert("⚠️ Devi essere autenticato per salvare.");
@@ -119,4 +72,57 @@ export function salvaProgettoFirebase(nomeProgetto) {
 
   firebase.database().ref("progetti/" + user.uid).push(progetto)
     .then(() => alert("✅ Progetto salvato nella galleria!"));
+}
+export function caricaProgettiFirebase() {
+  const user = firebase.auth().currentUser;
+  if (!user || user.isAnonymous) return alert("⚠️ Login richiesto.");
+
+  const projectList = document.getElementById("projectList");
+  projectList.innerHTML = "<p>⏳ Caricamento...</p>";
+
+  firebase.database().ref("progetti/" + user.uid).once("value")
+    .then(snapshot => {
+      const progetti = snapshot.val();
+      projectList.innerHTML = '';
+      if (!progetti) return (projectList.innerHTML = "<p>📭 Nessun progetto trovato.</p>");
+
+      Object.entries(progetti).forEach(([id, progetto]) => {
+        const div = document.createElement("div");
+        div.className = "project";
+        div.innerHTML = `
+          <img src="${progetto.preview}" width="100" height="75" />
+          <strong>${progetto.nome}</strong><br>
+        `;
+
+        const openBtn = document.createElement("button");
+        openBtn.textContent = "📂 Apri";
+        openBtn.onclick = () => loadProjectFirebase(id, progetto);
+
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "🗑️ Elimina";
+        delBtn.onclick = () => deleteProjectFirebase(id);
+
+        div.appendChild(openBtn);
+        div.appendChild(delBtn);
+        projectList.appendChild(div);
+      });
+    });
+}
+export function loadProjectFirebase(id, proj) {
+  if (confirm(`Vuoi aprire "${proj.nome}"?`)) {
+    loadProject(proj);
+    setCurrentProjectName(proj.nome);
+    document.getElementById("galleryModal").classList.add("hidden");
+  }
+}
+export function deleteProjectFirebase(id) {
+  const user = firebase.auth().currentUser;
+  if (!user || user.isAnonymous) return alert("⚠️ Login richiesto.");
+  if (!confirm("Vuoi davvero eliminare questo progetto?")) return;
+
+  firebase.database().ref("progetti/" + user.uid + "/" + id).remove()
+    .then(() => {
+      alert("✅ Progetto eliminato.");
+      caricaProgettiFirebase(); // aggiorna lista
+    });
 }

@@ -26,6 +26,31 @@ export function initUIControls() {
     brushDropdown.style.display = brushDropdown.style.display === "block" ? "none" : "block";
   };
 
+  downloadBtn.onclick = () => {
+    downloadDropdown.style.display=downloadDropdown.style.display === "block" ? "none" : "block";
+  }
+  document.querySelectorAll(".download-option").forEach(button => {
+    button.addEventListener("click", function () {
+      const format = this.getAttribute("value");
+      const width = window.innerWidth;
+      const height = window.innerHeight * 0.85;
+      const mergedCanvas = document.createElement("canvas");
+      mergedCanvas.width = width;
+      mergedCanvas.height = height;
+      const ctx = mergedCanvas.getContext("2d");
+      layers.forEach(layer => {
+        if (!layer.visible) return;
+        const layerEl = layer.canvas.lowerCanvasEl;
+        ctx.drawImage(layerEl, 0, 0);
+      });
+      const dataURL = mergedCanvas.toDataURL(`image/${format}`, 1.0);
+      const link = document.createElement('a');
+      link.href = dataURL;
+      link.download = `drawing.${format}`;
+      link.click();
+    });
+  })
+
   // Shape tool selection
   shapesButton.onclick = () => {
     shapeDropdown.style.display = shapeDropdown.style.display === "block" ? "none" : "block";
@@ -43,24 +68,27 @@ export function initUIControls() {
     });
   });
 
-  // Brush tool selection
   document.querySelectorAll(".brush-option").forEach(button => {
     button.addEventListener("click", () => {
-      const selected = button.getAttribute("data");
-      setIsFilling(false);
-      if (selected !== "Eraser") {
-        setCurrentBrush(selected);
-      }
-      setBrush(selected);
-      if (selected !== "Eraser") {
-        setGlobalDrawingMode(true);
-        setDrawingMode(true);
-        document.getElementById("pointerIcon").src = "./images/pencil-icon.png";
-      }
-      highlightTool("brushes_tab");
-      brushDropdown.style.display = "none";
+        const selected = button.getAttribute("data");
+        setIsFilling(false);
+        if (selected !== "Eraser") {
+            setCurrentBrush(selected);
+        }
+        setBrush(selected);
+        if (selected !== "Eraser") {
+            setGlobalDrawingMode(true);
+            setDrawingMode(true);
+            document.getElementById("pointerIcon").src = "./images/pencil-icon.png";
+        }
+        import('./canvas.js').then(({ updateCanvasVisibility }) => {
+            updateCanvasVisibility();
+        });
+        highlightTool("brushes_tab");
+        brushDropdown.style.display = "none";
     });
-  });
+});
+
 
   // Eraser tool selection
   eraserButton.onclick = () => {
@@ -177,4 +205,12 @@ function renderRecentColors() {
     };
     container.appendChild(btn);
   });
+}
+export function updateMenuHeight() {
+  const menu = document.querySelector('#menu');
+  if (menu) {
+    const height = menu.offsetHeight + 'px';
+    document.documentElement.style.setProperty('--menu-height', height);
+    console.log('Impostato --menu-height a:', height);
+  }
 }
