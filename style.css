@@ -1,10 +1,24 @@
 /* =====================================
    BASE STYLES
 ====================================== */
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+body, html {
+  width: 100%;
+  height: 100%;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: #f8f9fa;
   color: #333;
 }
@@ -13,22 +27,26 @@ body {
    HEADER & MENU
 ====================================== */
 header#menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
   background-color: #ffffffcc;
   backdrop-filter: blur(10px);
   border-bottom: 1px solid #ddd;
   display: flex;
   flex-direction: column;
   padding: 10px 20px;
-  position: sticky;
-  top: 0;
   z-index: 1000;
 }
 
 .menu-container {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   justify-content: space-between;
+  align-items: center;
   width: 100%;
+  max-width: 100%;
   gap: 20px;
   position: relative;
 }
@@ -36,8 +54,9 @@ header#menu {
 .menu-left,
 .menu-right {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 12px;
 }
 
 .logo {
@@ -88,11 +107,11 @@ button img {
 .layer-controls button:hover {
   background-color: #ddd;
 }
+
 button.tool-active {
   border: 2px solid #007bff;
   box-shadow: 0 0 0 2px #cce5ff;
 }
-
 
 /* =====================================
    COLOR PICKER
@@ -121,11 +140,7 @@ button.tool-active {
   border-radius: 50%;
 }
 
-.color-picker::-webkit-color-swatch {
-  border: none;
-  border-radius: 50%;
-}
-
+.color-picker::-webkit-color-swatch,
 .color-picker::-moz-color-swatch {
   border: none;
   border-radius: 50%;
@@ -134,6 +149,7 @@ button.tool-active {
 .color-picker::-moz-focus-inner {
   border: 0;
 }
+
 .color-history {
   display: flex;
   gap: 6px;
@@ -157,7 +173,6 @@ button.tool-active {
   transform: scale(1.2);
   border-color: #666;
 }
-
 
 /* =====================================
    SLIDER (THICKNESS)
@@ -218,6 +233,8 @@ button.tool-active {
   display: none;
   z-index: 1000;
   padding: 5px;
+  max-width: 100vw;
+  box-sizing: border-box;
 }
 
 .dropdown-content button {
@@ -237,25 +254,27 @@ button.tool-active {
    CANVAS AREA
 ====================================== */
 .canvas-container {
-  position: relative;
-  width: 100%;
-  height: calc(100vh - 120px); /* spazio sotto al menu */
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #fff;
-  overflow: hidden; /* 🔥 niente scroll */
+  position: relative;
+  width: 100%;
+  height: calc(100vh - var(--menu-height, 61px));
+  margin-top: var(--menu-height, 61px);
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 2px solid red;
 }
 
 .layer-canvas {
-  transform-origin: top left;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 0; /* 🔧 assicura che sia sotto */
-  pointer-events: none;
-  opacity: 1;
+  position: static;
+  top:30px;
+  left:2.5%;
+  border: 2px solid #000;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
+
 
 .layer-canvas.active {
   pointer-events: auto;
@@ -313,8 +332,9 @@ button.tool-active {
   background-color: #d0e6ff;
   font-weight: bold;
 }
+
 /* =====================================
-   GALLERY
+   GALLERY & MODALS
 ====================================== */
 .modal {
   position: fixed;
@@ -368,32 +388,10 @@ button.tool-active {
 .project-list .project:hover {
   background: #e0f0ff;
 }
-#exitModal .modal-content button {
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-}
 
-#exitModal .modal-content button:nth-child(1) {
-  background-color: #007bff;
-  color: white;
-}
-
-#exitModal .modal-content button:nth-child(2) {
-  background-color: #dc3545;
-  color: white;
-}
-
-#exitModal .modal-content button:nth-child(3) {
-  background-color: #6c757d;
-  color: white;
-}
-
-/* ===============================
-   MODALE GALLERIA - SAVE CONTROLS
-================================== */
+/* =====================================
+   SAVE CONTROLS
+====================================== */
 .save-controls {
   display: flex;
   gap: 10px;
@@ -434,6 +432,7 @@ button.tool-active {
 .save-confirmation.hidden {
   display: none;
 }
+
 #updateProjectBtn {
   padding: 10px 16px;
   background-color: #28a745;
@@ -447,8 +446,6 @@ button.tool-active {
 #updateProjectBtn:hover {
   background-color: #218838;
 }
-
-
 
 /* =====================================
    RESPONSIVE
