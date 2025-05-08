@@ -1,4 +1,5 @@
-// 📂 auth.js frontend completo
+const backendUrl = 'https://musebrush.onrender.com';
+
 export function authInit() {
   document.getElementById("loginBtn").onclick = loginWithEmail;
   document.getElementById("signupBtn").onclick = registerWithEmail;
@@ -16,7 +17,7 @@ export function authInit() {
 
 function loginWithEmail() {
   const email = document.getElementById("emailInput").value;
-  fetch('/api/login', {
+  fetch(`${backendUrl}/api/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email })
@@ -27,14 +28,17 @@ function loginWithEmail() {
         localStorage.setItem('userId', data.uid);
         alert(data.message);
         document.getElementById("authModal").classList.add("hidden");
-      } else alert(data.error);
-    });
+      } else {
+        alert(data.error);
+      }
+    })
+    .catch(error => alert('Errore di rete: ' + error.message));
 }
 
 function registerWithEmail() {
   const email = document.getElementById("emailInput").value;
   const password = document.getElementById("passwordInput").value;
-  fetch('/api/register', {
+  fetch(`${backendUrl}/api/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
@@ -43,15 +47,18 @@ function registerWithEmail() {
     .then(data => {
       if (data.uid) {
         alert(data.message + " Controlla la tua email.");
-      } else alert(data.error);
-    });
+      } else {
+        alert(data.error);
+      }
+    })
+    .catch(error => alert('Errore di rete: ' + error.message));
 }
 
 function loginWithGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
   firebase.auth().signInWithPopup(provider)
     .then(result => result.user.getIdToken())
-    .then(idToken => fetch('/api/googleLogin', {
+    .then(idToken => fetch(`${backendUrl}/api/googleLogin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ idToken })
@@ -62,7 +69,9 @@ function loginWithGoogle() {
         localStorage.setItem('userId', data.uid);
         alert(data.message);
         document.getElementById("authModal").classList.add("hidden");
-      } else alert(data.error);
+      } else {
+        alert(data.error);
+      }
     })
     .catch(error => alert("Errore login con Google: " + error.message));
 }
@@ -74,11 +83,12 @@ function logoutUser() {
 
 function resetPassword() {
   const email = document.getElementById("emailInput").value;
-  fetch('/api/resetPassword', {
+  fetch(`${backendUrl}/api/resetPassword`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email })
   })
     .then(res => res.json())
-    .then(data => alert(data.message || data.error));
+    .then(data => alert(data.message || data.error))
+    .catch(error => alert('Errore di rete: ' + error.message));
 }

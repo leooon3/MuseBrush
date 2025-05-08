@@ -1,4 +1,3 @@
-// 📂 index.js aggiornato backend completo
 const express = require('express');
 const cors = require('cors');
 const firebaseService = require('./firebaseService');
@@ -16,5 +15,5 @@ app.post('/api/googleLogin', firebaseService.googleLogin);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`✅ Server listening on port ${PORT}`);
 });
