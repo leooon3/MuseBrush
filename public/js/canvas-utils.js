@@ -10,8 +10,9 @@ import {
 import { renderLayerList } from './layers.js';
 
 export function setupNewCanvas() {
-  const user = window.firebase?.auth().currentUser;
-  if (!user || user.isAnonymous) {
+  const userId = localStorage.getItem('userId');
+
+  if (!userId) {
     alert("🔒 Devi essere autenticato per creare un nuovo canvas.");
     return;
   }
