@@ -55,28 +55,8 @@ function registerWithEmail() {
 }
 
 function loginWithGoogle() {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  firebase.auth().signInWithPopup(provider)
-    .then(result => result.user.getIdToken())
-    .then(idToken => fetch(`${backendUrl}/api/googleLogin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken })
-    }))
-    .then(res => res.json())
-    .then(data => {
-      if (data.uid) {
-        localStorage.setItem('userId', data.uid);
-        alert(data.message);
-        document.getElementById("authModal").classList.add("hidden");
-      } else {
-        alert(data.error);
-      }
-    })
-    .catch(error => alert("Errore login con Google: " + error.message));
+  window.location.href = `${backendUrl}/api/googleLogin`;
 }
-
-
 function logoutUser() {
   localStorage.removeItem('userId');
   alert('🚪 Disconnesso!');

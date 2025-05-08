@@ -58,15 +58,3 @@ exports.resetPassword = async (req, res) => {
     res.status(400).send({ error: 'Errore reset password: ' + err.message });
   }
 };
-
-exports.googleLogin = async (req, res) => {
-  const { idToken } = req.body;
-  console.log(`🔗 Google login verificato con idToken`);
-  try {
-    const decodedToken = await auth.verifyIdToken(idToken);
-    res.send({ uid: decodedToken.uid, message: '✅ Google login verificato!' });
-  } catch (err) {
-    console.error('❌ Errore Google login:', err.message);
-    res.status(400).send({ error: 'Errore Google login: ' + err.message });
-  }
-};

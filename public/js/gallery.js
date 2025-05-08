@@ -48,11 +48,13 @@ export function saveProjectToBackend(userId, projectName) {
 }
 
 function loadProjectsFromBackend(userId) {
+  const projectList = document.getElementById("projectList");
+  if (!projectList) return;
+  projectList.innerHTML = "<p>⏳ Caricamento...</p>";
+
   fetch(`${backendUrl}/api/loadProjects?uid=${userId}`)
     .then(res => res.json())
     .then(data => {
-      const projectList = document.getElementById("projectList");
-      if (!projectList) return;
       projectList.innerHTML = '';
       if (!data) return (projectList.innerHTML = "<p>📭 Nessun progetto trovato.</p>");
       Object.entries(data).forEach(([id, progetto]) => {
