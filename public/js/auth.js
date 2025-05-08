@@ -38,7 +38,3 @@ function updateAuthIcon(loggedIn) {
     authIcon.alt = loggedIn ? "Utente autenticato" : "Account";
   }
 }
-export function authInit() {
-  document.getElementById("googleLoginBtn").onclick = loginWithGoogle;
-  document.getElementById("logoutBtn").onclick = logoutUser;
-}
