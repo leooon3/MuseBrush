@@ -31,3 +31,5 @@ export function setShapeObject(val) { shapeObject = val; }
 export function setShapeOrigin(val) { shapeOrigin = val; }
 export function setBrushSize(val) { brushSize = val; }
 export function setCurrentProjectName(val) { currentProjectName = val; }
+export function getCurrentProjectName() {return typeof currentProjectName !== 'undefined' ? currentProjectName : null;}
+  

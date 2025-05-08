@@ -1,3 +1,4 @@
+// 📂 gallery.js aggiornato con import sicuri
 import { getActiveLayer } from './canvas.js';
 import { getCurrentCanvasState } from './storage.js';
 import { loadProject } from './projects.js';
@@ -6,13 +7,19 @@ import { setCurrentProjectName } from './state.js';
 export function initGallery() {
   document.getElementById("saveCanvasBtn").onclick = () => {
     const userId = localStorage.getItem('userId');
-    const name = document.getElementById("projectNameInput").value.trim();
+    if (!userId) return alert("🔒 Devi essere loggato per salvare.");
+    const nameInput = document.getElementById("projectNameInput");
+    const name = nameInput ? nameInput.value.trim() : "";
     if (!name) return alert("📛 Inserisci un nome progetto.");
     saveProjectToBackend(userId, name);
   };
 
   document.getElementById("galleryBtn").onclick = () => {
     const userId = localStorage.getItem('userId');
+    if (!userId) {
+      alert("🔒 Devi essere loggato per aprire la galleria.");
+      return;
+    }
     document.getElementById("galleryModal").classList.remove("hidden");
     loadProjectsFromBackend(userId);
   };
@@ -45,6 +52,7 @@ function loadProjectsFromBackend(userId) {
     .then(res => res.json())
     .then(data => {
       const projectList = document.getElementById("projectList");
+      if (!projectList) return;
       projectList.innerHTML = '';
       if (!data) return (projectList.innerHTML = "<p>📭 Nessun progetto trovato.</p>");
       Object.entries(data).forEach(([id, progetto]) => {
