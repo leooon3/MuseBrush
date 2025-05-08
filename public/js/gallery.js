@@ -22,7 +22,7 @@ export function initGallery() {
   };
 }
 
-function saveProjectToBackend(userId, projectName) {
+export function saveProjectToBackend(userId, projectName) {
   const project = {
     nome: projectName,
     layers: getCurrentCanvasState(),
