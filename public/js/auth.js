@@ -76,6 +76,7 @@ function loginWithGoogle() {
     .catch(error => alert("Errore login con Google: " + error.message));
 }
 
+
 function logoutUser() {
   localStorage.removeItem('userId');
   alert('🚪 Disconnesso!');

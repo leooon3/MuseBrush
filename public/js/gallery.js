@@ -1,15 +1,15 @@
-// 📂 gallery.js aggiornato con import sicuri
 import { getActiveLayer } from './canvas.js';
 import { getCurrentCanvasState } from './storage.js';
 import { loadProject } from './projects.js';
 import { setCurrentProjectName } from './state.js';
 
+const backendUrl = 'https://musebrush.onrender.com';
+
 export function initGallery() {
   document.getElementById("saveCanvasBtn").onclick = () => {
     const userId = localStorage.getItem('userId');
     if (!userId) return alert("🔒 Devi essere loggato per salvare.");
-    const nameInput = document.getElementById("projectNameInput");
-    const name = nameInput ? nameInput.value.trim() : "";
+    const name = document.getElementById("projectNameInput").value.trim();
     if (!name) return alert("📛 Inserisci un nome progetto.");
     saveProjectToBackend(userId, name);
   };
@@ -37,18 +37,18 @@ export function saveProjectToBackend(userId, projectName) {
     timestamp: Date.now()
   };
 
-  fetch('https://tuo-backend.onrender.com/api/saveProject', {
+  fetch(`${backendUrl}/api/saveProject`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ uid: userId, project })
   })
     .then(res => res.json())
     .then(data => alert(data.message))
-    .catch(err => alert('Errore: ' + err.message));
+    .catch(error => alert('Errore salvataggio: ' + error.message));
 }
 
 function loadProjectsFromBackend(userId) {
-  fetch(`https://tuo-backend.onrender.com/api/loadProjects?uid=${userId}`)
+  fetch(`${backendUrl}/api/loadProjects?uid=${userId}`)
     .then(res => res.json())
     .then(data => {
       const projectList = document.getElementById("projectList");
@@ -71,5 +71,5 @@ function loadProjectsFromBackend(userId) {
         projectList.appendChild(div);
       });
     })
-    .catch(err => alert('Errore caricamento progetti: ' + err.message));
+    .catch(error => alert('Errore caricamento progetti: ' + error.message));
 }
