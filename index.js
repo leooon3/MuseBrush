@@ -39,6 +39,9 @@ app.post('/api/login', firebaseService.loginUser);
 app.post('/api/resetPassword', firebaseService.resetPassword);
 
 const PORT = process.env.PORT || 3000;
+app.get('/', (req, res) => {
+  res.send('Server attivo 🚀');
+});
 app.listen(PORT, () => {
   console.log(`✅ Server listening on port ${PORT}`);
 });
