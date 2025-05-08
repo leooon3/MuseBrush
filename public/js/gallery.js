@@ -1,7 +1,7 @@
 import { getActiveLayer } from './canvas.js';
 import { getCurrentCanvasState } from './storage.js';
 import { loadProject } from './projects.js';
-import { setCurrentProjectName, getCurrentProjectId } from './state.js';
+import { setCurrentProjectName, getCurrentProjectId, setCurrentProjectId } from './state.js';
 
 const backendUrl = 'https://musebrush.onrender.com';
 
@@ -97,6 +97,7 @@ function loadProjectsFromBackend(userId) {
     .then(data => {
       projectList.innerHTML = '';
       if (!data) return showGalleryMessage("📭 Nessun progetto trovato.");
+
       Object.entries(data).forEach(([id, progetto]) => {
         const div = document.createElement("div");
         div.className = "project";
@@ -107,9 +108,7 @@ function loadProjectsFromBackend(userId) {
         openBtn.onclick = () => {
           loadProject(progetto);
           setCurrentProjectName(progetto.nome);
-          if (typeof window.setCurrentProjectId === 'function') {
-            window.setCurrentProjectId(id);
-          }
+          setCurrentProjectId(id); // ✅ salva correttamente l'ID del progetto
           document.getElementById("galleryModal").classList.add("hidden");
         };
         div.appendChild(openBtn);
