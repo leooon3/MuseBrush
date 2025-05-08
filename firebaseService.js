@@ -83,3 +83,16 @@ exports.updateProject = async (req, res) => {
     res.status(500).send({ error: 'Errore aggiornamento progetto: ' + err.message });
   }
 };
+exports.resendVerification = async (req, res) => {
+  const { email } = req.body;
+  console.log(`🔁 Reinvia verifica per: ${email}`);
+  try {
+    const link = await auth.generateEmailVerificationLink(email);
+    // Qui puoi anche usare un servizio di invio email custom (es: nodemailer), se vuoi personalizzarlo
+    // Per ora rimandiamo direttamente il link all'utente (non ideale in produzione)
+    res.send({ message: '📨 Link di verifica generato: controlla la tua email.', link });
+  } catch (err) {
+    console.error('❌ Errore invio verifica:', err.message);
+    res.status(400).send({ error: 'Errore invio verifica: ' + err.message });
+  }
+};

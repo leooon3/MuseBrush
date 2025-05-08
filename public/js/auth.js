@@ -6,6 +6,7 @@ export function authInit() {
   document.getElementById("googleLoginBtn").onclick = loginWithGoogle;
   document.getElementById("logoutBtn").onclick = logoutUser;
   document.getElementById("forgotPasswordBtn").onclick = resetPassword;
+  document.getElementById("resendVerificationBtn").onclick = resendVerification;
   document.getElementById("authToggleBtn").onclick = () => {
     document.getElementById("authModal").classList.toggle("hidden");
   };
@@ -80,7 +81,29 @@ function logoutUser() {
 
 function resetPassword() {
   const email = document.getElementById("emailInput").value;
+  if (!email) {
+    alert("📧 Inserisci l'email con cui ti sei registrato.");
+    return;
+  }
+
   fetch(`${backendUrl}/api/resetPassword`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  })
+    .then(res => res.json())
+    .then(data => alert(data.message || data.error))
+    .catch(error => alert('Errore di rete: ' + error.message));
+}
+
+function resendVerification() {
+  const email = document.getElementById("emailInput").value;
+  if (!email) {
+    alert("📧 Inserisci l'email per ricevere la verifica.");
+    return;
+  }
+
+  fetch(`${backendUrl}/api/resendVerification`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email })
