@@ -8,16 +8,16 @@ const backendUrl = 'https://musebrush.onrender.com';
 export function initGallery() {
   document.getElementById("saveCanvasBtn").onclick = () => {
     const userId = localStorage.getItem('userId');
-    if (!userId) return alert("🔒 Devi essere loggato per salvare.");
+    if (!userId) return showGalleryMessage("🔒 Devi essere loggato per salvare.");
     const name = document.getElementById("projectNameInput").value.trim();
-    if (!name) return alert("📛 Inserisci un nome progetto.");
+    if (!name) return showGalleryMessage("📛 Inserisci un nome progetto.");
     saveProjectToBackend(userId, name);
   };
 
   document.getElementById("updateProjectBtn").onclick = () => {
     const userId = localStorage.getItem('userId');
     const projectId = getCurrentProjectId();
-    if (!userId || !projectId) return alert("⚠️ Nessun progetto selezionato per aggiornare.");
+    if (!userId || !projectId) return showGalleryMessage("⚠️ Nessun progetto selezionato per aggiornare.");
     const name = document.getElementById("projectNameInput").value.trim();
     updateProjectToBackend(userId, projectId, name);
   };
@@ -25,7 +25,7 @@ export function initGallery() {
   document.getElementById("galleryBtn").onclick = () => {
     const userId = localStorage.getItem('userId');
     if (!userId) {
-      alert("🔒 Devi essere loggato per aprire la galleria.");
+      showGalleryMessage("🔒 Devi essere loggato per aprire la galleria.");
       return;
     }
     document.getElementById("galleryModal").classList.remove("hidden");
@@ -58,8 +58,8 @@ export function saveProjectToBackend(userId, projectName) {
       throw new Error('Risposta non JSON dal server');
     }
   })
-  .then(data => alert(data.message))
-  .catch(error => alert('Errore salvataggio: ' + error.message));
+  .then(data => showGalleryMessage(data.message))
+  .catch(error => showGalleryMessage('❌ Errore salvataggio: ' + error.message));
 }
 
 function updateProjectToBackend(userId, projectId, projectName) {
@@ -83,8 +83,8 @@ function updateProjectToBackend(userId, projectId, projectName) {
       throw new Error('Risposta non JSON dal server');
     }
   })
-  .then(data => alert(data.message))
-  .catch(error => alert('Errore aggiornamento: ' + error.message));
+  .then(data => showGalleryMessage(data.message))
+  .catch(error => showGalleryMessage('❌ Errore aggiornamento: ' + error.message));
 }
 
 function loadProjectsFromBackend(userId) {
@@ -96,7 +96,7 @@ function loadProjectsFromBackend(userId) {
     .then(res => res.json())
     .then(data => {
       projectList.innerHTML = '';
-      if (!data) return (projectList.innerHTML = "<p>📭 Nessun progetto trovato.</p>");
+      if (!data) return showGalleryMessage("📭 Nessun progetto trovato.");
       Object.entries(data).forEach(([id, progetto]) => {
         const div = document.createElement("div");
         div.className = "project";
@@ -107,7 +107,6 @@ function loadProjectsFromBackend(userId) {
         openBtn.onclick = () => {
           loadProject(progetto);
           setCurrentProjectName(progetto.nome);
-          // IMPORTANTE: Salva anche l'id del progetto
           if (typeof window.setCurrentProjectId === 'function') {
             window.setCurrentProjectId(id);
           }
@@ -117,5 +116,12 @@ function loadProjectsFromBackend(userId) {
         projectList.appendChild(div);
       });
     })
-    .catch(error => alert('Errore caricamento progetti: ' + error.message));
+    .catch(error => showGalleryMessage('❌ Errore caricamento progetti: ' + error.message));
+}
+
+function showGalleryMessage(message) {
+  const projectList = document.getElementById("projectList");
+  if (projectList) {
+    projectList.innerHTML = `<p style="padding:10px; text-align:center;">${message}</p>`;
+  }
 }
