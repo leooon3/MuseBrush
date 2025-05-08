@@ -1,5 +1,4 @@
 import { authInit } from './auth.js';
-import { initAuthUI } from './auth-ui.js';
 import { initUIControls } from './ui.js';
 import { initLayerPanel } from './layers.js';
 import { initStorage } from './storage.js';
@@ -22,7 +21,6 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById("newCanvasBtn").onclick = setupNewCanvas;
 
   authInit();
-  initAuthUI();
   initUIControls();
   initLayerPanel();
   initStorage();
