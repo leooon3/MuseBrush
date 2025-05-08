@@ -1,4 +1,3 @@
-// canvas-utils.js
 import { layers } from './canvas.js';
 import { initLayers } from './canvas.js';
 import { setDrawingMode, setBrush } from './tool.js';
@@ -11,7 +10,7 @@ import {
 import { renderLayerList } from './layers.js';
 
 export function setupNewCanvas() {
-  const user = firebase.auth().currentUser;
+  const user = window.firebase?.auth().currentUser;
   if (!user || user.isAnonymous) {
     alert("🔒 Devi essere autenticato per creare un nuovo canvas.");
     return;

@@ -263,14 +263,12 @@ button.tool-active {
   margin-top: var(--menu-height, 61px);
   box-sizing: border-box;
   overflow: hidden;
-  border: 2px solid red;
+  background-color: #f9f9f9;
 }
-
 .layer-canvas {
   position: static;
   top:30px;
   left:2.5%;
-  border: 2px solid #000;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
