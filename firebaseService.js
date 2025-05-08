@@ -58,3 +58,28 @@ exports.resetPassword = async (req, res) => {
     res.status(400).send({ error: 'Errore reset password: ' + err.message });
   }
 };
+
+exports.updateProject = async (req, res) => {
+  const { uid, projectId, project } = req.body;
+  console.log(`✏️ Aggiornamento progetto ${projectId} per UID: ${uid}`);
+
+  if (!uid || !projectId || !project) {
+    console.error('❌ Richiesta incompleta per aggiornamento');
+    return res.status(400).send({ error: 'uid, projectId e project sono richiesti' });
+  }
+
+  try {
+    const projectRef = db.ref(`progetti/${uid}/${projectId}`);
+    const snapshot = await projectRef.once('value');
+
+    if (!snapshot.exists()) {
+      return res.status(404).send({ error: 'Progetto non trovato' });
+    }
+
+    await projectRef.update(project);
+    res.send({ message: '✅ Progetto aggiornato con successo!' });
+  } catch (err) {
+    console.error('❌ Errore aggiornamento progetto:', err.message);
+    res.status(500).send({ error: 'Errore aggiornamento progetto: ' + err.message });
+  }
+};

@@ -1,7 +1,7 @@
 import { getActiveLayer } from './canvas.js';
 import { getCurrentCanvasState } from './storage.js';
 import { loadProject } from './projects.js';
-import { setCurrentProjectName } from './state.js';
+import { setCurrentProjectName, getCurrentProjectId } from './state.js';
 
 const backendUrl = 'https://musebrush.onrender.com';
 
@@ -12,6 +12,14 @@ export function initGallery() {
     const name = document.getElementById("projectNameInput").value.trim();
     if (!name) return alert("📛 Inserisci un nome progetto.");
     saveProjectToBackend(userId, name);
+  };
+
+  document.getElementById("updateProjectBtn").onclick = () => {
+    const userId = localStorage.getItem('userId');
+    const projectId = getCurrentProjectId();
+    if (!userId || !projectId) return alert("⚠️ Nessun progetto selezionato per aggiornare.");
+    const name = document.getElementById("projectNameInput").value.trim();
+    updateProjectToBackend(userId, projectId, name);
   };
 
   document.getElementById("galleryBtn").onclick = () => {
@@ -42,9 +50,41 @@ export function saveProjectToBackend(userId, projectName) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ uid: userId, project })
   })
-    .then(res => res.json())
-    .then(data => alert(data.message))
-    .catch(error => alert('Errore salvataggio: ' + error.message));
+  .then(async res => {
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return res.json();
+    } else {
+      throw new Error('Risposta non JSON dal server');
+    }
+  })
+  .then(data => alert(data.message))
+  .catch(error => alert('Errore salvataggio: ' + error.message));
+}
+
+function updateProjectToBackend(userId, projectId, projectName) {
+  const project = {
+    nome: projectName,
+    layers: getCurrentCanvasState(),
+    preview: getActiveLayer().canvas.toDataURL({ format: "jpeg", quality: 0.6, multiplier: 0.25 }),
+    timestamp: Date.now()
+  };
+
+  fetch(`${backendUrl}/api/updateProject`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uid: userId, projectId, project })
+  })
+  .then(async res => {
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return res.json();
+    } else {
+      throw new Error('Risposta non JSON dal server');
+    }
+  })
+  .then(data => alert(data.message))
+  .catch(error => alert('Errore aggiornamento: ' + error.message));
 }
 
 function loadProjectsFromBackend(userId) {
@@ -67,6 +107,10 @@ function loadProjectsFromBackend(userId) {
         openBtn.onclick = () => {
           loadProject(progetto);
           setCurrentProjectName(progetto.nome);
+          // IMPORTANTE: Salva anche l'id del progetto
+          if (typeof window.setCurrentProjectId === 'function') {
+            window.setCurrentProjectId(id);
+          }
           document.getElementById("galleryModal").classList.add("hidden");
         };
         div.appendChild(openBtn);
