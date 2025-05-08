@@ -1,7 +1,7 @@
 // ================================
 // 9. Exit Modal & Window Events
 // ================================
-import { salvaProgettoFirebase } from './gallery.js';
+import { saveProjectToBackend } from './gallery.js';
 
 export function initExitHandlers() {
   window.addEventListener("beforeunload", function (e) {
@@ -19,12 +19,12 @@ export function initExitHandlers() {
   };
   
   document.getElementById("confirmSaveExitBtn").onclick = () => {
+    const userId = localStorage.getItem('userId');
     const name = prompt("Inserisci il nome del progetto prima di uscire:", currentProjectName || "progetto-musebrush");
     if (name) {
-      salvaProgettoFirebase(name);
+      saveProjectToBackend(userId, name);
       window.removeEventListener("beforeunload", () => {});
       window.location.reload();
     }
   };
-  
 }
