@@ -7,7 +7,7 @@ const firebaseService = require('./firebaseService');
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '40mb' }));
 app.use(session({ secret: 'supersecret', resave: false, saveUninitialized: true }));
 app.use(passport.initialize());
 app.use(passport.session());
