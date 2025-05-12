@@ -4,6 +4,8 @@ const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const firebaseService = require('./firebaseService');
+const mongoService = require('./mongodbService');
+
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
@@ -32,14 +34,14 @@ app.get('/api/googleCallback',
     res.redirect(`${process.env.FRONTEND_URL}/?uid=${req.user.uid}`);
   });
 
-app.post('/api/saveProject', firebaseService.saveProject);
-app.get('/api/loadProjects', firebaseService.loadProjects);
+app.post('/api/saveProject', mongoService.saveProject);
+app.get('/api/loadProjects', mongoService.loadProjects);
+app.put('/api/updateProject', mongoService.updateProject);
+app.delete('/api/deleteProject', mongoService.deleteProject);
 app.post('/api/register', firebaseService.registerUser);
 app.post('/api/login', firebaseService.loginUser);
 app.post('/api/resetPassword', firebaseService.resetPassword);
 app.post('/api/resendVerification', firebaseService.resendVerification);
-app.put('/api/updateProject', firebaseService.updateProject);
-app.delete('/api/deleteProject', firebaseService.deleteProject);
 
 
 const PORT = process.env.PORT || 3000;

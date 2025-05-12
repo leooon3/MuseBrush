@@ -8,21 +8,6 @@ admin.initializeApp({
 
 const db = admin.database();
 const auth = admin.auth();
-
-exports.saveProject = async (req, res) => {
-  const { uid, project } = req.body;
-  console.log(`💾 Salvataggio progetto per UID: ${uid}`);
-  await db.ref(`progetti/${uid}`).push(project);
-  res.json({ message: '✅ Progetto salvato!' });
-};
-
-exports.loadProjects = async (req, res) => {
-  const { uid } = req.query;
-  console.log(`📥 Caricamento progetti per UID: ${uid}`);
-  const snapshot = await db.ref(`progetti/${uid}`).once('value');
-  res.json(snapshot.val());
-};
-
 exports.registerUser = async (req, res) => {
   const { email, password } = req.body;
   console.log(`👤 Registrazione utente email: ${email}`);
@@ -58,7 +43,49 @@ exports.resetPassword = async (req, res) => {
     res.status(400).json({ error: 'Errore reset password: ' + err.message });
   }
 };
+exports.resendVerification = async (req, res) => {
+  const { email } = req.body;
+  console.log(`🔁 Reinvia verifica per: ${email}`);
+  try {
+    const link = await auth.generateEmailVerificationLink(email);
+    // Qui puoi anche usare un servizio di invio email custom (es: nodemailer), se vuoi personalizzarlo
+    // Per ora rimandiamo direttamente il link all'utente (non ideale in produzione)
+    res.json({ message: '📨 Link di verifica generato: controlla la tua email.', link });
+  } catch (err) {
+    console.error('❌ Errore invio verifica:', err.message);
+    res.status(400).json({ error: 'Errore invio verifica: ' + err.message });
+  }
+};
+/*
+exports.deleteProject = async (req, res) => {
+  const { uid, projectId } = req.body;
+  console.log(`🗑️ Eliminazione progetto ${projectId} per UID: ${uid}`);
 
+  if (!uid || !projectId) {
+    return res.status(400).json({ error: 'uid e projectId sono richiesti' });
+  }
+
+  try {
+    await admin.database().ref(`progetti/${uid}/${projectId}`).remove();
+    res.json({ message: '✅ Progetto eliminato con successo!' });
+  } catch (err) {
+    console.error('❌ Errore eliminazione progetto:', err.message);
+    res.status(500).json({ error: 'Errore eliminazione progetto: ' + err.message });
+  }
+};
+exports.saveProject = async (req, res) => {
+  const { uid, project } = req.body;
+  console.log(`💾 Salvataggio progetto per UID: ${uid}`);
+  await db.ref(`progetti/${uid}`).push(project);
+  res.json({ message: '✅ Progetto salvato!' });
+};
+
+exports.loadProjects = async (req, res) => {
+  const { uid } = req.query;
+  console.log(`📥 Caricamento progetti per UID: ${uid}`);
+  const snapshot = await db.ref(`progetti/${uid}`).once('value');
+  res.json(snapshot.val());
+};
 exports.updateProject = async (req, res) => {
   const { uid, projectId, project } = req.body;
   console.log(`✏️ Aggiornamento progetto ${projectId} per UID: ${uid}`);
@@ -83,32 +110,5 @@ exports.updateProject = async (req, res) => {
     res.status(500).json({ error: 'Errore aggiornamento progetto: ' + err.message });
   }
 };
-exports.resendVerification = async (req, res) => {
-  const { email } = req.body;
-  console.log(`🔁 Reinvia verifica per: ${email}`);
-  try {
-    const link = await auth.generateEmailVerificationLink(email);
-    // Qui puoi anche usare un servizio di invio email custom (es: nodemailer), se vuoi personalizzarlo
-    // Per ora rimandiamo direttamente il link all'utente (non ideale in produzione)
-    res.json({ message: '📨 Link di verifica generato: controlla la tua email.', link });
-  } catch (err) {
-    console.error('❌ Errore invio verifica:', err.message);
-    res.status(400).json({ error: 'Errore invio verifica: ' + err.message });
-  }
-};
-exports.deleteProject = async (req, res) => {
-  const { uid, projectId } = req.body;
-  console.log(`🗑️ Eliminazione progetto ${projectId} per UID: ${uid}`);
 
-  if (!uid || !projectId) {
-    return res.status(400).json({ error: 'uid e projectId sono richiesti' });
-  }
-
-  try {
-    await admin.database().ref(`progetti/${uid}/${projectId}`).remove();
-    res.json({ message: '✅ Progetto eliminato con successo!' });
-  } catch (err) {
-    console.error('❌ Errore eliminazione progetto:', err.message);
-    res.status(500).json({ error: 'Errore eliminazione progetto: ' + err.message });
-  }
-};
+*/
