@@ -3,24 +3,22 @@ import { attachCanvasEvents } from './events.js';
 import { setCurrentProjectName, setActiveLayerIndex } from './state.js';
 import { updateMenuHeight } from './ui.js';
 
+// 👉 Aggiungi questa funzione se non è già esportata da canvas.js
+import { createBackgroundLayer } from './canvas.js';
 
 export function loadProject(proj) {
   const container = document.querySelector('.canvas-container');
   container.innerHTML = '';
 
-  const overlay = document.createElement('canvas');
-  overlay.id = 'eraser-preview';
-  overlay.style.position = 'absolute';
-  overlay.style.top = 0;
-  overlay.style.left = 0;
-  overlay.style.pointerEvents = 'none';
-  overlay.style.zIndex = 9999;
-  container.appendChild(overlay);
+  // ✅ Sfondo separato
+  createBackgroundLayer(container);
 
+  // Pulisci i layer e stato
   layers.length = 0;
   setActiveLayerIndex(0);
   setCurrentProjectName(proj.name);
 
+  // ✅ Carica ciascun layer normale
   proj.layers.forEach((layerData, index) => {
     const layerCanvasEl = document.createElement('canvas');
     layerCanvasEl.classList.add('layer-canvas');
@@ -31,9 +29,10 @@ export function loadProject(proj) {
     layerCanvasEl.height = originalHeight;
 
     const canvas = new fabric.Canvas(layerCanvasEl, {
-      backgroundColor: index === 0 ? 'white' : 'transparent',
+      backgroundColor: 'transparent',
       width: originalWidth,
-      height: originalHeight
+      height: originalHeight,
+      preserveObjectStacking: true
     });
 
     container.appendChild(canvas.lowerCanvasEl);
@@ -51,7 +50,7 @@ export function loadProject(proj) {
 
     canvas.loadFromJSON(layerData.json, () => {
       canvas.getObjects().forEach(obj => {
-        // Rimuoviamo fill errati da linee, rettangoli, cerchi e poligoni
+        // Rimuove fill indesiderati
         if (
           (obj.type === 'line' ||
            obj.type === 'rect' ||
@@ -66,7 +65,6 @@ export function loadProject(proj) {
       fitCanvasToContainer(canvas);
       attachCanvasEvents(canvas);
     });
-    
 
     canvas.getObjects().forEach(obj => {
       if (obj.type === 'path') {
@@ -76,6 +74,5 @@ export function loadProject(proj) {
   });
 
   updateCanvasVisibility();
-updateMenuHeight();
-
+  updateMenuHeight();
 }

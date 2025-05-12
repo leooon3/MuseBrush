@@ -11,25 +11,17 @@ import { renderLayerList } from './layers.js';
 
 export function setupNewCanvas() {
   const userId = localStorage.getItem('userId');
-
   if (!userId) {
     alert("🔒 Devi essere autenticato per creare un nuovo canvas.");
     return;
   }
 
-  const confirmReset = confirm("⚠️ Vuoi davvero creare un nuovo canvas? Tutte le modifiche attuali andranno perse.");
-  if (!confirmReset) return;
+  if (!confirm("⚠️ Vuoi davvero creare un nuovo canvas? Tutte le modifiche attuali andranno perse.")) return;
 
-  const container = document.querySelector('.canvas-container');
-  if (container) {
-    container.innerHTML = '';
-  }
+  initLayers(1); // include già lo sfondo
 
-  layers.length = 0;
   setActiveLayerIndex(0);
   setCurrentProjectName(null);
-
-  initLayers(1);
   renderLayerList();
   setDrawingMode(globalDrawingMode);
   setBrush(currentBrush);

@@ -13,23 +13,16 @@ import { activeLayerIndex } from './state.js';
 export const layers = [];
 const DEFAULT_CANVAS_WIDTH = 1920;
 const DEFAULT_CANVAS_HEIGHT = 1080;
+let backgroundCanvas = null;
 export function getActiveLayer() {
   return layers[activeLayerIndex];
 }
 
 export function initLayers(initialLayerCount = 1) {
-  const overlay = document.createElement('canvas');
-  overlay.id = 'eraser-preview';
-  overlay.style.position = 'absolute';
-  overlay.style.top = 0;
-  overlay.style.left = 0;
-  overlay.style.pointerEvents = 'none';
-  overlay.width = DEFAULT_CANVAS_WIDTH;
-  overlay.height = DEFAULT_CANVAS_HEIGHT;
-  overlay.style.zIndex = 9999;
-  document.querySelector('.canvas-container').appendChild(overlay);
-
   const container = document.querySelector('.canvas-container');
+  container.innerHTML = '';
+
+  createBackgroundLayer(container); // 🎯 Sfondo prima di tutto
 
   for (let i = 0; i < initialLayerCount; i++) {
     createLayer(container, i);
@@ -40,7 +33,44 @@ export function initLayers(initialLayerCount = 1) {
     setDrawingMode(true);
     setBrush(currentBrush);
   });
+
+  // Overlay per anteprima gomma
+  const overlay = document.createElement('canvas');
+  overlay.id = 'eraser-preview';
+  Object.assign(overlay.style, {
+    position: 'absolute',
+    top: 0, left: 0,
+    pointerEvents: 'none',
+    zIndex: 9999
+  });
+  overlay.width = DEFAULT_CANVAS_WIDTH;
+  overlay.height = DEFAULT_CANVAS_HEIGHT;
+  container.appendChild(overlay);
 }
+
+export function createBackgroundLayer(container) {
+  backgroundCanvas = new fabric.Canvas(document.createElement('canvas'), {
+    backgroundColor: 'white',
+    isDrawingMode: false,
+    width: DEFAULT_CANVAS_WIDTH,
+    height: DEFAULT_CANVAS_HEIGHT,
+    selection: false
+  });
+
+  backgroundCanvas.lowerCanvasEl.style.zIndex = 0;
+  backgroundCanvas.upperCanvasEl.style.zIndex = 0;
+  backgroundCanvas.lowerCanvasEl.style.pointerEvents = 'none';
+  backgroundCanvas.upperCanvasEl.style.pointerEvents = 'none';
+
+  backgroundCanvas.lowerCanvasEl.classList.add('background-canvas');
+  backgroundCanvas.upperCanvasEl.classList.add('background-canvas');
+
+  container.appendChild(backgroundCanvas.lowerCanvasEl);
+  container.appendChild(backgroundCanvas.upperCanvasEl);
+
+  fitCanvasToContainer(backgroundCanvas);
+}
+
 
 export function createLayer(container, index) {
   if (!container) {
@@ -111,16 +141,23 @@ export function updateCanvasStacking() {
   const container = document.querySelector('.canvas-container');
   container.innerHTML = '';
 
+  // 🔁 Aggiungi sfondo prima
+  if (backgroundCanvas) {
+    container.appendChild(backgroundCanvas.lowerCanvasEl);
+    container.appendChild(backgroundCanvas.upperCanvasEl);
+  }
+
   const overlay = document.getElementById('eraser-preview');
   if (overlay) container.appendChild(overlay);
 
-  layers.forEach((layer, i) => {
+  layers.forEach((layer) => {
     container.appendChild(layer.canvas.lowerCanvasEl);
     container.appendChild(layer.canvas.upperCanvasEl);
   });
 
   updateCanvasVisibility();
 }
+
 
 export function fitCanvasToContainer(canvas) {
   const container = document.querySelector('.canvas-container');

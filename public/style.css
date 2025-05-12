@@ -277,6 +277,13 @@ button.tool-active {
 .layer-canvas.active {
   pointer-events: auto;
 }
+.background-canvas {
+  position: static;
+  z-index: 0;
+  pointer-events: none;
+  filter: none;
+  box-shadow: none;
+}
 
 /* =====================================
    PANEL: LAYERS

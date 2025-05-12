@@ -141,14 +141,15 @@ export function initUIControls() {
   document.getElementById("undoBtn").onclick = undo;
   document.getElementById("redoBtn").onclick = redo;
 
-  document.getElementById("clearBtn").onclick = () => {
-    layers.forEach((layer, i) => {
-      layer.canvas.clear();
-      layer.canvas.backgroundColor = i === 0 ? "white" : "transparent";
-      saveState();
-      layer.canvas.renderAll();
-    });
-  };
+document.getElementById("clearBtn").onclick = () => {
+  layers.forEach((layer, i) => {
+    layer.canvas.clear();
+    layer.canvas.backgroundColor = 'transparent';
+    saveState();
+    layer.canvas.renderAll();
+  });
+};
+
 
   // Text tool
   document.getElementById("text_tab").onclick = () => {
