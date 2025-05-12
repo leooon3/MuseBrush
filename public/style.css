@@ -193,7 +193,7 @@ button.tool-active {
   writing-mode: vertical-lr;
   width: 8px;
   height: 150px;
-  background: linear-gradient(to bottom, #3f3f3f, #1f1f1f);
+  background: linear-gradient(to bottom, #9d9d9d, #ffffff);
   border-radius: 5px;
   outline: none;
   opacity: 0.8;
@@ -209,7 +209,7 @@ button.tool-active {
   appearance: none;
   width: 20px;
   height: 20px;
-  background: linear-gradient(to bottom, #252525, #141414);
+  background: linear-gradient(to bottom, #9d9d9d, #ffffff);
   border-radius: 50%;
   cursor: pointer;
 }
