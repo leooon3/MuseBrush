@@ -1,7 +1,7 @@
 // ================================
 // 5. Layers: Add, Select, Rename, Delete
 // ================================
-import { createLayer, updateCanvasVisibility } from './canvas.js';
+import { createLayer, updateCanvasVisibility , updateCanvasStacking} from './canvas.js';
 import { setBrush } from './tool.js';
 import {
   activeLayerIndex,
@@ -53,7 +53,27 @@ export function renderLayerList() {
 
       const controls = document.createElement('div');
       controls.className = 'layer-controls';
+      const upBtn = document.createElement('button');
+      upBtn.textContent = '⬆️';
+      upBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (index > 0) {
+          [layers[index], layers[index - 1]] = [layers[index - 1], layers[index]];
+          renderLayerList();
+          updateCanvasStacking();
+        }
+      };
 
+      const downBtn = document.createElement('button');
+      downBtn.textContent = '⬇️';
+      downBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (index < layers.length - 1) {
+          [layers[index], layers[index + 1]] = [layers[index + 1], layers[index]];
+          renderLayerList();
+          updateCanvasStacking();
+        }
+      };
       const visibilityBtn = document.createElement('button');
       visibilityBtn.textContent = layer.visible ? '👁️' : '🚫';
       visibilityBtn.onclick = (e) => {
@@ -79,7 +99,8 @@ export function renderLayerList() {
           setBrush(currentBrush);
         }
       };
-
+      controls.appendChild(upBtn);
+      controls.appendChild(downBtn);
       controls.appendChild(visibilityBtn);
       controls.appendChild(deleteBtn);
       li.appendChild(nameSpan);

@@ -107,6 +107,20 @@ export function updateCanvasVisibility() {
     });
   });
 }
+export function updateCanvasStacking() {
+  const container = document.querySelector('.canvas-container');
+  container.innerHTML = '';
+
+  const overlay = document.getElementById('eraser-preview');
+  if (overlay) container.appendChild(overlay);
+
+  layers.forEach((layer, i) => {
+    container.appendChild(layer.canvas.lowerCanvasEl);
+    container.appendChild(layer.canvas.upperCanvasEl);
+  });
+
+  updateCanvasVisibility();
+}
 
 export function fitCanvasToContainer(canvas) {
   const container = document.querySelector('.canvas-container');
