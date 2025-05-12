@@ -1,60 +1,54 @@
-require('dotenv').config();
-const admin = require('firebase-admin');
-const { MongoClient } = require('mongodb');
+// 📁 mongodbService.js
+const { MongoClient, ObjectId } = require('mongodb');
 
-// 🔐 File chiave Firebase
-const serviceAccount = require('./serviceAccountKey.json');
+const uri = process.env.MONGODB_URI;
+const client = new MongoClient(uri);
+let db;
 
-// ✅ Inizializza Firebase Admin SDK
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://musebrush-app-default-rtdb.europe-west1.firebasedatabase.app'
-});
-
-// ✅ Connessione MongoDB
-const mongoClient = new MongoClient(process.env.MONGODB_URI);
-
-async function migrate() {
-  try {
-    console.log("🔗 Connessione a Firebase e MongoDB...");
-
-    const dbRef = admin.database().ref('progetti');
-    const snapshot = await dbRef.once('value');
-    const data = snapshot.val();
-
-    if (!data) {
-      console.log("📭 Nessun progetto trovato in Firebase.");
-      return;
-    }
-
-    await mongoClient.connect();
-    const mongoDb = mongoClient.db('musebrush');
-    const col = mongoDb.collection('progetti');
-
-    const entries = Object.entries(data); // [uid, { projectId: {projectData} }]
-
-    for (const [uid, progettiUtente] of entries) {
-      for (const progetto of Object.values(progettiUtente)) {
-        const record = {
-          uid,
-          nome: progetto.nome || "Senza nome",
-          layers: progetto.layers || [],
-          preview: progetto.preview || null,
-          timestamp: progetto.timestamp || Date.now()
-        };
-
-        await col.insertOne(record);
-        console.log(`✅ Migrato progetto "${record.nome}" per utente ${uid}`);
-      }
-    }
-
-    console.log("🎉 Migrazione completata con successo!");
-  } catch (err) {
-    console.error("❌ Errore durante la migrazione:", err);
-  } finally {
-    await mongoClient.close();
-    process.exit();
+async function connect() {
+  if (!db) {
+    await client.connect();
+    db = client.db("musebrush"); // nome database
   }
+  return db.collection("progetti");
 }
 
-migrate();
+exports.saveProject = async (req, res) => {
+  const { uid, project } = req.body;
+  const col = await connect();
+  const result = await col.insertOne({ uid, ...project });
+  res.json({ message: '✅ Progetto salvato!', id: result.insertedId });
+};
+
+exports.loadProjects = async (req, res) => {
+  const { uid } = req.query;
+  const col = await connect();
+  const results = await col.find({ uid }).toArray();
+  const mapped = {};
+  results.forEach(p => {
+    mapped[p._id] = {
+      nome: p.nome,
+      layers: p.layers,
+      preview: p.preview,
+      timestamp: p.timestamp
+    };
+  });
+  res.json(mapped);
+};
+
+exports.updateProject = async (req, res) => {
+  const { uid, projectId, project } = req.body;
+  const col = await connect();
+  const result = await col.updateOne(
+    { _id: new ObjectId(projectId), uid },
+    { $set: project }
+  );
+  res.json({ message: '✅ Progetto aggiornato!' });
+};
+
+exports.deleteProject = async (req, res) => {
+  const { uid, projectId } = req.body;
+  const col = await connect();
+  await col.deleteOne({ _id: new ObjectId(projectId), uid });
+  res.json({ message: '✅ Progetto eliminato!' });
+};
