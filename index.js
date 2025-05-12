@@ -39,6 +39,8 @@ app.post('/api/login', firebaseService.loginUser);
 app.post('/api/resetPassword', firebaseService.resetPassword);
 app.post('/api/resendVerification', firebaseService.resendVerification);
 app.put('/api/updateProject', firebaseService.updateProject);
+app.delete('/api/deleteProject', firebaseService.deleteProject);
+
 
 const PORT = process.env.PORT || 3000;
 app.get('/', (req, res) => {

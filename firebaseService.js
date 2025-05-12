@@ -96,3 +96,19 @@ exports.resendVerification = async (req, res) => {
     res.status(400).json({ error: 'Errore invio verifica: ' + err.message });
   }
 };
+exports.deleteProject = async (req, res) => {
+  const { uid, projectId } = req.body;
+  console.log(`🗑️ Eliminazione progetto ${projectId} per UID: ${uid}`);
+
+  if (!uid || !projectId) {
+    return res.status(400).json({ error: 'uid e projectId sono richiesti' });
+  }
+
+  try {
+    await admin.database().ref(`progetti/${uid}/${projectId}`).remove();
+    res.json({ message: '✅ Progetto eliminato con successo!' });
+  } catch (err) {
+    console.error('❌ Errore eliminazione progetto:', err.message);
+    res.status(500).json({ error: 'Errore eliminazione progetto: ' + err.message });
+  }
+};

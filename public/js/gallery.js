@@ -108,10 +108,19 @@ function loadProjectsFromBackend(userId) {
         openBtn.onclick = () => {
           loadProject(progetto);
           setCurrentProjectName(progetto.nome);
-          setCurrentProjectId(id); // ✅ salva correttamente l'ID del progetto
+          setCurrentProjectId(id);
           document.getElementById("galleryModal").classList.add("hidden");
         };
         div.appendChild(openBtn);
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "🗑️ Elimina";
+        deleteBtn.style.marginLeft = "5px";
+        deleteBtn.onclick = () => {
+          if (confirm(`Vuoi davvero eliminare il progetto "${progetto.nome}"?`)) {
+            deleteProjectFromBackend(userId, id);
+          }
+        };
+        div.appendChild(deleteBtn);
         projectList.appendChild(div);
       });
     })
@@ -123,4 +132,24 @@ function showGalleryMessage(message) {
   if (projectList) {
     projectList.innerHTML = `<p style="padding:10px; text-align:center;">${message}</p>`;
   }
+}
+function deleteProjectFromBackend(userId, projectId) {
+  fetch(`${backendUrl}/api/deleteProject`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uid: userId, projectId })
+  })
+    .then(async res => {
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return res.json();
+      } else {
+        throw new Error('Risposta non JSON dal server');
+      }
+    })
+    .then(data => {
+      showGalleryMessage(data.message);
+      loadProjectsFromBackend(userId); // aggiorna lista
+    })
+    .catch(error => showGalleryMessage('❌ Errore eliminazione: ' + error.message));
 }
