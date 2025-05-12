@@ -80,7 +80,7 @@ export function createLayer(container, index) {
 
   const layerCanvas = new fabric.Canvas(document.createElement('canvas'), {
     isDrawingMode: index === 1,
-    backgroundColor: index === 0 ? 'white' : 'transparent',
+    backgroundColor: 'transparent',
     preserveObjectStacking: true,
     width: DEFAULT_CANVAS_WIDTH,
     height: DEFAULT_CANVAS_HEIGHT
