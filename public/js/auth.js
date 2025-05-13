@@ -122,6 +122,10 @@ function loginWithEmail() {
     })
     .catch(error => alert('Errore di rete: ' + error.message));
 }
+function loginWithGoogle() {
+  window.location.href = `${backendUrl}/api/googleLogin`;
+}
+
 
 function logoutUser() {
   localStorage.removeItem('userId');

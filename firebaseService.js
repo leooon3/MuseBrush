@@ -1,4 +1,6 @@
 const admin = require('firebase-admin');
+const nodemailer = require('nodemailer');
+
 const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
 
 admin.initializeApp({
@@ -9,6 +11,18 @@ admin.initializeApp({
 const db = admin.database();
 const auth = admin.auth();
 
+// ✉️ Configurazione nodemailer da variabili .env
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT),
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
+
+// 👤 Registrazione utente
 exports.registerUser = async (req, res) => {
   const { email, password } = req.body;
   console.log(`👤 Registrazione utente email: ${email}`);
@@ -21,6 +35,7 @@ exports.registerUser = async (req, res) => {
   }
 };
 
+// 🔐 Login (solo verifica se l'utente esiste)
 exports.loginUser = async (req, res) => {
   const { email } = req.body;
   console.log(`🔑 Login utente email: ${email}`);
@@ -33,39 +48,65 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-exports.resetPassword = async (req, res) => {
-  console.log("💬 Ricevuto resetPassword:", req.body);
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "Email mancante nella richiesta" });
-
-  try {
-    const link = await auth.generatePasswordResetLink(email);
-    console.log("✅ Link reset password generato:", link);
-    res.json({ message: "🔗 Link reset generato correttamente", link });
-  } catch (err) {
-    console.error("❌ Errore reset password:", err.message);
-    res.status(400).json({ error: "Errore reset password: " + err.message });
-  }
-};
-
+// 🔁 Email di verifica personalizzata
 exports.resendVerification = async (req, res) => {
-  console.log("💬 Ricevuto resendVerification:", req.body);
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "Email mancante nella richiesta" });
 
   try {
     const link = await auth.generateEmailVerificationLink(email);
-    console.log("✅ Link verifica generato:", link);
-    res.json({ message: "📨 Link di verifica generato", link });
+
+    await transporter.sendMail({
+      from: process.env.FROM_EMAIL,
+      to: email,
+      subject: "Verify your email for MuseBrush",
+      html: `
+        <p>Hello,</p>
+        <p>Follow this link to verify your email address:</p>
+        <p><a href="${link}">${link}</a></p>
+        <p>If you didn’t ask to verify this address, you can ignore this email.</p>
+        <p>Thanks,<br>MuseBrush team</p>
+      `
+    });
+
+    console.log(`📨 Email di verifica inviata a ${email}`);
+    res.json({ message: "📨 Email di verifica inviata con successo." });
   } catch (err) {
     console.error("❌ Errore invio verifica:", err.message);
     res.status(400).json({ error: "Errore invio verifica: " + err.message });
   }
 };
 
+// 🔒 Email reset password personalizzata
+exports.resetPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: "Email mancante nella richiesta" });
 
+  try {
+    const link = await auth.generatePasswordResetLink(email);
 
+    await transporter.sendMail({
+      from: process.env.FROM_EMAIL,
+      to: email,
+      subject: "Reset your password for MuseBrush",
+      html: `
+        <p>Hello,</p>
+        <p>Follow this link to reset your MuseBrush password:</p>
+        <p><a href="${link}">${link}</a></p>
+        <p>If you didn’t ask to reset your password, you can ignore this email.</p>
+        <p>Thanks,<br>MuseBrush team</p>
+      `
+    });
 
+    console.log(`📨 Email di reset inviata a ${email}`);
+    res.json({ message: "✅ Email di reset inviata con successo." });
+  } catch (err) {
+    console.error("❌ Errore reset password:", err.message);
+    res.status(400).json({ error: "Errore reset password: " + err.message });
+  }
+};
+
+// ℹ️ Le altre API (progetti) restano invariate...
 
 
 /*
