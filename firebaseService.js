@@ -8,6 +8,7 @@ admin.initializeApp({
 
 const db = admin.database();
 const auth = admin.auth();
+
 exports.registerUser = async (req, res) => {
   const { email, password } = req.body;
   console.log(`👤 Registrazione utente email: ${email}`);
@@ -33,32 +34,40 @@ exports.loginUser = async (req, res) => {
 };
 
 exports.resetPassword = async (req, res) => {
-    console.log("💬 Ricevuto resetPassword:", req.body);  // <
+  console.log("💬 Ricevuto resetPassword:", req.body);
   const { email } = req.body;
-  console.log(`✉️ Reset password email: ${email}`);
-  try {
-const link = await auth.generateEmailVerificationLink(email);
-console.log("✅ Link generato:", link); // utile per debug
+  if (!email) return res.status(400).json({ error: "Email mancante nella richiesta" });
 
+  try {
+    const link = await auth.generatePasswordResetLink(email);
+    console.log("✅ Link reset password generato:", link);
+    res.json({ message: "🔗 Link reset generato correttamente", link });
   } catch (err) {
-    console.error('❌ Errore reset password:', err.message);
-    res.status(400).json({ error: 'Errore reset password: ' + err.message });
+    console.error("❌ Errore reset password:", err.message);
+    res.status(400).json({ error: "Errore reset password: " + err.message });
   }
 };
+
 exports.resendVerification = async (req, res) => {
-    console.log("💬 Ricevuto resentemail:", req.body);  // <
+  console.log("💬 Ricevuto resendVerification:", req.body);
   const { email } = req.body;
-  console.log(`🔁 Reinvia verifica per: ${email}`);
+  if (!email) return res.status(400).json({ error: "Email mancante nella richiesta" });
+
   try {
     const link = await auth.generateEmailVerificationLink(email);
-    // Qui puoi anche usare un servizio di invio email custom (es: nodemailer), se vuoi personalizzarlo
-    // Per ora rimandiamo direttamente il link all'utente (non ideale in produzione)
-    res.json({ message: '📨 Link di verifica generato: controlla la tua email.', link });
+    console.log("✅ Link verifica generato:", link);
+    res.json({ message: "📨 Link di verifica generato", link });
   } catch (err) {
-    console.error('❌ Errore invio verifica:', err.message);
-    res.status(400).json({ error: 'Errore invio verifica: ' + err.message });
+    console.error("❌ Errore invio verifica:", err.message);
+    res.status(400).json({ error: "Errore invio verifica: " + err.message });
   }
 };
+
+
+
+
+
+
 /*
 exports.deleteProject = async (req, res) => {
   const { uid, projectId } = req.body;

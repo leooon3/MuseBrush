@@ -10,12 +10,12 @@ export function authInit() {
   document.getElementById("authToggleBtn").onclick = () => {
     document.getElementById("authModal").classList.toggle("hidden");
   };
+
   window.onclick = (e) => {
     const modal = document.getElementById("authModal");
     if (e.target === modal) modal.classList.add("hidden");
   };
 
-  // ✅ Recupera uid da URL dopo login Google
   const params = new URLSearchParams(window.location.search);
   const uid = params.get('uid');
   if (uid) {
@@ -27,6 +27,79 @@ export function authInit() {
     const storedUid = localStorage.getItem('userId');
     updateAuthIcon(!!storedUid);
   }
+}
+
+function resetPassword() {
+  const emailInput = document.getElementById("emailInput");
+  if (!emailInput || !emailInput.value.trim()) {
+    alert("📧 Inserisci un'email valida.");
+    return;
+  }
+
+  const email = emailInput.value.trim();
+  console.log("📧 Email per reset:", email);
+
+  fetch(`${backendUrl}/api/resetPassword`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.link) {
+        alert("📩 Link reset generato. Si apre ora.");
+        window.open(data.link, "_blank");
+      } else {
+        alert(data.message || data.error);
+      }
+    })
+    .catch(error => alert('❌ Errore di rete: ' + error.message));
+}
+
+function resendVerification() {
+  const emailInput = document.getElementById("emailInput");
+  if (!emailInput || !emailInput.value.trim()) {
+    alert("📧 Inserisci un'email valida.");
+    return;
+  }
+
+  const email = emailInput.value.trim();
+  console.log("📧 Email per verifica:", email);
+
+  fetch(`${backendUrl}/api/resendVerification`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.link) {
+        alert("📨 Link di verifica generato. Si apre ora.");
+        window.open(data.link, "_blank");
+      } else {
+        alert(data.message || data.error);
+      }
+    })
+    .catch(error => alert('❌ Errore di rete: ' + error.message));
+}
+
+function registerWithEmail() {
+  const email = document.getElementById("emailInput").value;
+  const password = document.getElementById("passwordInput").value;
+  fetch(`${backendUrl}/api/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.uid) {
+        alert(data.message + " Controlla la tua email.");
+      } else {
+        alert(data.error);
+      }
+    })
+    .catch(error => alert('Errore di rete: ' + error.message));
 }
 
 function loginWithEmail() {
@@ -50,77 +123,11 @@ function loginWithEmail() {
     .catch(error => alert('Errore di rete: ' + error.message));
 }
 
-function registerWithEmail() {
-  const email = document.getElementById("emailInput").value;
-  const password = document.getElementById("passwordInput").value;
-  fetch(`${backendUrl}/api/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.uid) {
-        alert(data.message + " Controlla la tua email.");
-      } else {
-        alert(data.error);
-      }
-    })
-    .catch(error => alert('Errore di rete: ' + error.message));
-}
-
-function loginWithGoogle() {
-  window.location.href = `${backendUrl}/api/googleLogin`;
-}
-
 function logoutUser() {
   localStorage.removeItem('userId');
   updateAuthIcon(false);
   alert('🚪 Disconnesso!');
 }
-
-function resetPassword() {
-  const email = document.getElementById("emailInput").value;
-  if (!email) {
-    alert("📧 Inserisci l'email con cui ti sei registrato.");
-    return;
-  }
-
-  fetch(`${backendUrl}/api/resetPassword`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email })  // <--- importante
-  })
-    .then(res => res.json())
-    .then(data => alert(data.message || data.error))
-    .catch(error => alert('Errore di rete: ' + error.message));
-}
-
-
-function resendVerification() {
-  const email = document.getElementById("emailInput").value;
-  if (!email) {
-    alert("📧 Inserisci l'email per ricevere la verifica.");
-    return;
-  }
-
-  fetch(`${backendUrl}/api/resendVerification`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.link) {
-        alert("📨 Link generato con successo. Verrà aperto in una nuova finestra.");
-        window.open(data.link, "_blank");
-      } else {
-        alert(data.message || data.error);
-      }
-    })
-    .catch(error => alert('❌ Errore di rete: ' + error.message));
-}
-
 
 function updateAuthIcon(loggedIn) {
   const authIcon = document.getElementById("authIcon");
