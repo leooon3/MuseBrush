@@ -7,12 +7,14 @@ import {
   drawingShape, globalDrawingMode, isDrawingShape,
   setCurrentBrush, setIsDrawingShape
 } from './state.js';
+import { getIsPointerMode } from './state.js';
+
 
 export function setBrush(type) {
   const layer = getActiveLayer();
   setCurrentBrush(type);
 
-  if (!layer.canvas.isDrawingMode) return;
+  if (!layer || !layer.canvas) return;
 
   let brush = null;
   const realColor = type === 'Eraser' ? 'rgba(0,0,0,0)' : brushColor;
@@ -55,24 +57,58 @@ export function setBrush(type) {
       brush.width = brushSize;
       brush.color = 'white';
       break;
-    case 'Eraser':
-      brush = new fabric.PencilBrush(layer.canvas);
-      brush.width = brushSize;
-      brush.color = 'rgba(0,0,0,0)';
+    case 'Eraser': {
+      const canvas = layer.canvas;
+
+      // ✅ Disabilita selezione e target-find
+      canvas.selection = false;
+      canvas.skipTargetFind = true;
+
+      // ❌ Gli oggetti non devono essere selezionabili né interattivi
+      canvas.getObjects().forEach(obj => {
+        obj.selectable = false;
+        obj.evented = false;
+      });
+
+      // ✅ Crea un brush invisibile
+      const eraserBrush = new fabric.PencilBrush(canvas);
+      eraserBrush.width = brushSize;
+      eraserBrush.color = 'rgba(0,0,0,0)';
+      brush = eraserBrush;
+
+      // ✅ Intercetta l'oggetto colpito durante il disegno
+      canvas.on('path:created', function handleEraserPath(e) {
+        const path = e.path;
+
+        // Trova oggetti che intersecano il path
+        const intersected = canvas.getObjects().filter(obj => {
+          return obj !== path && path.intersectsWithObject(obj);
+        });
+
+        intersected.forEach(obj => canvas.remove(obj));
+        canvas.remove(path); // rimuove il path della gomma
+
+        canvas.off('path:created', handleEraserPath); // previene chiamate multiple
+        canvas.requestRenderAll();
+        });
       break;
+    }
   }
 
-  if (brush) {
-    layer.canvas.freeDrawingBrush = brush;
+if (brush) {
+  layer.canvas.freeDrawingBrush = brush;
+  if (!getIsPointerMode()) {
+    layer.canvas.isDrawingMode = true;
   }
 }
 
+}
 export function setDrawingMode(active) {
   import('./canvas.js').then(({ layers, activeLayerIndex }) => {
     layers.forEach((layer, i) => {
       const isActive = i === activeLayerIndex;
       const canvas = layer.canvas;
-      const isDrawing = isActive && active && layer.visible;
+      const isDrawing = isActive && active && layer.visible && !getIsPointerMode();
       const isFillingNow = isFilling;
 
       canvas.isDrawingMode = isDrawing && !drawingShape && !isInsertingText;

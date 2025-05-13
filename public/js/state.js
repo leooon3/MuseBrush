@@ -14,6 +14,7 @@ export let lastEraserPoint = null;
 export let currentProjectName = null;
 export let currentProjectId = null; // ✅ aggiunto per gestione update
 export let activeLayerIndex = 0;
+export let isPointerMode = false;
 
 export function setActiveLayerIndex(val) { activeLayerIndex = val; }
 export function setCurrentBrush(val) { currentBrush = val; }
@@ -32,3 +33,5 @@ export function setCurrentProjectName(val) { currentProjectName = val; }
 export function getCurrentProjectName() { return typeof currentProjectName !== 'undefined' ? currentProjectName : null; }
 export function setCurrentProjectId(val) { currentProjectId = val; }  // ✅ nuova funzione
 export function getCurrentProjectId() { return typeof currentProjectId !== 'undefined' ? currentProjectId : null; }  // ✅ nuova funzione
+export function setIsPointerMode(val) { isPointerMode = val; }
+export function getIsPointerMode() { return isPointerMode; }

@@ -10,6 +10,7 @@ import {
   setGlobalDrawingMode, setDrawingShape, setIsInsertingText, setIsFilling,
   setIsBucketActive, setPreviousDrawingMode
 } from './state.js';
+import { setIsPointerMode, getIsPointerMode } from './state.js';
 
 export function initUIControls() {
   const brushButton = document.getElementById("brushes_tab");
@@ -95,16 +96,22 @@ export function initUIControls() {
     eraserDropdown.style.display = eraserDropdown.style.display === "block" ? "none" : "block";
   };
 
-  document.querySelectorAll(".eraser-option").forEach(button => {
-    button.addEventListener("click", () => {
-      setGlobalDrawingMode(true);
-      setIsFilling(false);
-      setDrawingMode(true);
-      setBrush(button.getAttribute("data"));
-      highlightTool("eraser_tab");
-      eraserDropdown.style.display = "none";
-    });
+document.querySelectorAll(".eraser-option").forEach(button => {
+  button.addEventListener("click", () => {
+    const selected = button.getAttribute("data");
+    setIsPointerMode(false); // ✅ Disattiva modalità selezione
+    setGlobalDrawingMode(true);
+    setIsFilling(false);
+    setIsInsertingText(false);
+    setDrawingShape(null);
+    setDrawingMode(true);
+    setBrush(selected);
+    document.getElementById("pointerIcon").src = "./images/pencil-icon.png";
+    highlightTool("eraser_tab");
+    eraserDropdown.style.display = "none";
   });
+});
+
 
   // Close dropdowns on click outside
   document.addEventListener("click", function (e) {
@@ -116,14 +123,23 @@ export function initUIControls() {
     }
   });
 
-  // Pointer toggle
-  document.getElementById("pointerToggleBtn").onclick = () => {
-    setGlobalDrawingMode(!globalDrawingMode);
-    setIsFilling(false);
-    setDrawingMode(globalDrawingMode);
-    setBrush(currentBrush);
-    setDrawingShape(null);
-  };
+
+document.getElementById("pointerToggleBtn").onclick = () => {
+  const newPointerState = !getIsPointerMode();
+  setIsPointerMode(newPointerState);
+  setGlobalDrawingMode(!newPointerState); // disattiva drawing se pointer è attivo
+  setIsFilling(false);
+  setDrawingShape(null);
+  setIsInsertingText(false);
+
+  setDrawingMode(!newPointerState); // attivo solo se non siamo in pointer
+  setBrush(currentBrush);
+
+  document.getElementById("pointerIcon").src = newPointerState
+    ? "./images/pointer-icon.png"
+    : "./images/pencil-icon.png";
+};
+
 
   // Sliders
   document.getElementById("thicknessSlider").addEventListener("input", function () {

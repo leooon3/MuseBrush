@@ -34,16 +34,19 @@ window.addEventListener('DOMContentLoaded', () => {
 
   initLayers(1);
 
-  setTimeout(() => {
-    if (layers.length > 0) {
-      setActiveLayerIndex(0);
-      const firstLayer = layers[0];
-      attachCanvasEvents(firstLayer.canvas);
+setTimeout(() => {
+  if (layers.length > 0) {
+    setActiveLayerIndex(0);
+    const firstLayer = layers[0];
+    attachCanvasEvents(firstLayer.canvas);
+    if (!isPointerMode) {
       setDrawingMode(true);
       setBrush(currentBrush);
-      updateCanvasVisibility();
     }
-  }, 0);
+    updateCanvasVisibility();
+  }
+}, 0);
+
 });
 
 document.addEventListener('DOMContentLoaded', function() {
