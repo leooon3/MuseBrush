@@ -36,8 +36,9 @@ exports.resetPassword = async (req, res) => {
   const { email } = req.body;
   console.log(`✉️ Reset password email: ${email}`);
   try {
-    await auth.generatePasswordResetLink(email);
-    res.json({ message: '✅ Email di reset password inviata!' });
+const link = await auth.generateEmailVerificationLink(email);
+console.log("✅ Link generato:", link); // utile per debug
+
   } catch (err) {
     console.error('❌ Errore reset password:', err.message);
     res.status(400).json({ error: 'Errore reset password: ' + err.message });

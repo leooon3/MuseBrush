@@ -109,9 +109,17 @@ function resendVerification() {
     body: JSON.stringify({ email })
   })
     .then(res => res.json())
-    .then(data => alert(data.message || data.error))
-    .catch(error => alert('Errore di rete: ' + error.message));
+    .then(data => {
+      if (data.link) {
+        alert("📨 Link generato con successo. Verrà aperto in una nuova finestra.");
+        window.open(data.link, "_blank");
+      } else {
+        alert(data.message || data.error);
+      }
+    })
+    .catch(error => alert('❌ Errore di rete: ' + error.message));
 }
+
 
 function updateAuthIcon(loggedIn) {
   const authIcon = document.getElementById("authIcon");
