@@ -89,12 +89,13 @@ function resetPassword() {
   fetch(`${backendUrl}/api/resetPassword`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email })
+    body: JSON.stringify({ email })  // <--- importante
   })
     .then(res => res.json())
     .then(data => alert(data.message || data.error))
     .catch(error => alert('Errore di rete: ' + error.message));
 }
+
 
 function resendVerification() {
   const email = document.getElementById("emailInput").value;

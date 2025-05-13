@@ -11,7 +11,8 @@ import {
   setIsInsertingText, 
   setDrawingShape, 
   setActiveLayerIndex,
-  currentBrush 
+  currentBrush,
+  isPointerMode 
 } from './state.js';
 import { initLayers, layers, fitCanvasToContainer, updateCanvasVisibility } from './canvas.js';
 import { attachCanvasEvents } from './events.js';

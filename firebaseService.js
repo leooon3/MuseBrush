@@ -33,6 +33,7 @@ exports.loginUser = async (req, res) => {
 };
 
 exports.resetPassword = async (req, res) => {
+    console.log("💬 Ricevuto resetPassword:", req.body);  // <
   const { email } = req.body;
   console.log(`✉️ Reset password email: ${email}`);
   try {
@@ -45,6 +46,7 @@ console.log("✅ Link generato:", link); // utile per debug
   }
 };
 exports.resendVerification = async (req, res) => {
+    console.log("💬 Ricevuto resentemail:", req.body);  // <
   const { email } = req.body;
   console.log(`🔁 Reinvia verifica per: ${email}`);
   try {
