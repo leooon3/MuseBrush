@@ -112,7 +112,6 @@ document.querySelectorAll(".eraser-option").forEach(button => {
   });
 });
 
-
   // Close dropdowns on click outside
   document.addEventListener("click", function (e) {
     if (!eraserButton.contains(e.target) && !eraserDropdown.contains(e.target)) {

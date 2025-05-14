@@ -90,7 +90,7 @@ export function createLayer(container, index) {
   layerCanvas.upperCanvasEl.classList.add('layer-canvas');
   container.appendChild(layerCanvas.lowerCanvasEl);
   container.appendChild(layerCanvas.upperCanvasEl);
-
+ 
   layers.push({
     canvas: layerCanvas,
     undoStack: [JSON.stringify(layerCanvas)],

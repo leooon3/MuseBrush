@@ -16,7 +16,7 @@ export function initExitHandlers() {
   document.getElementById("cancelExitBtn").onclick = () => {
     document.getElementById("exitModal").classList.add("hidden");
   };
-
+  
   document.getElementById("confirmSaveExitBtn").onclick = () => {
     const userId = localStorage.getItem('userId');
     const currentProjectName = getCurrentProjectName() || "progetto-musebrush";

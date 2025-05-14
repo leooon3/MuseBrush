@@ -120,8 +120,6 @@ export function renderLayerList() {
   });
 }
 
-
-
 export function initLayerPanel() {
   layersTab.onclick = () => {
     layersPanel.classList.toggle("visible");

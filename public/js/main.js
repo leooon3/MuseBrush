@@ -20,7 +20,7 @@ import { setDrawingMode, setBrush } from './tool.js';
 
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById("newCanvasBtn").onclick = setupNewCanvas;
-
+  
   authInit();
   initUIControls();
   initLayerPanel();

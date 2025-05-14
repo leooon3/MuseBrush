@@ -163,5 +163,5 @@ exports.updateProject = async (req, res) => {
     res.status(500).json({ error: 'Errore aggiornamento progetto: ' + err.message });
   }
 };
-
+ 
 */

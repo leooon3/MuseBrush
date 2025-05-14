@@ -153,3 +153,4 @@ function deleteProjectFromBackend(userId, projectId) {
     })
     .catch(error => showGalleryMessage('❌ Errore eliminazione: ' + error.message));
 }
+ 

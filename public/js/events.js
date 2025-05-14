@@ -137,7 +137,7 @@ export function attachCanvasEvents(canvas) {
     shapeObject.setCoords();
     canvas.requestRenderAll();
   });
-  
+
   canvas.on("mouse:up", function () {
     if (isDrawingShape) {
       setIsDrawingShape(false);

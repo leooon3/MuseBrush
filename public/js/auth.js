@@ -126,7 +126,6 @@ function loginWithGoogle() {
   window.location.href = `${backendUrl}/api/googleLogin`;
 }
 
-
 function logoutUser() {
   localStorage.removeItem('userId');
   updateAuthIcon(false);

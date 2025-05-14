@@ -17,7 +17,7 @@ export function loadProject(proj) {
   layers.length = 0;
   setActiveLayerIndex(0);
   setCurrentProjectName(proj.name);
-
+ 
   // ✅ Carica ciascun layer normale
   proj.layers.forEach((layerData, index) => {
     const layerCanvasEl = document.createElement('canvas');

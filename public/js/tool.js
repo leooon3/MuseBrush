@@ -131,3 +131,4 @@ export function disableDrawingSilently() {
     layers.forEach(layer => layer.canvas.isDrawingMode = false);
   });
 }
+ 

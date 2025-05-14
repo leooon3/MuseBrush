@@ -52,3 +52,4 @@ exports.deleteProject = async (req, res) => {
   await col.deleteOne({ _id: new ObjectId(projectId), uid });
   res.json({ message: '✅ Progetto eliminato!' });
 };
+ 

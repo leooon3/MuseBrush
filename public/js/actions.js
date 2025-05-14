@@ -17,7 +17,6 @@ export  function undo() {
       layer.canvas.loadFromJSON(previous, () => layer.canvas.renderAll());
     }
   }
-  
 export function redo() {
     const layer = getActiveLayer();
     if (layer.redoStack.length > 0) {

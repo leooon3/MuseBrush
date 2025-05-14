@@ -15,7 +15,7 @@ export let currentProjectName = null;
 export let currentProjectId = null; // ✅ aggiunto per gestione update
 export let activeLayerIndex = 0;
 export let isPointerMode = false;
-
+ 
 export function setActiveLayerIndex(val) { activeLayerIndex = val; }
 export function setCurrentBrush(val) { currentBrush = val; }
 export function setBrushColor(val) { brushColor = val; }
