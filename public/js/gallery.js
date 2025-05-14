@@ -1,4 +1,6 @@
 import { getActiveLayer } from './canvas.js';
+import { layers } from './canvas.js';
+import { getBackgroundCanvas } from './canvas.js';
 import { getCurrentCanvasState } from './storage.js';
 import { loadProject } from './projects.js';
 import { setCurrentProjectName, getCurrentProjectId, setCurrentProjectId } from './state.js';
@@ -41,7 +43,7 @@ export function saveProjectToBackend(userId, projectName) {
   const project = {
     nome: projectName,
     layers: getCurrentCanvasState(),
-    preview: getActiveLayer().canvas.toDataURL({ format: "jpeg", quality: 0.6, multiplier: 0.25 }),
+    preview: generateProjectPreview(),
     timestamp: Date.now()
   };
 
@@ -66,7 +68,7 @@ function updateProjectToBackend(userId, projectId, projectName) {
   const project = {
     nome: projectName,
     layers: getCurrentCanvasState(),
-    preview: getActiveLayer().canvas.toDataURL({ format: "jpeg", quality: 0.6, multiplier: 0.25 }),
+    preview: generateProjectPreview(),
     timestamp: Date.now()
   };
 
@@ -153,4 +155,28 @@ function deleteProjectFromBackend(userId, projectId) {
     })
     .catch(error => showGalleryMessage('❌ Errore eliminazione: ' + error.message));
 }
+function generateProjectPreview() {
+  const background = getBackgroundCanvas();
+  if (!background) return "";
+
+  const width = background.getWidth();
+  const height = background.getHeight();
+
+  const mergedCanvas = document.createElement("canvas");
+  mergedCanvas.width = width;
+  mergedCanvas.height = height;
+  const ctx = mergedCanvas.getContext("2d");
+
+  // Draw background
+  ctx.drawImage(background.lowerCanvasEl, 0, 0);
+
+  // Draw visible layers
+  layers.forEach(layer => {
+    if (!layer.visible) return;
+    ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
+  });
+
+  return mergedCanvas.toDataURL("image/jpeg", 0.6);
+}
+
  

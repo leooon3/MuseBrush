@@ -17,7 +17,6 @@ let backgroundCanvas = null;
 export function getActiveLayer() {
   return layers[activeLayerIndex];
 }
-
 export function initLayers(initialLayerCount = 1) {
   const container = document.querySelector('.canvas-container');
   container.innerHTML = '';
@@ -47,7 +46,6 @@ export function initLayers(initialLayerCount = 1) {
   overlay.height = DEFAULT_CANVAS_HEIGHT;
   container.appendChild(overlay);
 }
-
 export function createBackgroundLayer(container) {
   backgroundCanvas = new fabric.Canvas(document.createElement('canvas'), {
     backgroundColor: 'white',
@@ -70,8 +68,6 @@ export function createBackgroundLayer(container) {
 
   fitCanvasToContainer(backgroundCanvas);
 }
-
-
 export function createLayer(container, index) {
   if (!container) {
     console.error("❌ .canvas-container not found!");
@@ -102,7 +98,6 @@ export function createLayer(container, index) {
   attachCanvasEvents(layerCanvas);
   fitCanvasToContainer(layerCanvas);
 }
-
 export function updateCanvasVisibility() {
   layers.forEach((layer, i) => {
     const canvas = layer.canvas;
@@ -157,8 +152,6 @@ export function updateCanvasStacking() {
 
   updateCanvasVisibility();
 }
-
-
 export function fitCanvasToContainer(canvas) {
   const container = document.querySelector('.canvas-container');
   if (!container) return;
@@ -206,11 +199,6 @@ export function fitCanvasToContainer(canvas) {
   canvas.setViewportTransform([scale, 0, 0, scale, 0, 0]);
   canvas.renderAll();
 }
-
-
-
-
-
-
-
-
+export function getBackgroundCanvas() {
+  return backgroundCanvas;
+}
