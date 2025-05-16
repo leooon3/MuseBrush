@@ -1,24 +1,23 @@
+// ✅ projects.js aggiornato con updateStates
 import { layers, fitCanvasToContainer, updateCanvasVisibility } from './canvas.js';
 import { attachCanvasEvents } from './events.js';
-import { setCurrentProjectName, setActiveLayerIndex } from './state.js';
+import { updateStates } from './state.js';
 import { updateMenuHeight } from './ui.js';
-
-// 👉 Aggiungi questa funzione se non è già esportata da canvas.js
 import { createBackgroundLayer } from './canvas.js';
 
 export function loadProject(proj) {
   const container = document.querySelector('.canvas-container');
   container.innerHTML = '';
 
-  // ✅ Sfondo separato
   createBackgroundLayer(container);
 
-  // Pulisci i layer e stato
   layers.length = 0;
-  setActiveLayerIndex(0);
-  setCurrentProjectName(proj.name);
- 
-  // ✅ Carica ciascun layer normale
+
+  updateStates({
+    activeLayerIndex: 0,
+    currentProjectName: proj.name
+  });
+
   proj.layers.forEach((layerData, index) => {
     const layerCanvasEl = document.createElement('canvas');
     layerCanvasEl.classList.add('layer-canvas');
@@ -50,7 +49,6 @@ export function loadProject(proj) {
 
     canvas.loadFromJSON(layerData.json, () => {
       canvas.getObjects().forEach(obj => {
-        // Rimuove fill indesiderati
         if (
           (obj.type === 'line' ||
            obj.type === 'rect' ||

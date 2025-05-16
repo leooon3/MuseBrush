@@ -1,4 +1,6 @@
+// ✅ fill.js aggiornato con updateStates
 import { saveState } from './actions.js';
+import { updateStates } from './state.js';
 
 function hexToRgba(hex) {
   const bigint = parseInt(hex.replace('#', ''), 16);
@@ -133,20 +135,6 @@ export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
         evented: true
       });
 
-      // 🔍 LOG DETTAGLIATO DEGLI OGGETTI
-      fabricCanvas.getObjects().forEach(obj => {
-        console.log({
-          type: obj.type,
-          left: obj.left,
-          top: obj.top,
-          width: obj.width,
-          height: obj.height,
-          selectable: obj.selectable,
-          aCoords: obj.aCoords
-        });
-      });
-
-      // ✅ FALLBACK usando bounding box diretto
       let target = fabricCanvas.getObjects()
         .filter(obj => obj.type !== 'image')
         .find(obj => {
@@ -160,8 +148,6 @@ export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
         });
 
       if (target && fabricCanvas.getObjects().includes(target)) {
-        console.log("✅ Entriamo nel blocco GROUP");
-
         const originalLeft = target.left;
         const originalTop = target.top;
 
@@ -185,13 +171,16 @@ export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
         fabricCanvas.add(group);
         fabricCanvas.setActiveObject(group);
       } else {
-        console.warn("❌ target nullo o non presente nel canvas");
         fabricCanvas.add(fillImg);
-        console.warn("⚠️ Gruppo NON creato, fill aggiunto da solo.");
       }
 
       fabricCanvas.requestRenderAll();
       saveState();
+      updateStates({
+        isFilling: false,
+        isBucketActive: false,
+        globalDrawingMode: true
+      });
     });
   };
 

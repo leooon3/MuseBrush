@@ -1,12 +1,11 @@
-// ================================
-// 6. Project Save/Load/Export/Import (Local & Firebase)
-// ================================
+// ✅ storage.js aggiornato con updateStates
 import { layers } from './canvas.js';
 import { loadProject } from './projects.js';
+import { updateStates } from './state.js';
 
 export function initStorage() {
   document.getElementById("exportProjectBtn").onclick = () => {
-    const name = prompt("Nome file da esportare:", currentProjectName || "progetto-musebrush");
+    const name = prompt("Nome file da esportare:", localStorage.getItem('currentProjectName') || "progetto-musebrush");
     if (!name) return;
 
     try {
@@ -20,7 +19,7 @@ export function initStorage() {
           height: layer.canvas.getHeight()
         }))
       };
- 
+
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -45,7 +44,7 @@ export function initStorage() {
 
         if (confirm(`Vuoi caricare il progetto "${proj.name}"?`)) {
           loadProject(proj);
-          currentProjectName = proj.name;
+          updateStates({ currentProjectName: proj.name });
         }
       } catch (err) {
         alert("Errore nel caricamento del file: " + err.message);

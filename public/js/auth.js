@@ -1,4 +1,6 @@
+// ✅ auth.js aggiornato per usare updateStates se necessario
 const backendUrl = 'https://musebrush.onrender.com';
+import { updateStates } from './state.js';
 
 export function authInit() {
   document.getElementById("loginBtn").onclick = loginWithEmail;
@@ -37,8 +39,6 @@ function resetPassword() {
   }
 
   const email = emailInput.value.trim();
-  console.log("📧 Email per reset:", email);
-
   fetch(`${backendUrl}/api/resetPassword`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -64,8 +64,6 @@ function resendVerification() {
   }
 
   const email = emailInput.value.trim();
-  console.log("📧 Email per verifica:", email);
-
   fetch(`${backendUrl}/api/resendVerification`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -122,6 +120,7 @@ function loginWithEmail() {
     })
     .catch(error => alert('Errore di rete: ' + error.message));
 }
+
 function loginWithGoogle() {
   window.location.href = `${backendUrl}/api/googleLogin`;
 }

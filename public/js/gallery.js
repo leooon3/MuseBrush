@@ -1,9 +1,11 @@
+// ✅ gallery.js aggiornato con updateStates
 import { getActiveLayer } from './canvas.js';
 import { layers } from './canvas.js';
 import { getBackgroundCanvas } from './canvas.js';
 import { getCurrentCanvasState } from './storage.js';
 import { loadProject } from './projects.js';
-import { setCurrentProjectName, getCurrentProjectId, setCurrentProjectId } from './state.js';
+import { updateStates, getCurrentProjectId } from './state.js';
+
 
 const backendUrl = 'https://musebrush.onrender.com';
 
@@ -39,54 +41,53 @@ export function initGallery() {
   };
 }
 
-export function saveProjectToBackend(userId, projectName) {
-  const project = {
-    nome: projectName,
+function buildProjectData(name) {
+  return {
+    nome: name,
     layers: getCurrentCanvasState(),
     preview: generateProjectPreview(),
     timestamp: Date.now()
   };
+}
+
+export function saveProjectToBackend(userId, projectName) {
+  const project = buildProjectData(projectName);
 
   fetch(`${backendUrl}/api/saveProject`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ uid: userId, project })
   })
-  .then(async res => {
-    const contentType = res.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      return res.json();
-    } else {
-      throw new Error('Risposta non JSON dal server');
-    }
-  })
-  .then(data => showGalleryMessage(data.message))
-  .catch(error => showGalleryMessage('❌ Errore salvataggio: ' + error.message));
+    .then(async res => {
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return res.json();
+      } else {
+        throw new Error('Risposta non JSON dal server');
+      }
+    })
+    .then(data => showGalleryMessage(data.message))
+    .catch(error => showGalleryMessage('❌ Errore salvataggio: ' + error.message));
 }
 
 function updateProjectToBackend(userId, projectId, projectName) {
-  const project = {
-    nome: projectName,
-    layers: getCurrentCanvasState(),
-    preview: generateProjectPreview(),
-    timestamp: Date.now()
-  };
+  const project = buildProjectData(projectName);
 
   fetch(`${backendUrl}/api/updateProject`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ uid: userId, projectId, project })
   })
-  .then(async res => {
-    const contentType = res.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      return res.json();
-    } else {
-      throw new Error('Risposta non JSON dal server');
-    }
-  })
-  .then(data => showGalleryMessage(data.message))
-  .catch(error => showGalleryMessage('❌ Errore aggiornamento: ' + error.message));
+    .then(async res => {
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return res.json();
+      } else {
+        throw new Error('Risposta non JSON dal server');
+      }
+    })
+    .then(data => showGalleryMessage(data.message))
+    .catch(error => showGalleryMessage('❌ Errore aggiornamento: ' + error.message));
 }
 
 function loadProjectsFromBackend(userId) {
@@ -108,9 +109,8 @@ function loadProjectsFromBackend(userId) {
         const openBtn = document.createElement("button");
         openBtn.textContent = "📂 Apri";
         openBtn.onclick = () => {
-          loadProject(progetto);
-          setCurrentProjectName(progetto.nome);
-          setCurrentProjectId(id);
+          loadProject({ ...progetto, id });
+          updateStates({ currentProjectName: progetto.nome, currentProjectId: id });
           document.getElementById("galleryModal").classList.add("hidden");
         };
         div.appendChild(openBtn);
@@ -135,6 +135,7 @@ function showGalleryMessage(message) {
     projectList.innerHTML = `<p style="padding:10px; text-align:center;">${message}</p>`;
   }
 }
+
 function deleteProjectFromBackend(userId, projectId) {
   fetch(`${backendUrl}/api/deleteProject`, {
     method: 'DELETE',
@@ -151,10 +152,11 @@ function deleteProjectFromBackend(userId, projectId) {
     })
     .then(data => {
       showGalleryMessage(data.message);
-      loadProjectsFromBackend(userId); // aggiorna lista
+      loadProjectsFromBackend(userId);
     })
     .catch(error => showGalleryMessage('❌ Errore eliminazione: ' + error.message));
 }
+
 function generateProjectPreview() {
   const background = getBackgroundCanvas();
   if (!background) return "";
@@ -167,10 +169,8 @@ function generateProjectPreview() {
   mergedCanvas.height = height;
   const ctx = mergedCanvas.getContext("2d");
 
-  // Draw background
   ctx.drawImage(background.lowerCanvasEl, 0, 0);
 
-  // Draw visible layers
   layers.forEach(layer => {
     if (!layer.visible) return;
     ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
@@ -178,5 +178,3 @@ function generateProjectPreview() {
 
   return mergedCanvas.toDataURL("image/jpeg", 0.6);
 }
-
- 

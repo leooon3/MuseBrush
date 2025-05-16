@@ -1,18 +1,15 @@
-// ================================
-// 3. Drawing Tools: Brush, Shapes, Text, Events
-// ================================
+// ✅ tool.js aggiornato con updateStates
 import { getActiveLayer } from './canvas.js';
 import {
   currentBrush, brushColor, brushSize, isFilling, isInsertingText,
   drawingShape, globalDrawingMode, isDrawingShape,
-  setCurrentBrush, setIsDrawingShape
+  updateStates
 } from './state.js';
 import { getIsPointerMode } from './state.js';
 
-
 export function setBrush(type) {
   const layer = getActiveLayer();
-  setCurrentBrush(type);
+  updateStates({ currentBrush: type });
 
   if (!layer || !layer.canvas) return;
 
@@ -59,50 +56,43 @@ export function setBrush(type) {
       break;
     case 'Eraser': {
       const canvas = layer.canvas;
-
-      // ✅ Disabilita selezione e target-find
       canvas.selection = false;
       canvas.skipTargetFind = true;
 
-      // ❌ Gli oggetti non devono essere selezionabili né interattivi
       canvas.getObjects().forEach(obj => {
         obj.selectable = false;
         obj.evented = false;
       });
 
-      // ✅ Crea un brush invisibile
       const eraserBrush = new fabric.PencilBrush(canvas);
       eraserBrush.width = brushSize;
       eraserBrush.color = 'rgba(0,0,0,0)';
       brush = eraserBrush;
 
-      // ✅ Intercetta l'oggetto colpito durante il disegno
       canvas.on('path:created', function handleEraserPath(e) {
         const path = e.path;
-
-        // Trova oggetti che intersecano il path
         const intersected = canvas.getObjects().filter(obj => {
           return obj !== path && path.intersectsWithObject(obj);
         });
 
         intersected.forEach(obj => canvas.remove(obj));
-        canvas.remove(path); // rimuove il path della gomma
+        canvas.remove(path);
 
-        canvas.off('path:created', handleEraserPath); // previene chiamate multiple
+        canvas.off('path:created', handleEraserPath);
         canvas.requestRenderAll();
-        });
+      });
       break;
     }
   }
 
-if (brush) {
-  layer.canvas.freeDrawingBrush = brush;
-  if (!getIsPointerMode()) {
-    layer.canvas.isDrawingMode = true;
+  if (brush) {
+    layer.canvas.freeDrawingBrush = brush;
+    if (!getIsPointerMode()) {
+      layer.canvas.isDrawingMode = true;
+    }
   }
 }
 
-}
 export function setDrawingMode(active) {
   import('./canvas.js').then(({ layers, activeLayerIndex }) => {
     layers.forEach((layer, i) => {
@@ -131,4 +121,3 @@ export function disableDrawingSilently() {
     layers.forEach(layer => layer.canvas.isDrawingMode = false);
   });
 }
- 

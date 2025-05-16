@@ -1,4 +1,4 @@
-// 📂 exit.js aggiornato senza import mancanti
+// ✅ exit.js aggiornato con updateStates
 import { saveProjectToBackend } from './gallery.js';
 import { getCurrentProjectName } from './state.js';
 

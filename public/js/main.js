@@ -7,11 +7,8 @@ import { initExitHandlers } from './exit.js';
 import { setupNewCanvas } from './canvas-utils.js';
 import { updateMenuHeight } from './ui.js';
 import { 
-  setGlobalDrawingMode, 
-  setIsInsertingText, 
-  setDrawingShape, 
-  setActiveLayerIndex,
-  currentBrush,
+  updateStates, 
+  currentBrush, 
   isPointerMode 
 } from './state.js';
 import { initLayers, layers, fitCanvasToContainer, updateCanvasVisibility } from './canvas.js';
@@ -28,26 +25,27 @@ window.addEventListener('DOMContentLoaded', () => {
   initGallery();
   initExitHandlers();
 
-  // Settiamo prima lo stato globale
-  setGlobalDrawingMode(true);
-  setIsInsertingText(false);
-  setDrawingShape(null);
+  // Stato iniziale raggruppato
+  updateStates({
+    globalDrawingMode: true,
+    isInsertingText: false,
+    drawingShape: null
+  });
 
   initLayers(1);
 
-setTimeout(() => {
-  if (layers.length > 0) {
-    setActiveLayerIndex(0);
-    const firstLayer = layers[0];
-    attachCanvasEvents(firstLayer.canvas);
-    if (!isPointerMode) {
-      setDrawingMode(true);
-      setBrush(currentBrush);
+  setTimeout(() => {
+    if (layers.length > 0) {
+      updateStates({ activeLayerIndex: 0 });
+      const firstLayer = layers[0];
+      attachCanvasEvents(firstLayer.canvas);
+      if (!isPointerMode) {
+        setDrawingMode(true);
+        setBrush(currentBrush);
+      }
+      updateCanvasVisibility();
     }
-    updateCanvasVisibility();
-  }
-}, 0);
-
+  }, 0);
 });
 
 document.addEventListener('DOMContentLoaded', function() {

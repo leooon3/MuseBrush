@@ -262,17 +262,17 @@ button.tool-active {
   height: calc(100vh - var(--menu-height, 61px));
   margin-top: var(--menu-height, 61px);
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible; /* ✅ mostra tutto, anche se il canvas esce */
   background-color: #0d042f;
 }
+
 .layer-canvas {
-  position: static;
-  top:30px;
-  left:2.5%;
+  position: absolute; /* ✅ ora top/left hanno effetto */
+  top: 0;
+  left: 0;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
-
 
 .layer-canvas.active {
   pointer-events: auto;

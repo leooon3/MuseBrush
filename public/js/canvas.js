@@ -157,7 +157,7 @@ export function fitCanvasToContainer(canvas) {
   if (!container) return;
 
   const containerWidth = container.clientWidth;
-  const containerHeight = container.clientHeight - 40; // lascia spazio per 20px sopra e sotto
+  const containerHeight = container.clientHeight - 40;
 
   const canvasWidth = canvas.getWidth();
   const canvasHeight = canvas.getHeight();
@@ -169,21 +169,24 @@ export function fitCanvasToContainer(canvas) {
   let displayWidth;
   let displayHeight;
   let marginX = 0;
-  let marginY = 20; // 20px top gap
+  let marginY = 20;
 
   if (containerRatio > canvasRatio) {
-      scale = containerHeight / canvasHeight;
-      displayWidth = canvasWidth * scale;
-      displayHeight = containerHeight;
-      marginX = (containerWidth - displayWidth) / 2;
+    scale = containerHeight / canvasHeight;
+    displayWidth = canvasWidth * scale;
+    displayHeight = containerHeight;
+    marginX = (containerWidth - displayWidth) / 2;
   } else {
-      scale = containerWidth / canvasWidth;
-      displayWidth = containerWidth;
-      displayHeight = canvasHeight * scale;
-      marginY += (containerHeight - displayHeight) / 2;
+    scale = containerWidth / canvasWidth;
+    displayWidth = containerWidth;
+    displayHeight = canvasHeight * scale;
+    marginY += (containerHeight - displayHeight) / 2;
   }
 
-  // Aggiorna dimensioni e margini DOM
+  // ✅ FORZA simulazione DPI 1.25 su tutti gli schermi
+  const simulatedDeviceRatio = 1.25;
+  const correctedScale = scale / simulatedDeviceRatio;
+
   canvas.lowerCanvasEl.style.width = `${displayWidth}px`;
   canvas.lowerCanvasEl.style.height = `${displayHeight}px`;
   canvas.upperCanvasEl.style.width = `${displayWidth}px`;
@@ -194,11 +197,11 @@ export function fitCanvasToContainer(canvas) {
   canvas.lowerCanvasEl.style.marginTop = `${marginY}px`;
   canvas.upperCanvasEl.style.marginTop = `${marginY}px`;
 
-  // Applica solo lo zoom
-  canvas.setZoom(scale);
-  canvas.setViewportTransform([scale, 0, 0, scale, 0, 0]);
+  canvas.setZoom(correctedScale);
+  canvas.setViewportTransform([correctedScale, 0, 0, correctedScale, 0, 0]);
   canvas.renderAll();
 }
+
 export function getBackgroundCanvas() {
   return backgroundCanvas;
 }

@@ -4,8 +4,7 @@ import { setDrawingMode, setBrush } from './tool.js';
 import {
   currentBrush,
   globalDrawingMode,
-  setCurrentProjectName,
-  setActiveLayerIndex
+  updateStates
 } from './state.js';
 import { renderLayerList } from './layers.js';
 
@@ -20,8 +19,12 @@ export function setupNewCanvas() {
 
   initLayers(1); // include già lo sfondo
 
-  setActiveLayerIndex(0);
-  setCurrentProjectName(null);
+  updateStates({
+    activeLayerIndex: 0,
+    currentProjectName: null,
+    globalDrawingMode: globalDrawingMode
+  });
+
   renderLayerList();
   setDrawingMode(globalDrawingMode);
   setBrush(currentBrush);

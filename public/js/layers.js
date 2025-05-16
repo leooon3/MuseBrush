@@ -1,13 +1,11 @@
-// ================================
-// 5. Layers: Add, Select, Rename, Delete
-// ================================
-import { createLayer, updateCanvasVisibility , updateCanvasStacking} from './canvas.js';
+// ✅ layers.js aggiornato con updateStates
+import { createLayer, updateCanvasVisibility , updateCanvasStacking } from './canvas.js';
 import { setBrush } from './tool.js';
 import {
   activeLayerIndex,
-  setActiveLayerIndex,
   currentBrush,
-  globalDrawingMode
+  globalDrawingMode,
+  updateStates
 } from './state.js';
 
 const layersTab = document.getElementById('layers_tab');
@@ -18,7 +16,6 @@ export function renderLayerList() {
   list.innerHTML = '';
 
   import('./canvas.js').then(({ layers }) => {
-    // ✅ Aggiungi il pulsante sopra
     const addBtn = document.createElement('button');
     addBtn.textContent = "+ Nuovo Livello";
     addBtn.className = 'add-layer-btn';
@@ -26,14 +23,13 @@ export function renderLayerList() {
     addBtn.onclick = () => {
       const container = document.querySelector('.canvas-container');
       createLayer(container, layers.length);
-      setActiveLayerIndex(layers.length - 1);
+      updateStates({ activeLayerIndex: layers.length - 1 });
       updateCanvasVisibility();
       renderLayerList();
       setBrush(currentBrush);
     };
-    list.appendChild(addBtn); // ✅ Prima della lista
+    list.appendChild(addBtn);
 
-    // Aggiungi i layer sotto
     layers.forEach((layer, index) => {
       const li = document.createElement('li');
       li.className = index === activeLayerIndex ? 'active' : '';
@@ -74,6 +70,7 @@ export function renderLayerList() {
           updateCanvasStacking();
         }
       };
+
       const visibilityBtn = document.createElement('button');
       visibilityBtn.textContent = layer.visible ? '👁️' : '🚫';
       visibilityBtn.onclick = (e) => {
@@ -93,12 +90,13 @@ export function renderLayerList() {
           container.removeChild(layer.canvas.lowerCanvasEl);
           container.removeChild(layer.canvas.upperCanvasEl);
           layers.splice(index, 1);
-          setActiveLayerIndex(Math.max(0, activeLayerIndex - 1));
+          updateStates({ activeLayerIndex: Math.max(0, activeLayerIndex - 1) });
           updateCanvasVisibility();
           renderLayerList();
           setBrush(currentBrush);
         }
       };
+
       controls.appendChild(upBtn);
       controls.appendChild(downBtn);
       controls.appendChild(visibilityBtn);
@@ -106,7 +104,7 @@ export function renderLayerList() {
       li.appendChild(nameSpan);
       li.appendChild(controls);
       li.onclick = () => {
-        setActiveLayerIndex(index);
+        updateStates({ activeLayerIndex: index });
         updateCanvasVisibility();
         renderLayerList();
         const isVisible = layers[index].visible;
