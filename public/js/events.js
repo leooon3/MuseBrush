@@ -1,5 +1,3 @@
-// ✅ events.js aggiornato con updateStates
-
 import {
   currentBrush, brushColor, brushSize, isFilling, isBucketActive, isInsertingText,
   drawingShape, previousDrawingMode, shapeObject, shapeOrigin, isDrawingShape,
@@ -10,7 +8,7 @@ import { fabricToCanvasCoords, saveState } from './actions.js';
 import { floodFillFromPoint } from './fill.js';
 import { setBrush, setDrawingMode } from './tool.js';
 
-export function attachCanvasEvents(canvas) {
+export function attachCanvasEvents(canvas) { // makes everything happear on the canva
   canvas.on("path:created", (opt) => {
     const path = opt.path;
     canvas.renderAll();

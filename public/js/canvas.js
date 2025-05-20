@@ -14,10 +14,10 @@ export const layers = [];
 const DEFAULT_CANVAS_WIDTH = 1920;
 const DEFAULT_CANVAS_HEIGHT = 1080;
 let backgroundCanvas = null;
-export function getActiveLayer() {
+export function getActiveLayer() {  // return the active layer for functions
   return layers[activeLayerIndex];
 }
-export function initLayers(initialLayerCount = 1) {
+export function initLayers(initialLayerCount = 1) { //functions for starting the layers
   const container = document.querySelector('.canvas-container');
   container.innerHTML = '';
 
@@ -46,7 +46,7 @@ export function initLayers(initialLayerCount = 1) {
   overlay.height = DEFAULT_CANVAS_HEIGHT;
   container.appendChild(overlay);
 }
-export function createBackgroundLayer(container) {
+export function createBackgroundLayer(container) { // creates the background that is not in the layers array
   backgroundCanvas = new fabric.Canvas(document.createElement('canvas'), {
     backgroundColor: 'white',
     isDrawingMode: false,
@@ -68,7 +68,7 @@ export function createBackgroundLayer(container) {
 
   fitCanvasToContainer(backgroundCanvas);
 }
-export function createLayer(container, index) {
+export function createLayer(container, index) { // create layer
   if (!container) {
     console.error("❌ .canvas-container not found!");
     return;
@@ -98,7 +98,7 @@ export function createLayer(container, index) {
   attachCanvasEvents(layerCanvas);
   fitCanvasToContainer(layerCanvas);
 }
-export function updateCanvasVisibility() {
+export function updateCanvasVisibility() { // makes sure i see the right canva
   layers.forEach((layer, i) => {
     const canvas = layer.canvas;
     const isActive = i === activeLayerIndex;
@@ -132,7 +132,7 @@ export function updateCanvasVisibility() {
     });
   });
 }
-export function updateCanvasStacking() {
+export function updateCanvasStacking() { //
   const container = document.querySelector('.canvas-container');
   container.innerHTML = '';
 
@@ -201,7 +201,6 @@ export function fitCanvasToContainer(canvas) {
   canvas.setViewportTransform([correctedScale, 0, 0, correctedScale, 0, 0]);
   canvas.renderAll();
 }
-
 export function getBackgroundCanvas() {
   return backgroundCanvas;
 }

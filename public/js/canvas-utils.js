@@ -8,7 +8,7 @@ import {
 } from './state.js';
 import { renderLayerList } from './layers.js';
 
-export function setupNewCanvas() {
+export function setupNewCanvas() { // the function to eliminate everything and restart everything
   const userId = localStorage.getItem('userId');
   if (!userId) {
     alert("🔒 Devi essere autenticato per creare un nuovo canvas.");
@@ -16,11 +16,7 @@ export function setupNewCanvas() {
   }
 
   if (!confirm("⚠️ Vuoi davvero creare un nuovo canvas? Tutte le modifiche attuali andranno perse.")) return;
-
-  // Ripulisce l'array dei livelli, mantenendo lo sfondo separato
   layers.length = 0;
-
-  // Inizializza un nuovo canvas con 1 layer di disegno oltre allo sfondo
   initLayers(1);
 
   updateStates({

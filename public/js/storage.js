@@ -1,9 +1,8 @@
-// ✅ storage.js aggiornato con updateStates
 import { layers } from './canvas.js';
 import { loadProject } from './projects.js';
 import { updateStates } from './state.js';
 
-export function initStorage() {
+export function initStorage() { // make sure the connection with database works
   document.getElementById("exportProjectBtn").onclick = () => {
     const name = prompt("Nome file da esportare:", localStorage.getItem('currentProjectName') || "progetto-musebrush");
     if (!name) return;
@@ -54,7 +53,7 @@ export function initStorage() {
   };
 }
 
-export function getCurrentCanvasState() {
+export function getCurrentCanvasState() { // takes the info of the canva
   return layers.map(layer => ({
     json: layer.canvas.toJSON(),
     visible: layer.visible,

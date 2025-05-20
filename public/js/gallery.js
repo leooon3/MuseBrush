@@ -1,15 +1,12 @@
-// ✅ gallery.js aggiornato con updateStates
 import { getActiveLayer } from './canvas.js';
 import { layers } from './canvas.js';
 import { getBackgroundCanvas } from './canvas.js';
 import { getCurrentCanvasState } from './storage.js';
 import { loadProject } from './projects.js';
 import { updateStates, getCurrentProjectId } from './state.js';
-
-
 const backendUrl = 'https://musebrush.onrender.com';
 
-export function initGallery() {
+export function initGallery() { // connects the modal to the functions
   document.getElementById("saveCanvasBtn").onclick = () => {
     const userId = localStorage.getItem('userId');
     if (!userId) return showGalleryMessage("🔒 Devi essere loggato per salvare.");
@@ -41,7 +38,7 @@ export function initGallery() {
   };
 }
 
-function buildProjectData(name) {
+function buildProjectData(name) { //makes the project data
   return {
     nome: name,
     layers: getCurrentCanvasState(),
@@ -50,7 +47,7 @@ function buildProjectData(name) {
   };
 }
 
-export function saveProjectToBackend(userId, projectName) {
+export function saveProjectToBackend(userId, projectName) { // talks to backend to save the project
   const project = buildProjectData(projectName);
 
   fetch(`${backendUrl}/api/saveProject`, {
@@ -70,7 +67,7 @@ export function saveProjectToBackend(userId, projectName) {
     .catch(error => showGalleryMessage('❌ Errore salvataggio: ' + error.message));
 }
 
-function updateProjectToBackend(userId, projectId, projectName) {
+function updateProjectToBackend(userId, projectId, projectName) { // talks to backend to update the project info, such as data ,ect
   const project = buildProjectData(projectName);
 
   fetch(`${backendUrl}/api/updateProject`, {
@@ -90,7 +87,7 @@ function updateProjectToBackend(userId, projectId, projectName) {
     .catch(error => showGalleryMessage('❌ Errore aggiornamento: ' + error.message));
 }
 
-function loadProjectsFromBackend(userId) {
+function loadProjectsFromBackend(userId) { // loads the project into the canva 
   const projectList = document.getElementById("projectList");
   if (!projectList) return;
   projectList.innerHTML = "<p>⏳ Caricamento...</p>";
@@ -129,14 +126,14 @@ function loadProjectsFromBackend(userId) {
     .catch(error => showGalleryMessage('❌ Errore caricamento progetti: ' + error.message));
 }
 
-function showGalleryMessage(message) {
+function showGalleryMessage(message) { // shows the message of the gallery, errors, updates, ect
   const projectList = document.getElementById("projectList");
   if (projectList) {
     projectList.innerHTML = `<p style="padding:10px; text-align:center;">${message}</p>`;
   }
 }
 
-function deleteProjectFromBackend(userId, projectId) {
+function deleteProjectFromBackend(userId, projectId) { // deletes the projects form the database
   fetch(`${backendUrl}/api/deleteProject`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
@@ -157,7 +154,7 @@ function deleteProjectFromBackend(userId, projectId) {
     .catch(error => showGalleryMessage('❌ Errore eliminazione: ' + error.message));
 }
 
-function generateProjectPreview() {
+function generateProjectPreview() { //creates the preview to show in the gallery
   const background = getBackgroundCanvas();
   if (!background) return "";
 

@@ -1,8 +1,7 @@
-// ✅ fill.js aggiornato con updateStates
 import { saveState } from './actions.js';
 import { updateStates } from './state.js';
 
-function hexToRgba(hex) {
+function hexToRgba(hex) { //transform the hexadecimal to rgba data
   const bigint = parseInt(hex.replace('#', ''), 16);
   return [
     (bigint >> 16) & 255,
@@ -12,12 +11,12 @@ function hexToRgba(hex) {
   ];
 }
 
-function getPixelColor(imgData, x, y) {
+function getPixelColor(imgData, x, y) { // takes the color of the pixel 
   const index = (y * imgData.width + x) * 4;
   return imgData.data.slice(index, index + 4);
 }
 
-function setPixelColor(imgData, x, y, [r, g, b, a]) {
+function setPixelColor(imgData, x, y, [r, g, b, a]) { // modify the pixel
   const index = (y * imgData.width + x) * 4;
   imgData.data[index] = r;
   imgData.data[index + 1] = g;
@@ -25,14 +24,14 @@ function setPixelColor(imgData, x, y, [r, g, b, a]) {
   imgData.data[index + 3] = a;
 }
 
-function colorsMatch(a, b, tolerance = 32) {
+function colorsMatch(a, b, tolerance = 32) { // checks if the color is equal with a margin
   return Math.abs(a[0] - b[0]) < tolerance &&
          Math.abs(a[1] - b[1]) < tolerance &&
          Math.abs(a[2] - b[2]) < tolerance &&
          Math.abs(a[3] - b[3]) < tolerance;
 }
 
-export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
+export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) { // the function to actually fill the space
   const width = fabricCanvas.getWidth();
   const height = fabricCanvas.getHeight();
 

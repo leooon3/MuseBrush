@@ -1,7 +1,7 @@
-// ✅ actions.js aggiornato con updateStates se necessario
+//actions for the canva
 import { getActiveLayer } from './canvas.js';
 
-export function saveState() {
+export function saveState() { // saves the action just made for undo and redo
   const layer = getActiveLayer();
   const current = JSON.stringify(layer.canvas);
   if (layer.undoStack[layer.undoStack.length - 1] !== current) {
@@ -10,7 +10,7 @@ export function saveState() {
   }
 }
 
-export function undo() {
+export function undo() { //delete last action
   const layer = getActiveLayer();
   if (layer.undoStack.length > 1) {
     layer.redoStack.push(layer.undoStack.pop());
@@ -19,7 +19,7 @@ export function undo() {
   }
 }
 
-export function redo() {
+export function redo() { // make happen last action deleted
   const layer = getActiveLayer();
   if (layer.redoStack.length > 0) {
     const next = layer.redoStack.pop();
@@ -28,7 +28,7 @@ export function redo() {
   }
 }
 
-export function fabricToCanvasCoords(canvas, pointer) {
+export function fabricToCanvasCoords(canvas, pointer) { // adapting the canvas coordinates
   const vt = canvas.viewportTransform;
   const zoom = canvas.getZoom();
   const x = (pointer.x * zoom + vt[4]) / zoom;

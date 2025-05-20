@@ -38,7 +38,6 @@ export function getCurrentProjectId() { return typeof currentProjectId !== 'unde
 export function setIsPointerMode(val) { isPointerMode = val; }
 export function getIsPointerMode() { return isPointerMode; }
 
-// ✅ Funzione centralizzata
 export function updateStates(updates = {}) {
   const setters = {
     currentBrush: setCurrentBrush,
@@ -67,3 +66,5 @@ export function updateStates(updates = {}) {
     }
   });
 }
+
+// takes care of all the variables needed in the front end

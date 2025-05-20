@@ -1,11 +1,10 @@
-// ✅ projects.js aggiornato con updateStates
 import { layers, fitCanvasToContainer, updateCanvasVisibility } from './canvas.js';
 import { attachCanvasEvents } from './events.js';
 import { updateStates } from './state.js';
 import { updateMenuHeight } from './ui.js';
 import { createBackgroundLayer } from './canvas.js';
 
-export function loadProject(proj) {
+export function loadProject(proj) { // loads the project form the data of the backend
   const container = document.querySelector('.canvas-container');
   container.innerHTML = '';
 

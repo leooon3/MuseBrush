@@ -1,8 +1,7 @@
-// ✅ exit.js aggiornato con updateStates
 import { saveProjectToBackend } from './gallery.js';
 import { getCurrentProjectName } from './state.js';
 
-export function initExitHandlers() {
+export function initExitHandlers() { // the exit modal with all the checks
   window.addEventListener("beforeunload", function (e) {
     e.preventDefault();
     e.returnValue = '';

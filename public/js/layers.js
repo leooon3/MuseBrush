@@ -1,4 +1,3 @@
-// ✅ layers.js aggiornato con updateStates
 import { createLayer, updateCanvasVisibility , updateCanvasStacking } from './canvas.js';
 import { setBrush } from './tool.js';
 import {
@@ -11,7 +10,7 @@ import {
 const layersTab = document.getElementById('layers_tab');
 const layersPanel = document.getElementById('layersPanel');
 
-export function renderLayerList() {
+export function renderLayerList() { // show you the layers in their menù
   const list = document.getElementById("layersList");
   list.innerHTML = '';
 
@@ -118,7 +117,7 @@ export function renderLayerList() {
   });
 }
 
-export function initLayerPanel() {
+export function initLayerPanel() { //create the layer panel visible
   layersTab.onclick = () => {
     layersPanel.classList.toggle("visible");
     renderLayerList();

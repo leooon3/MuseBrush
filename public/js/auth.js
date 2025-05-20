@@ -1,8 +1,8 @@
-// ✅ auth.js aggiornato per usare updateStates se necessario
+//auth .js for all the necessary functions for autentication
 const backendUrl = 'https://musebrush.onrender.com';
 import { updateStates } from './state.js';
 
-export function authInit() {
+export function authInit() { // connecting buttons with functions
   document.getElementById("loginBtn").onclick = loginWithEmail;
   document.getElementById("signupBtn").onclick = registerWithEmail;
   document.getElementById("googleLoginBtn").onclick = loginWithGoogle;
@@ -31,7 +31,7 @@ export function authInit() {
   }
 }
 
-function resetPassword() {
+function resetPassword() { // resetting password with email
   const emailInput = document.getElementById("emailInput");
   if (!emailInput || !emailInput.value.trim()) {
     alert("📧 Inserisci un'email valida.");
@@ -56,7 +56,7 @@ function resetPassword() {
     .catch(error => alert('❌ Errore di rete: ' + error.message));
 }
 
-function resendVerification() {
+function resendVerification() { // verification mail is real 
   const emailInput = document.getElementById("emailInput");
   if (!emailInput || !emailInput.value.trim()) {
     alert("📧 Inserisci un'email valida.");
@@ -81,7 +81,7 @@ function resendVerification() {
     .catch(error => alert('❌ Errore di rete: ' + error.message));
 }
 
-function registerWithEmail() {
+function registerWithEmail() { // first time needs to be registered with this function
   const email = document.getElementById("emailInput").value;
   const password = document.getElementById("passwordInput").value;
   fetch(`${backendUrl}/api/register`, {
@@ -100,7 +100,7 @@ function registerWithEmail() {
     .catch(error => alert('Errore di rete: ' + error.message));
 }
 
-function loginWithEmail() {
+function loginWithEmail() { // login can be made after verification has happened
   const email = document.getElementById("emailInput").value;
   fetch(`${backendUrl}/api/login`, {
     method: 'POST',
@@ -121,17 +121,17 @@ function loginWithEmail() {
     .catch(error => alert('Errore di rete: ' + error.message));
 }
 
-function loginWithGoogle() {
+function loginWithGoogle() { // login with google is totally backend
   window.location.href = `${backendUrl}/api/googleLogin`;
 }
 
-function logoutUser() {
+function logoutUser() { // logout for becoming anonymous
   localStorage.removeItem('userId');
   updateAuthIcon(false);
   alert('🚪 Disconnesso!');
 }
 
-function updateAuthIcon(loggedIn) {
+function updateAuthIcon(loggedIn) { //updates the icon to let you know you are logged in
   const authIcon = document.getElementById("authIcon");
   if (authIcon) {
     authIcon.src = loggedIn ? "./images/user-auth.png" : "./images/user.png";
