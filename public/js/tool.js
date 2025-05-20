@@ -1,4 +1,4 @@
-// ✅ tool.js aggiornato con updateStates
+
 import { getActiveLayer } from './canvas.js';
 import {
   currentBrush, brushColor, brushSize, isFilling, isInsertingText,
@@ -7,7 +7,7 @@ import {
 } from './state.js';
 import { getIsPointerMode } from './state.js';
 
-export function setBrush(type) {
+export function setBrush(type) { // set the Brush that is selected by the user
   const layer = getActiveLayer();
   updateStates({ currentBrush: type });
 
@@ -93,7 +93,7 @@ export function setBrush(type) {
   }
 }
 
-export function setDrawingMode(active) {
+export function setDrawingMode(active) { // change from selection to drawing mode
   import('./canvas.js').then(({ layers, activeLayerIndex }) => {
     layers.forEach((layer, i) => {
       const isActive = i === activeLayerIndex;
@@ -116,7 +116,7 @@ export function setDrawingMode(active) {
     : './images/pointer-icon.png';
 }
 
-export function disableDrawingSilently() {
+export function disableDrawingSilently() { // disable drawing mode in order to not make conflict with all the functions
   import('./canvas.js').then(({ layers }) => {
     layers.forEach(layer => layer.canvas.isDrawingMode = false);
   });
