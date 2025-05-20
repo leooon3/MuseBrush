@@ -262,12 +262,12 @@ button.tool-active {
   height: calc(100vh - var(--menu-height, 61px));
   margin-top: var(--menu-height, 61px);
   box-sizing: border-box;
-  overflow: visible; /* ✅ mostra tutto, anche se il canvas esce */
+  overflow: visible; 
   background-color: #0d042f;
 }
 
 .layer-canvas {
-  position: absolute; /* ✅ ora top/left hanno effetto */
+  position: absolute;
   top: 0;
   left: 0;
   border-radius: 8px;

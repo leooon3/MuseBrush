@@ -1,4 +1,3 @@
-// 📁 mongodbService.js
 const { MongoClient, ObjectId } = require('mongodb');
 
 const uri = process.env.MONGODB_URI;
@@ -8,7 +7,7 @@ let db;
 async function connect() {
   if (!db) {
     await client.connect();
-    db = client.db("musebrush"); // nome database
+    db = client.db("musebrush"); 
   }
   return db.collection("progetti");
 }

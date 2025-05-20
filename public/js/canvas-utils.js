@@ -17,7 +17,11 @@ export function setupNewCanvas() {
 
   if (!confirm("⚠️ Vuoi davvero creare un nuovo canvas? Tutte le modifiche attuali andranno perse.")) return;
 
-  initLayers(1); // include già lo sfondo
+  // Ripulisce l'array dei livelli, mantenendo lo sfondo separato
+  layers.length = 0;
+
+  // Inizializza un nuovo canvas con 1 layer di disegno oltre allo sfondo
+  initLayers(1);
 
   updateStates({
     activeLayerIndex: 0,

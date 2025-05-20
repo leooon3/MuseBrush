@@ -30,7 +30,7 @@ app.get('/api/googleLogin', passport.authenticate('google', { scope: ['profile',
 app.get('/api/googleCallback',
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
-    // Redirige al frontend passando l’uid come parametro
+    // Redirect to frontend passinf the uid as a parameter
     res.redirect(`${process.env.FRONTEND_URL}/?uid=${req.user.uid}`);
   });
 

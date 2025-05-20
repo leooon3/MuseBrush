@@ -11,7 +11,7 @@ admin.initializeApp({
 const db = admin.database();
 const auth = admin.auth();
 
-// ✉️ Configurazione nodemailer da variabili .env
+// Configuration nodemailer from variables .env
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT),
@@ -22,7 +22,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// 👤 Registrazione utente
+// user registration
 exports.registerUser = async (req, res) => {
   const { email, password } = req.body;
   console.log(`👤 Registrazione utente email: ${email}`);
@@ -35,7 +35,7 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-// 🔐 Login (solo verifica se l'utente esiste)
+// Login (check only if the user exist)
 exports.loginUser = async (req, res) => {
   const { email } = req.body;
   console.log(`🔑 Login utente email: ${email}`);
@@ -48,7 +48,7 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-// 🔁 Email di verifica personalizzata
+// check if email is real sending an email to the given one
 exports.resendVerification = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "Email mancante nella richiesta" });
@@ -77,7 +77,7 @@ exports.resendVerification = async (req, res) => {
   }
 };
 
-// 🔒 Email reset password personalizzata
+// Email reset with a personalized pasword
 exports.resetPassword = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "Email mancante nella richiesta" });
@@ -106,62 +106,3 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-// ℹ️ Le altre API (progetti) restano invariate...
-
-
-/*
-exports.deleteProject = async (req, res) => {
-  const { uid, projectId } = req.body;
-  console.log(`🗑️ Eliminazione progetto ${projectId} per UID: ${uid}`);
-
-  if (!uid || !projectId) {
-    return res.status(400).json({ error: 'uid e projectId sono richiesti' });
-  }
-
-  try {
-    await admin.database().ref(`progetti/${uid}/${projectId}`).remove();
-    res.json({ message: '✅ Progetto eliminato con successo!' });
-  } catch (err) {
-    console.error('❌ Errore eliminazione progetto:', err.message);
-    res.status(500).json({ error: 'Errore eliminazione progetto: ' + err.message });
-  }
-};
-exports.saveProject = async (req, res) => {
-  const { uid, project } = req.body;
-  console.log(`💾 Salvataggio progetto per UID: ${uid}`);
-  await db.ref(`progetti/${uid}`).push(project);
-  res.json({ message: '✅ Progetto salvato!' });
-};
-
-exports.loadProjects = async (req, res) => {
-  const { uid } = req.query;
-  console.log(`📥 Caricamento progetti per UID: ${uid}`);
-  const snapshot = await db.ref(`progetti/${uid}`).once('value');
-  res.json(snapshot.val());
-};
-exports.updateProject = async (req, res) => {
-  const { uid, projectId, project } = req.body;
-  console.log(`✏️ Aggiornamento progetto ${projectId} per UID: ${uid}`);
-
-  if (!uid || !projectId || !project) {
-    console.error('❌ Richiesta incompleta per aggiornamento');
-    return res.status(400).json({ error: 'uid, projectId e project sono richiesti' });
-  }
-
-  try {
-    const projectRef = db.ref(`progetti/${uid}/${projectId}`);
-    const snapshot = await projectRef.once('value');
-
-    if (!snapshot.exists()) {
-      return res.status(404).json({ error: 'Progetto non trovato' });
-    }
-
-    await projectRef.update(project);
-    res.json({ message: '✅ Progetto aggiornato con successo!' });
-  } catch (err) {
-    console.error('❌ Errore aggiornamento progetto:', err.message);
-    res.status(500).json({ error: 'Errore aggiornamento progetto: ' + err.message });
-  }
-};
- 
-*/
