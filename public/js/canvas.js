@@ -1,6 +1,3 @@
-// ================================
-// 2. Canvas Constants & Init
-// ================================
 import {
   currentBrush, brushColor, brushSize, globalDrawingMode,
   isFilling, isBucketActive, isInsertingText,
@@ -132,7 +129,7 @@ export function updateCanvasVisibility() { // makes sure i see the right canva
     });
   });
 }
-export function updateCanvasStacking() { //
+export function updateCanvasStacking() { 
   const container = document.querySelector('.canvas-container');
   container.innerHTML = '';
 

@@ -1,5 +1,4 @@
 // here there is all the function that manage what every button does 
-
 import { setBrush, setDrawingMode, disableDrawingSilently } from './tool.js';
 import { getActiveLayer, layers, initLayers } from './canvas.js';
 import { undo, redo, saveState } from './actions.js';

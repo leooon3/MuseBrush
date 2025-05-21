@@ -1,4 +1,3 @@
-//auth .js for all the necessary functions for autentication
 const backendUrl = 'https://musebrush.onrender.com';
 import { updateStates } from './state.js';
 

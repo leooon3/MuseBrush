@@ -1,4 +1,3 @@
-//actions for the canva
 import { getActiveLayer } from './canvas.js';
 
 export function saveState() { // saves the action just made for undo and redo

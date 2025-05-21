@@ -1,5 +1,3 @@
-// ✅ state.js con updateStates()
-
 export let currentBrush = "Basic";
 export let brushColor = "#000000";
 export let globalDrawingMode = true;
