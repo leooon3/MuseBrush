@@ -1,7 +1,30 @@
 // actions.js
 
 import { getActiveLayer } from './canvas.js';
-import isEqual from 'lodash.isequal';
+
+/**
+ * deepEqual: semplice confronto ricorsivo di oggetti/array.
+ * @param {*} a 
+ * @param {*} b 
+ * @returns {boolean}
+ */
+function deepEqual(a, b) {
+  if (a === b) return true;
+  if (typeof a !== 'object' || a === null
+   || typeof b !== 'object' || b === null) {
+    return false;
+  }
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (let key of keysA) {
+    if (!keysB.includes(key) || !deepEqual(a[key], b[key])) {
+      return false;
+    }
+  }
+  return true;
+}
 
 /**
  * saveState: salva lo stato corrente per le funzionalità di undo/redo.
@@ -11,10 +34,10 @@ export function saveState() {
 
   // Serializziamo con toJSON(), non con JSON.stringify, per evitare riferimenti circolari
   const currentState = layer.canvas.toJSON();
-  const lastState = layer.undoStack[layer.undoStack.length - 1];
+  const lastState    = layer.undoStack[layer.undoStack.length - 1];
 
   // Confronto profondo degli oggetti JSON per decidere se pushare un nuovo snapshot
-  if (!isEqual(lastState, currentState)) {
+  if (!deepEqual(lastState, currentState)) {
     layer.undoStack.push(currentState);
     layer.redoStack.length = 0; // resetto il redoStack quando c'è una nuova azione
   }
@@ -61,9 +84,9 @@ export function redo() {
  * @returns {{ x: number, y: number }}
  */
 export function fabricToCanvasCoords(canvas, pointer) {
-  const vt = canvas.viewportTransform;
+  const vt   = canvas.viewportTransform;
   const zoom = canvas.getZoom();
-  const x = (pointer.x * zoom + vt[4]) / zoom;
-  const y = (pointer.y * zoom + vt[5]) / zoom;
+  const x    = (pointer.x * zoom + vt[4]) / zoom;
+  const y    = (pointer.y * zoom + vt[5]) / zoom;
   return { x: Math.floor(x), y: Math.floor(y) };
 }

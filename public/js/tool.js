@@ -2,6 +2,7 @@
 
 import { getActiveLayer, layers } from './canvas.js';
 import {
+  activeLayerIndex,
   currentBrush,
   brushColor,
   brushSize,
@@ -23,9 +24,12 @@ export function setBrush(type) {
   updateStates({ currentBrush: type });
   if (!layer || !layer.canvas) return;
 
-  let brush = null;
-  const realColor = type === 'Eraser' ? 'rgba(0,0,0,0)' : brushColor;
   const canvas = layer.canvas;
+  // Rimuovo eventuali listener eraser precedenti per evitare duplicazioni
+  canvas.off('path:created');
+
+  let brush;
+  const realColor = type === 'Eraser' ? 'rgba(0,0,0,0)' : brushColor;
 
   switch (type) {
     case 'Basic':
@@ -66,63 +70,78 @@ export function setBrush(type) {
       brush.color = 'white';
       break;
     case 'Eraser':
-      // Modalità gomma: disabilita selezione e path di gomma rimuove oggetti
+      // Gomma: disabilito selezione e lascio il listener per rimuovere oggetti
       canvas.selection = false;
       canvas.skipTargetFind = true;
       canvas.getObjects().forEach(obj => {
         obj.selectable = false;
-        obj.evented = false;
+        obj.evented    = false;
       });
       brush = new fabric.PencilBrush(canvas);
       brush.width = brushSize;
       brush.color = 'rgba(0,0,0,0)';
-      // Mantieni il listener attivo per tutta la sessione
+      // Listener che rimuove oggetti intersecati al path creato
       canvas.on('path:created', function handleEraserPath(e) {
         const path = e.path;
-        const toRemove = canvas.getObjects().filter(obj => obj !== path && path.intersectsWithObject(obj));
+        const toRemove = canvas.getObjects().filter(obj =>
+          obj !== path && path.intersectsWithObject(obj)
+        );
         toRemove.forEach(obj => canvas.remove(obj));
         canvas.remove(path);
         canvas.requestRenderAll();
       });
       break;
+    default:
+      // Se tipo non riconosciuto, fallback pencil
+      brush = new fabric.PencilBrush(canvas);
+      brush.width = brushSize;
+      brush.color = brushColor;
   }
 
-  if (brush) {
-    canvas.freeDrawingBrush = brush;
-    if (!getIsPointerMode()) {
-      canvas.isDrawingMode = true;
-    }
+  // Applica il brush e attiva isDrawingMode se non in pointer mode
+  canvas.freeDrawingBrush = brush;
+  if (!getIsPointerMode()) {
+    canvas.isDrawingMode = true;
   }
 }
 
 /**
- * setDrawingMode: abilita/disabilita la modalità di disegno su tutti i layers.
+ * setDrawingMode: abilita/disabilita la modalità di disegno sul layer attivo.
  * @param {boolean} active
  */
 export function setDrawingMode(active) {
-  layers.forEach((layer, index) => {
-    const isActive = index === activeLayerIndex;
-    const canvas = layer.canvas;
-    const fillingNow = isFilling;
-    const drawing = isActive && active && layer.visible && !getIsPointerMode();
+  const layer = layers[activeLayerIndex];
+  if (!layer) return;
 
-    canvas.isDrawingMode = drawing && !drawingShape && !isInsertingText;
-    canvas.selection = !(drawing || fillingNow);
-    canvas.skipTargetFind = drawing || fillingNow;
+  const canvas = layer.canvas;
+  const fillingNow = isFilling;
+  const allowDraw = active && layer.visible && !getIsPointerMode();
 
-    canvas.getObjects().forEach(obj => {
-      obj.selectable = canvas.selection;
-    });
+  canvas.isDrawingMode = allowDraw && !drawingShape && !isInsertingText;
+  canvas.selection      = !(canvas.isDrawingMode || fillingNow);
+  canvas.skipTargetFind = canvas.isDrawingMode || fillingNow;
+
+  // Aggiorna selettabilità degli oggetti
+  canvas.getObjects().forEach(obj => {
+    obj.selectable = canvas.selection;
+    obj.evented    = canvas.selection;
   });
-  document.getElementById('pointerIcon').src =
-    active ? './images/pencil-icon.png' : './images/pointer-icon.png';
+
+  // Aggiorna icona puntatore
+  const pointerIcon = document.getElementById('pointerIcon');
+  if (pointerIcon) {
+    pointerIcon.src = active
+      ? './images/pencil-icon.png'
+      : './images/pointer-icon.png';
+  }
 }
 
 /**
- * disableDrawingSilently: disabilita drawingMode senza alterare la UI.
+ * disableDrawingSilently: disabilita drawingMode su tutti i layer
+ * senza modificare la UI (icone, dropdown, ecc.).
  */
 export function disableDrawingSilently() {
-  layers.forEach(layer => {
-    layer.canvas.isDrawingMode = false;
+  layers.forEach(({ canvas }) => {
+    canvas.isDrawingMode = false;
   });
 }

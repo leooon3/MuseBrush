@@ -20,10 +20,10 @@ export let currentProjectName  = null;
 export let currentProjectId    = null;
 export let activeLayerIndex    = 0;
 export let isPointerMode       = false;
+export let isAuthenticated     = false;  // nuovo stato di autenticazione
 
 /**
  * 📌 Setter e Getter per lo stato.
- * Manteniamo i nomi esistenti per compatibilità con il codice attuale.
  */
 export function setCurrentBrush(val)        { currentBrush        = val; }
 export function getCurrentBrush()           { return currentBrush; }
@@ -76,31 +76,14 @@ export function getActiveLayerIndex()       { return activeLayerIndex; }
 export function setIsPointerMode(val)       { isPointerMode       = val; }
 export function getIsPointerMode()          { return isPointerMode; }
 
+export function setIsAuthenticated(val)     { isAuthenticated     = val; }
+export function getIsAuthenticated()        { return isAuthenticated; }
+
 /**
  * 🚀 updateStates: aggiorna più stati in un colpo solo.
- * Usa le chiavi di cui sopra come proprietà del parametro.
+ * Usa le funzioni setter sopra definite.
  */
 export function updateStates(updates = {}) {
-  const setters = {
-    currentBrush,        // placeholder, non usato
-    brushColor,
-    globalDrawingMode,
-    isFilling,
-    isBucketActive,
-    isInsertingText,
-    drawingShape,
-    previousDrawingMode,
-    isDrawingShape,
-    shapeObject,
-    shapeOrigin,
-    brushSize,
-    lastEraserPoint,
-    currentProjectName,
-    currentProjectId,
-    activeLayerIndex,
-    isPointerMode
-  };
-
   const setterFns = {
     currentBrush:        setCurrentBrush,
     brushColor:          setBrushColor,
@@ -118,7 +101,8 @@ export function updateStates(updates = {}) {
     currentProjectName:  setCurrentProjectName,
     currentProjectId:    setCurrentProjectId,
     activeLayerIndex:    setActiveLayerIndex,
-    isPointerMode:       setIsPointerMode
+    isPointerMode:       setIsPointerMode,
+    isAuthenticated:     setIsAuthenticated  // registrato qui
   };
 
   Object.entries(updates).forEach(([key, value]) => {
