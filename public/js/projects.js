@@ -4,40 +4,30 @@ import { updateStates } from './state.js';
 import { updateMenuHeight } from './ui.js';
 import { createBackgroundLayer } from './canvas.js';
 
-export function loadProject(proj) { // loads the project form the data of the backend
+export function loadProject(proj) {
   const container = document.querySelector('.canvas-container');
   container.innerHTML = '';
-
   createBackgroundLayer(container);
-
   layers.length = 0;
-
   updateStates({
     activeLayerIndex: 0,
-    currentProjectName: proj.name
+    currentProjectName: proj.nome
   });
-
-  proj.layers.forEach((layerData, index) => {
+  proj.layers.forEach(layerData => {
     const layerCanvasEl = document.createElement('canvas');
     layerCanvasEl.classList.add('layer-canvas');
-
-    const originalWidth = layerData.width || 1920;
-    const originalHeight = layerData.height || 1080;
-    layerCanvasEl.width = originalWidth;
-    layerCanvasEl.height = originalHeight;
-
+    layerCanvasEl.width = layerData.width || 1920;
+    layerCanvasEl.height = layerData.height || 1080;
     const canvas = new fabric.Canvas(layerCanvasEl, {
       backgroundColor: 'transparent',
-      width: originalWidth,
-      height: originalHeight,
+      width: layerCanvasEl.width,
+      height: layerCanvasEl.height,
       preserveObjectStacking: true
     });
-
     container.appendChild(canvas.lowerCanvasEl);
     container.appendChild(canvas.upperCanvasEl);
     canvas.lowerCanvasEl.style.position = 'relative';
     canvas.upperCanvasEl.style.position = 'relative';
-
     layers.push({
       canvas: canvas,
       undoStack: [],
@@ -45,15 +35,11 @@ export function loadProject(proj) { // loads the project form the data of the ba
       name: layerData.name,
       visible: layerData.visible
     });
-
     canvas.loadFromJSON(layerData.json, () => {
       canvas.getObjects().forEach(obj => {
         if (
-          (obj.type === 'line' ||
-           obj.type === 'rect' ||
-           obj.type === 'circle' ||
-           obj.type === 'polygon') &&
-          (obj.fill === null || obj.fill === '' || obj.fill === 'rgba(0,0,0,1)')
+          (['line','rect','circle','polygon'].includes(obj.type)) &&
+          (!obj.fill || obj.fill === 'rgba(0,0,0,1)')
         ) {
           obj.set({ fill: 'transparent' });
         }
@@ -62,14 +48,10 @@ export function loadProject(proj) { // loads the project form the data of the ba
       fitCanvasToContainer(canvas);
       attachCanvasEvents(canvas);
     });
-
     canvas.getObjects().forEach(obj => {
-      if (obj.type === 'path') {
-        obj.set({ fill: null });
-      }
+      if (obj.type === 'path') obj.set({ fill: null });
     });
   });
-
   updateCanvasVisibility();
   updateMenuHeight();
 }

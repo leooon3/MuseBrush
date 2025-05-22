@@ -7,7 +7,7 @@ let db;
 async function connect() {
   if (!db) {
     await client.connect();
-    db = client.db("musebrush"); 
+    db = client.db("musebrush");
   }
   return db.collection("progetti");
 }
@@ -43,7 +43,7 @@ exports.updateProject = async (req, res) => {
   if (!uid) return res.status(401).json({ error: 'Non autenticato' });
   const { projectId, project } = req.body;
   const col = await connect();
-  const result = await col.updateOne(
+  await col.updateOne(
     { _id: new ObjectId(projectId), uid },
     { $set: project }
   );
@@ -58,4 +58,3 @@ exports.deleteProject = async (req, res) => {
   await col.deleteOne({ _id: new ObjectId(projectId), uid });
   res.json({ message: '✅ Progetto eliminato!' });
 };
- 

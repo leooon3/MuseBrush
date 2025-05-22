@@ -8,18 +8,16 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const firebaseService = require('./firebaseService');
 const mongoService = require('./mongodbService');
-const { loginUserRaw, loginUser } = require('./firebaseService');
+const { loginUserRaw } = require('./firebaseService');
 
 const app = express();
-
-// index.js
 
 app.use(helmet());
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],            // accetta solo script dal tuo dominio
+      scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:"],
       connectSrc: ["'self'", process.env.FRONTEND_URL],
@@ -29,15 +27,19 @@ app.use(
   })
 );
 
-app.use(cors({
-  origin: (origin, callback) => {
-    const allowed = [process.env.FRONTEND_URL, 'http://127.0.0.1:5500'];
-    if (!origin || allowed.includes(origin)) callback(null, true);
-    else callback(new Error('CORS policy: Origin not allowed'), false);
-  },
-  credentials: true,
-  optionsSuccessStatus: 200
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      const allowed = [process.env.FRONTEND_URL, 'http://127.0.0.1:5500'];
+      if (!origin || allowed.includes(origin)) callback(null, true);
+      else callback(new Error('CORS policy: Origin not allowed'), false);
+    },
+    credentials: true,
+    optionsSuccessStatus: 200,
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token']
+  })
+);
+app.options('*', cors());
 app.use(express.json({ limit: '40mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(session({
@@ -52,7 +54,6 @@ app.use(session({
 }));
 app.use(cookieParser());
 
-// Passport setup
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 passport.use(new GoogleStrategy({
@@ -65,11 +66,7 @@ passport.use(new GoogleStrategy({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Public auth routes (no CSRF)
 app.post('/api/register', firebaseService.registerUser);
-// …
-// non monta più direttamente loginUser qui
-// app.post('/api/login', firebaseService.loginUser);
 app.post('/api/login', async (req, res) => {
   try {
     const { uid, message } = await loginUserRaw(req.body.email, req.body.password);
@@ -79,26 +76,21 @@ app.post('/api/login', async (req, res) => {
     res.status(err.statusCode || 400).json({ error: err.message });
   }
 });
-
 app.post('/api/resetPassword', firebaseService.resetPassword);
 app.post('/api/resendVerification', firebaseService.resendVerification);
 app.get('/api/googleLogin', passport.authenticate('google', { scope: ['profile'] }));
 app.post('/api/logout', (req, res) => {
   req.session.destroy(err => {
-    if (err) return res.status(500).send('Logout fallito');
+    if (err) return res.status(500).send('Logout failed');
     res.clearCookie('connect.sid');
-    res.json({ message: 'Logout avvenuto' });
+    res.json({ message: 'Logged out' });
   });
 });
+app.get('/api/googleCallback',
+  passport.authenticate('google', { failureRedirect: process.env.FRONTEND_URL, session: true }),
+  (req, res) => res.redirect(process.env.FRONTEND_URL)
+);
 
-app.get('/api/googleCallback', passport.authenticate('google', {
-  failureRedirect: process.env.FRONTEND_URL,
-  session: true
-}), (req, res) => {
-  res.redirect(process.env.FRONTEND_URL);
-});
-
-// CSRF protection for other routes
 const csurf = require('csurf');
 app.use(csurf({ cookie: true }));
 app.use((err, req, res, next) => {
@@ -106,14 +98,15 @@ app.use((err, req, res, next) => {
   next(err);
 });
 app.get('/api/csrf-token', (req, res) => res.json({ csrfToken: req.csrfToken() }));
+
 function ensureAuth(req, res, next) {
   if (!req.session.uid) return res.status(401).json({ error: 'Non autenticato' });
   next();
 }
-// Protected project routes
-app.post('/api/saveProject',     ensureAuth, mongoService.saveProject);
-app.get ('/api/loadProjects',    ensureAuth, mongoService.loadProjects);
-app.put ('/api/updateProject',   ensureAuth, mongoService.updateProject);
+
+app.post('/api/saveProject', ensureAuth, mongoService.saveProject);
+app.get('/api/loadProjects', ensureAuth, mongoService.loadProjects);
+app.put('/api/updateProject', ensureAuth, mongoService.updateProject);
 app.delete('/api/deleteProject', ensureAuth, mongoService.deleteProject);
 
 app.get('/', (req, res) => res.send('Server attivo 🚀'));
