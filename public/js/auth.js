@@ -99,26 +99,40 @@ function registerWithEmail() { // first time needs to be registered with this fu
     .catch(error => alert('Errore di rete: ' + error.message));
 }
 
-function loginWithEmail() { // login can be made after verification has happened
-  const email = document.getElementById("emailInput").value;
-  fetch(`${backendUrl}/api/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.uid) {
-        localStorage.setItem('userId', data.uid);
-        updateAuthIcon(true);
-        alert(data.message);
-        document.getElementById("authModal").classList.add("hidden");
-      } else {
-        alert(data.error);
-      }
-    })
-    .catch(error => alert('Errore di rete: ' + error.message));
+import { updateAuthIcon } from './auth.js'; // se necessario
+
+export async function loginWithEmail() {
+  const email = document.getElementById("emailInput").value.trim();
+  const password = document.getElementById("passwordInput").value;
+  if (!email || !password) {
+    alert("📧 Inserisci email e password.");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${backendUrl}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await response.json();
+
+    if (response.ok && data.uid) {
+      // login OK
+      localStorage.setItem('userId', data.uid);
+      updateAuthIcon(true);
+      alert(data.message);
+      document.getElementById("authModal").classList.add("hidden");
+    } else {
+      // login KO (incluso “Devi verificare...”)
+      alert(data.error || '❌ Errore login');
+    }
+  } catch (err) {
+    alert('❌ Errore di rete: ' + err.message);
+  }
 }
+
+
 
 function loginWithGoogle() { // login with google is totally backend
   window.location.href = `${backendUrl}/api/googleLogin`;
