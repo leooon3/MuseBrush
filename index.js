@@ -13,11 +13,20 @@ const mongoService = require('./mongodbService');
 const app = express();
 
 app.use(helmet());
+
+const allowedOrigins = [process.env.FRONTEND_URL, 'http://127.0.0.1:5500'];
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy: Origin not allowed'), false);
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200
 }));
+
 app.use(express.json({ limit: '40mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(session({

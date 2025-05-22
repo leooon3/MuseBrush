@@ -41,14 +41,12 @@ function buildProjectData(name) {
 }
 
 async function getCsrfToken() {
-  const res = await fetch(`${backendUrl}/api/csrf-token`, {
-    credentials: 'include'
-  });
+  const res = await fetch(`${backendUrl}/api/csrf-token`, { credentials: 'include' });
   const { csrfToken } = await res.json();
   return csrfToken;
 }
 
-async function saveProjectToBackend(projectName) {
+export async function saveProjectToBackend(projectName) {
   const project = buildProjectData(projectName);
   try {
     const csrfToken = await getCsrfToken();
@@ -68,7 +66,7 @@ async function saveProjectToBackend(projectName) {
   }
 }
 
-async function updateProjectToBackend(projectId, projectName) {
+export async function updateProjectToBackend(projectId, projectName) {
   const project = buildProjectData(projectName);
   try {
     const csrfToken = await getCsrfToken();
@@ -88,7 +86,7 @@ async function updateProjectToBackend(projectId, projectName) {
   }
 }
 
-async function loadProjectsFromBackend() {
+export async function loadProjectsFromBackend() {
   const projectList = document.getElementById('projectList');
   if (!projectList) return;
   projectList.innerHTML = '<p>⏳ Caricamento...</p>';
@@ -146,7 +144,7 @@ async function loadProjectsFromBackend() {
   }
 }
 
-async function deleteProjectFromBackend(projectId) {
+export async function deleteProjectFromBackend(projectId) {
   try {
     const csrfToken = await getCsrfToken();
     const res = await fetch(`${backendUrl}/api/deleteProject`, {
