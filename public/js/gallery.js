@@ -4,30 +4,24 @@ import { getBackgroundCanvas } from './canvas.js';
 import { getCurrentCanvasState } from './storage.js';
 import { loadProject } from './projects.js';
 import { updateStates, getCurrentProjectId } from './state.js';
-import { getAuth } from 'firebase/auth';
 
 const backendUrl = 'https://musebrush.onrender.com';
 
 export function initGallery() {
   document.getElementById('saveCanvasBtn').onclick = () => {
-    const auth = getAuth();
-    if (!auth.currentUser) return showGalleryMessage('🔒 Devi essere loggato per salvare.');
     const name = document.getElementById('projectNameInput').value.trim();
     if (!name) return showGalleryMessage('📛 Inserisci un nome progetto.');
     saveProjectToBackend(name);
   };
 
   document.getElementById('updateProjectBtn').onclick = () => {
-    const auth = getAuth();
     const projectId = getCurrentProjectId();
-    if (!auth.currentUser || !projectId) return showGalleryMessage('⚠️ Nessun progetto selezionato per aggiornare.');
+    if (!projectId) return showGalleryMessage('⚠️ Nessun progetto selezionato per aggiornare.');
     const name = document.getElementById('projectNameInput').value.trim();
     updateProjectToBackend(projectId, name);
   };
 
   document.getElementById('galleryBtn').onclick = () => {
-    const auth = getAuth();
-    if (!auth.currentUser) return showGalleryMessage('🔒 Devi essere loggato per aprire la galleria.');
     document.getElementById('galleryModal').classList.remove('hidden');
     loadProjectsFromBackend();
   };
@@ -46,19 +40,23 @@ function buildProjectData(name) {
   };
 }
 
+async function getCsrfToken() {
+  const res = await fetch(`${backendUrl}/api/csrf-token`, {
+    credentials: 'include'
+  });
+  const { csrfToken } = await res.json();
+  return csrfToken;
+}
+
 async function saveProjectToBackend(projectName) {
-  const auth = getAuth();
   const project = buildProjectData(projectName);
   try {
-    const csrfRes = await fetch(`${backendUrl}/api/csrf-token`, { credentials: 'include' });
-    const { csrfToken } = await csrfRes.json();
-    const userToken = await auth.currentUser.getIdToken();
+    const csrfToken = await getCsrfToken();
     const res = await fetch(`${backendUrl}/api/saveProject`, {
       method: 'POST',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userToken}`,
         'X-CSRF-Token': csrfToken
       },
       body: JSON.stringify({ project })
@@ -71,18 +69,14 @@ async function saveProjectToBackend(projectName) {
 }
 
 async function updateProjectToBackend(projectId, projectName) {
-  const auth = getAuth();
   const project = buildProjectData(projectName);
   try {
-    const csrfRes = await fetch(`${backendUrl}/api/csrf-token`, { credentials: 'include' });
-    const { csrfToken } = await csrfRes.json();
-    const userToken = await auth.currentUser.getIdToken();
+    const csrfToken = await getCsrfToken();
     const res = await fetch(`${backendUrl}/api/updateProject`, {
       method: 'PUT',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userToken}`,
         'X-CSRF-Token': csrfToken
       },
       body: JSON.stringify({ projectId, project })
@@ -95,19 +89,15 @@ async function updateProjectToBackend(projectId, projectName) {
 }
 
 async function loadProjectsFromBackend() {
-  const auth = getAuth();
   const projectList = document.getElementById('projectList');
   if (!projectList) return;
   projectList.innerHTML = '<p>⏳ Caricamento...</p>';
   try {
-    const csrfRes = await fetch(`${backendUrl}/api/csrf-token`, { credentials: 'include' });
-    const { csrfToken } = await csrfRes.json();
-    const userToken = await auth.currentUser.getIdToken();
+    const csrfToken = await getCsrfToken();
     const res = await fetch(`${backendUrl}/api/loadProjects`, {
       method: 'GET',
       credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${userToken}`,
         'X-CSRF-Token': csrfToken
       }
     });
@@ -117,16 +107,19 @@ async function loadProjectsFromBackend() {
     Object.entries(data).forEach(([id, progetto]) => {
       const div = document.createElement('div');
       div.className = 'project';
+
       const img = document.createElement('img');
       img.src = progetto.preview;
       img.width = 100;
       img.height = 75;
       img.alt = progetto.nome;
       div.appendChild(img);
+
       const title = document.createElement('strong');
       title.textContent = progetto.nome;
       div.appendChild(title);
       div.appendChild(document.createElement('br'));
+
       const openBtn = document.createElement('button');
       openBtn.textContent = '📂 Apri';
       openBtn.onclick = () => {
@@ -135,6 +128,7 @@ async function loadProjectsFromBackend() {
         document.getElementById('galleryModal').classList.add('hidden');
       };
       div.appendChild(openBtn);
+
       const deleteBtn = document.createElement('button');
       deleteBtn.textContent = '🗑️ Elimina';
       deleteBtn.style.marginLeft = '5px';
@@ -144,6 +138,7 @@ async function loadProjectsFromBackend() {
         }
       };
       div.appendChild(deleteBtn);
+
       projectList.appendChild(div);
     });
   } catch (error) {
@@ -152,17 +147,13 @@ async function loadProjectsFromBackend() {
 }
 
 async function deleteProjectFromBackend(projectId) {
-  const auth = getAuth();
   try {
-    const csrfRes = await fetch(`${backendUrl}/api/csrf-token`, { credentials: 'include' });
-    const { csrfToken } = await csrfRes.json();
-    const userToken = await auth.currentUser.getIdToken();
+    const csrfToken = await getCsrfToken();
     const res = await fetch(`${backendUrl}/api/deleteProject`, {
       method: 'DELETE',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userToken}`,
         'X-CSRF-Token': csrfToken
       },
       body: JSON.stringify({ projectId })

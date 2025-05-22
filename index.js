@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const helmet = require('helmet');
 const csurf = require('csurf');
@@ -29,6 +30,7 @@ app.use(session({
     sameSite: 'lax'
   }
 }));
+app.use(cookieParser());
 app.use(csurf({ cookie: true }));
 app.use((err, req, res, next) => {
   if (err.code === 'EBADCSRFTOKEN') {
