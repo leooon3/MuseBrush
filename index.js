@@ -54,6 +54,14 @@ app.post('/api/login', firebaseService.loginUser);
 app.post('/api/resetPassword', firebaseService.resetPassword);
 app.post('/api/resendVerification', firebaseService.resendVerification);
 app.get('/api/googleLogin', passport.authenticate('google', { scope: ['profile'] }));
+app.post('/api/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) return res.status(500).send('Logout fallito');
+    res.clearCookie('connect.sid');
+    res.json({ message: 'Logout avvenuto' });
+  });
+});
+
 app.get('/api/googleCallback', passport.authenticate('google', {
   failureRedirect: process.env.FRONTEND_URL,
   session: true
