@@ -14,6 +14,7 @@ import {
 import { initLayers, layers, fitCanvasToContainer, updateCanvasVisibility } from './canvas.js';
 import { attachCanvasEvents } from './events.js';
 import { setDrawingMode, setBrush } from './tool.js';
+import { initResponsiveMenus } from './ui.js';
 
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById("newCanvasBtn").onclick = setupNewCanvas;
@@ -46,6 +47,7 @@ window.addEventListener('DOMContentLoaded', () => {
       updateCanvasVisibility();
     }
   }, 0);
+    initResponsiveMenus();
 });
 
 document.addEventListener('DOMContentLoaded', function() {

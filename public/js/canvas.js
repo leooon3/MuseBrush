@@ -18,7 +18,7 @@ export function initLayers(initialLayerCount = 1) { //functions for starting the
   const container = document.querySelector('.canvas-container');
   container.innerHTML = '';
 
-  createBackgroundLayer(container); // 🎯 Sfondo prima di tutto
+  createBackgroundLayer(container);
 
   for (let i = 0; i < initialLayerCount; i++) {
     createLayer(container, i);
@@ -29,8 +29,6 @@ export function initLayers(initialLayerCount = 1) { //functions for starting the
     setDrawingMode(true);
     setBrush(currentBrush);
   });
-
-  // Overlay per anteprima gomma
   const overlay = document.createElement('canvas');
   overlay.id = 'eraser-preview';
   Object.assign(overlay.style, {
@@ -132,8 +130,6 @@ export function updateCanvasVisibility() { // makes sure i see the right canva
 export function updateCanvasStacking() { 
   const container = document.querySelector('.canvas-container');
   container.innerHTML = '';
-
-  // 🔁 Aggiungi sfondo prima
   if (backgroundCanvas) {
     container.appendChild(backgroundCanvas.lowerCanvasEl);
     container.appendChild(backgroundCanvas.upperCanvasEl);
@@ -180,7 +176,6 @@ export function fitCanvasToContainer(canvas) {
     marginY += (containerHeight - displayHeight) / 2;
   }
 
-  // ✅ FORZA simulazione DPI 1.25 su tutti gli schermi
   const simulatedDeviceRatio = 1.25;
   const correctedScale = scale / simulatedDeviceRatio;
 

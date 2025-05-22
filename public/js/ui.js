@@ -17,7 +17,8 @@ export function initUIControls() { // this function links every button with thei
   const shapeDropdown = document.getElementById("shapeDropdown");
   const eraserButton = document.getElementById("eraser_tab");
   const eraserDropdown = document.getElementById("eraserDropdown");
-
+  const layersButton    = document.getElementById("layers_tab");
+  const layersPanel     = document.getElementById("layersPanel");
   brushButton.onclick = () => {
     brushDropdown.style.display = brushDropdown.style.display === "block" ? "none" : "block";
   };
@@ -105,30 +106,29 @@ export function initUIControls() { // this function links every button with thei
     });
   });
 
-  document.addEventListener("click", function (e) {
-    if (!eraserButton.contains(e.target) && !eraserDropdown.contains(e.target)) {
-      eraserDropdown.style.display = "none";
-    }
-    if (!downloadBtn.contains(e.target) && !downloadDropdown.contains(e.target)) {
-      downloadDropdown.style.display = "none";
-    }
-  });
 
-  document.getElementById("pointerToggleBtn").onclick = () => {
-    const newPointerState = !getIsPointerMode();
-    updateStates({
-      isPointerMode: newPointerState,
-      globalDrawingMode: !newPointerState,
-      isFilling: false,
-      drawingShape: null,
-      isInsertingText: false
-    });
-    setDrawingMode(!newPointerState);
-    setBrush(currentBrush);
-    document.getElementById("pointerIcon").src = newPointerState
-      ? "./images/pointer-icon.png"
-      : "./images/pencil-icon.png";
-  };
+  const pointerBtn = document.getElementById("pointerToggleBtn");
+pointerBtn.onclick = () => {
+  const newPointerState = !getIsPointerMode();
+  updateStates({
+    isPointerMode: newPointerState,
+    globalDrawingMode: !newPointerState,
+    isFilling: false,
+    drawingShape: null,
+    isInsertingText: false
+  });
+  setDrawingMode(!newPointerState);
+  setBrush(currentBrush);
+
+  const iconSrc = newPointerState
+    ? "./images/pointer-icon.png"
+    : "./images/pencil-icon.png";
+
+  document.getElementById("pointerIcon").src = iconSrc;
+  const mobileIcon = document.getElementById("pointerIcon_mobile");
+  if (mobileIcon) mobileIcon.src = iconSrc;
+};
+
 
   document.getElementById("thicknessSlider").addEventListener("input", function () {
     updateStates({ brushSize: parseInt(this.value) });
@@ -175,6 +175,43 @@ export function initUIControls() { // this function links every button with thei
     setDrawingMode(false);
     highlightTool("bucket_tab");
   };
+  document.addEventListener('click', function(e) {
+    if (
+      !e.target.closest('#brushes_tab') &&
+      !e.target.closest('#brushDropdown') &&
+      !e.target.closest('#brushes_tab_mobile')
+    ) {
+      document.getElementById('brushDropdown').style.display = 'none';
+    }
+    if (
+      !e.target.closest('#shapes_tab') &&
+      !e.target.closest('#shapeDropdown') &&
+      !e.target.closest('#shapes_tab_mobile')
+    ) {
+      document.getElementById('shapeDropdown').style.display = 'none';
+    }
+    if (
+      !e.target.closest('#eraser_tab') &&
+      !e.target.closest('#eraserDropdown') &&
+      !e.target.closest('#eraser_tab_mobile')
+    ) {
+      document.getElementById('eraserDropdown').style.display = 'none';
+    }
+    if (
+      !e.target.closest('#download_tab') &&
+      !e.target.closest('#downloadDropdown') &&
+      !e.target.closest('#download_tab_mobile')
+    ) {
+      document.getElementById('downloadDropdown').style.display = 'none';
+    }
+    if (
+      !e.target.closest('#layers_tab') &&
+      !e.target.closest('#layersPanel') &&
+      !e.target.closest('#layers_tab_mobile')
+    ) {
+      document.getElementById('layersPanel').classList.remove('visible');
+    }
+  });
 }
 
 function highlightTool(buttonId) { // blue margin effect that let you know when your button is on
@@ -210,11 +247,164 @@ function renderRecentColors() { // is the list of the most recent colors
   });
 }
 
-export function updateMenuHeight() { // with this function we are sure that the menu pf all the tools, doesn't cover the space of the other things
-  const menu = document.querySelector('#menu');
-  if (menu) {
-    const height = menu.offsetHeight + 'px';
+export function updateMenuHeight() {
+  // Sceglie quale menu misurare a seconda del breakpoint 1068px
+  const isMobile = window.innerWidth <= 1068;
+  const menuEl  = document.querySelector(isMobile ? '#responsiveTopMenu' : '#menu');
+  if (menuEl) {
+    const height = menuEl.offsetHeight + 'px';
     document.documentElement.style.setProperty('--menu-height', height);
     console.log('Impostato --menu-height a:', height);
   }
+}
+
+export function initResponsiveMenus() {
+  const leftMenu  = document.getElementById("responsiveLeftMenu");
+  const rightMenu = document.getElementById("responsiveRightMenu");
+  const topMenu   = document.getElementById("responsiveTopMenu");
+  document.getElementById("toggleLeftMenu").onclick = () => {
+    leftMenu .classList.toggle("hidden");
+    rightMenu.classList.add("hidden");
+  };
+  document.getElementById("toggleRightMenu").onclick = () => {
+    rightMenu.classList.toggle("hidden");
+    leftMenu .classList.add("hidden");
+  };
+
+function populateResponsiveMenus() {
+  leftMenu.innerHTML = `
+    <button id="brushes_tab_mobile">
+      <img src="./images/brush.png"/><span class="btn-label">Brushes</span>
+    </button>
+    <button id="shapes_tab_mobile">
+      <img src="./images/square.png"/><span class="btn-label">Shapes</span>
+    </button>
+    <button id="bucket_tab_mobile">
+      <img src="./images/bucket.png"/><span class="btn-label">Bucket</span>
+    </button>
+    <button id="text_tab_mobile">
+      <img src="./images/text.png"/><span class="btn-label">Text</span>
+    </button>
+    <button id="eraser_tab_mobile">
+      <img src="./images/eraser.png"/><span class="btn-label">Eraser</span>
+    </button>
+    <button id="pointerToggleBtn_mobile">
+      <img id="pointerIcon_mobile" src="./images/pointer-icon.png"/><span class="btn-label">Pointer</span>
+    </button>
+    <input type="color" id="colorInput_mobile" class="color-picker"/>
+  `;
+  rightMenu.innerHTML = `
+    <button id="download_tab_mobile">
+      <img src="./images/downloads.png"/><span class="btn-label">Download</span>
+    </button>
+    <button id="layers_tab_mobile">
+      <img src="./images/layers.png"/><span class="btn-label">Layers</span>
+    </button>
+    <button id="galleryBtn_mobile">
+      <img src="./images/gallery.png"/><span class="btn-label">Gallery</span>
+    </button>
+    <button id="authToggleBtn_mobile">
+      <img src="./images/user.png"/><span class="btn-label">User</span>
+    </button>
+    <button id="newCanvasBtn_mobile">
+      <img src="./images/new-canva.png"/><span class="btn-label">New Canvas</span>
+    </button>
+    <button id="undoBtn_mobile">
+      <img src="./images/undo.png"/><span class="btn-label">Undo</span>
+    </button>
+    <button id="redoBtn_mobile">
+      <img src="./images/arrow.png"/><span class="btn-label">Redo</span>
+    </button>
+    <button id="clearBtn_mobile">
+      <img src="https://icons.veryicon.com/png/o/miscellaneous/flat-wireframe-library/trash-bin-3.png"/>
+      <span class="btn-label">Clear</span>
+    </button>
+  `;
+  [
+    ["brushes_tab_mobile", "brushDropdown"],
+    ["shapes_tab_mobile",  "shapeDropdown"],
+    ["eraser_tab_mobile",  "eraserDropdown"],
+    ["download_tab_mobile","downloadDropdown"]
+  ].forEach(([btnId, ddId]) => {
+    const btn = document.getElementById(btnId);
+    btn.onclick = e => {
+      const dd = document.getElementById(ddId);
+      const portal = document.getElementById("globalDropdowns");
+      if (dd.parentElement !== portal) portal.appendChild(dd);
+      const { left, bottom } = e.currentTarget.getBoundingClientRect();
+      dd.style.position = "fixed";
+      dd.style.top      = `${bottom}px`;
+      dd.style.left     = `${left}px`;
+      dd.style.zIndex   = "2000";
+      dd.style.display  = dd.style.display === "block" ? "none" : "block";
+    };
+  });
+
+  [
+    ["bucket_tab",       "bucket_tab_mobile"],
+    ["pointerToggleBtn", "pointerToggleBtn_mobile"],
+    ["layers_tab",       "layers_tab_mobile"],
+    ["galleryBtn",       "galleryBtn_mobile"],
+    ["authToggleBtn",    "authToggleBtn_mobile"],
+    ["newCanvasBtn",     "newCanvasBtn_mobile"],
+    ["undoBtn",          "undoBtn_mobile"],
+    ["redoBtn",          "redoBtn_mobile"],
+    ["clearBtn",         "clearBtn_mobile"],
+    ["text_tab",         "text_tab_mobile"]
+  ].forEach(([deskId, mobId]) => {
+    const desk = document.getElementById(deskId);
+    const mob  = document.getElementById(mobId);
+    if (desk && mob) mob.onclick = () => desk.click();
+  });
+  const cm = document.getElementById("colorInput_mobile");
+  const co = document.getElementById("colorInput");
+  if (cm && co) {
+    cm.value   = co.value;
+    cm.oninput = e => {
+      co.value = e.target.value;
+      co.dispatchEvent(new Event("input"));
+    };
+  }
+}
+function resetDropdowns() {
+  const leftWrappers = Array.from(
+    document.querySelectorAll('#menu .menu-left > .dropdown-wrapper')
+  );
+  const rightWrapper = document.querySelector(
+    '#menu .menu-right > .dropdown-wrapper'
+  );
+
+  const mappings = [
+    { id: 'brushDropdown',  wrapper: leftWrappers[0] },
+    { id: 'shapeDropdown',  wrapper: leftWrappers[1] },
+    { id: 'eraserDropdown', wrapper: leftWrappers[2] },
+    { id: 'downloadDropdown', wrapper: rightWrapper }
+  ];
+
+  mappings.forEach(({ id, wrapper }) => {
+    const dd = document.getElementById(id);
+    if (dd && wrapper && dd.parentElement !== wrapper) {
+      ['position', 'top', 'left', 'zIndex', 'display']
+        .forEach(prop => dd.style[prop] = '');
+      wrapper.appendChild(dd);
+    }
+  });
+}
+
+  function handleResponsive() {
+    if (window.innerWidth <= 1068) {
+      topMenu .classList.remove("hidden");
+      leftMenu.classList.remove("hidden");
+      rightMenu.classList.remove("hidden");
+      populateResponsiveMenus();
+    } else {
+      topMenu .classList.add("hidden");
+      leftMenu.classList.add("hidden");
+      rightMenu.classList.add("hidden");
+      resetDropdowns();
+    }
+  }
+
+  window.addEventListener("resize", handleResponsive);
+  handleResponsive();
 }

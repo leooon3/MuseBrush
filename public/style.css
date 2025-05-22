@@ -10,7 +10,10 @@ body, html {
   overflow-x: hidden;
   overflow-y: hidden;
 }
-
+/* Nasconde qualsiasi elemento con .hidden */
+.hidden {
+  display: none !important;
+}
 *,
 *::before,
 *::after {
@@ -220,6 +223,7 @@ button.tool-active {
 .dropdown-wrapper {
   position: relative;
   display: inline-block;
+  z-index: 9999 !important;
 }
 
 .dropdown-content {
@@ -231,7 +235,7 @@ button.tool-active {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border-radius: 6px;
   display: none;
-  z-index: 1000;
+  z-index: 9999 !important; 
   padding: 5px;
   max-width: 100vw;
   box-sizing: border-box;
@@ -473,14 +477,124 @@ button.tool-active {
   min-width: 150px;
   text-align: center;
 }
-
 /* =====================================
    RESPONSIVE
 ====================================== */
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 1068px) {
+
+  .menu-left > button,
+  .menu-right > button,
   .slider-container {
-    position: static;
-    transform: rotate(180deg);
-    margin: 10px 0;
+    display: none !important;
   }
+
+  .menu-left > .dropdown-wrapper > button,
+  .menu-right > .dropdown-wrapper > button {
+    display: none !important;
+  }
+  .menu-left > .dropdown-wrapper,
+  .menu-right > .dropdown-wrapper {
+    display: inline-block !important;
+  }
+
+  /* Top responsive */
+  .responsive-top-menu {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: #fff;
+    border-bottom: 1px solid #ccc;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1001;
+  }
+
+  /* Side menus */
+  .responsive-side-menu {
+    position: fixed;
+    top: 60px;
+    width: 200px;
+    height: calc(100% - 60px);
+    background: #ffffff;
+    border-right: 1px solid #ccc;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+    overflow-y: auto;
+    overflow: visible !important;
+    z-index: 1001;
+  }
+  #responsiveLeftMenu  { left:  0; }
+  #responsiveRightMenu { right: 0; }
+  .dropdown-content {
+    position: fixed !important;
+    z-index: 2000 !important;  
+    white-space: nowrap;
+  }
+@media screen and (max-width: 1068px) {
+  .responsive-top-menu button,
+  .responsive-side-menu button {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 8px 12px !important;
+    box-sizing: border-box;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: auto !important;
+    min-width: 0;
+  }
+    .responsive-side-menu {
+    display: flex;
+    flex-direction: column !important;
+    align-items: stretch;
+  }
+  .btn-label {
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .color-picker {
+    margin-left: 6px;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: none;
+  }
+}
+
+  .slider-container {
+    display: flex !important;
+  }
+
+  .slider {
+    background: linear-gradient(to bottom, #666666, #dddddd) !important;
+    opacity: 1 !important;
+  }
+  .slider:hover {
+    opacity: 1 !important;
+  }
+  
+}
+
+/* =====================================
+   GLOBAL DROPDOWN PORTAL
+====================================== */
+#globalDropdowns {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 3000;      
+}
+
+#globalDropdowns .dropdown-content {
+  pointer-events: auto;
+
+  z-index: 3001 !important;
 }
