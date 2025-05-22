@@ -99,28 +99,70 @@ exports.loginUser = async (req, res) => {
   }
 };
 // --- RISPEDISCI LINK DI VERIFICA ---
+// 🔁 Reinvia link di verifica via mail
 exports.resendVerification = async (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "Email mancante." });
+  if (!email) {
+    return res.status(400).json({ error: "Email mancante." });
+  }
+
   try {
-    const link = await admin.auth().generateEmailVerificationLink(email);
-    // usa il tuo transporter SMTP per inviare `link` all’indirizzo
-    res.json({ link });
+    // 1) Genera il link di verifica
+    const link = await auth.generateEmailVerificationLink(email);
+
+    // 2) Spedisci la mail con Nodemailer
+    await transporter.sendMail({
+      from: process.env.FROM_EMAIL,      // es. "no-reply@musebrush.com"
+      to:   email,
+      subject: "Verifica il tuo indirizzo e-mail per MuseBrush",
+      html: `
+        <p>Ciao!</p>
+        <p>Per completare la registrazione sul tuo account MuseBrush, clicca qui:</p>
+        <p><a href="${link}">Verifica il tuo indirizzo e-mail</a></p>
+        <p>Se non sei stato tu, puoi ignorare questa mail.</p>
+      `
+    });
+
+    // 3) Rispondi con un messaggio di conferma (non il link!)
+    res.json({ message: "✅ Link di verifica inviato! Controlla la tua casella di posta." });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("❌ Errore invio verifica:", err);
+    res.status(400).json({ error: "Errore invio verifica: " + err.message });
   }
 };
 
+
+// --- RISPEDISCI LINK DI RESET PASSWORD ---
 // --- RISPEDISCI LINK DI RESET PASSWORD ---
 exports.resetPassword = async (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "Email mancante." });
+  if (!email) {
+    return res.status(400).json({ error: "Email mancante." });
+  }
   try {
-    const link = await admin.auth().generatePasswordResetLink(email);
-    // invia `link` via mail
-    res.json({ link });
+    // 1) Genera il link con Firebase Admin
+    const link = await auth.generatePasswordResetLink(email);
+
+    // 2) Invia via mail il link di reset usando Nodemailer
+    await transporter.sendMail({
+      from: process.env.FROM_EMAIL,      // es. "no-reply@musebrush.com"
+      to: email,
+      subject: "Reset della password per MuseBrush",
+      html: `
+        <p>Ciao!</p>
+        <p>Hai richiesto il reset della password per il tuo account MuseBrush.</p>
+        <p>Clicca qui per impostarne una nuova:</p>
+        <p><a href="${link}">Resetta la password</a></p>
+        <p>Se non sei stato tu, ignora questa mail.</p>
+      `
+    });
+
+    // 3) Rispondi con un messaggio di conferma
+    res.json({ message: "✅ Email di reset password inviata. Controlla la tua casella di posta." });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("❌ Errore reset password:", err);
+    res.status(400).json({ error: "Errore reset password: " + err.message });
   }
 };
+
 

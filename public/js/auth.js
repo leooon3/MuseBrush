@@ -30,7 +30,7 @@ export function authInit() { // connecting buttons with functions
   }
 }
 
-function resetPassword() { // resetting password with email
+function resetPassword() {
   const emailInput = document.getElementById("emailInput");
   if (!emailInput || !emailInput.value.trim()) {
     alert("📧 Inserisci un'email valida.");
@@ -45,17 +45,17 @@ function resetPassword() { // resetting password with email
   })
     .then(res => res.json())
     .then(data => {
-      if (data.link) {
-        alert("📩 Link reset generato. Si apre ora.");
-        window.open(data.link, "_blank");
+      if (data.message) {
+        alert(data.message); // “✅ Email di reset password inviata…”
       } else {
-        alert(data.message || data.error);
+        alert(data.error);
       }
     })
     .catch(error => alert('❌ Errore di rete: ' + error.message));
 }
 
-function resendVerification() { // verification mail is real 
+
+function resendVerification() {
   const emailInput = document.getElementById("emailInput");
   if (!emailInput || !emailInput.value.trim()) {
     alert("📧 Inserisci un'email valida.");
@@ -70,14 +70,17 @@ function resendVerification() { // verification mail is real
   })
     .then(res => res.json())
     .then(data => {
-      if (data.link) {
-        alert("📨 Link di verifica generato. Si apre ora.");
-        window.open(data.link, "_blank");
+      if (data.message) {
+        // qui mostri solo il messaggio di conferma
+        alert(data.message);
       } else {
-        alert(data.message || data.error);
+        alert(data.error);
       }
     })
-    .catch(error => alert('❌ Errore di rete: ' + error.message));
+    .catch(err => {
+      console.error("❌ Network error:", err);
+      alert('❌ Errore di rete: ' + err.message);
+    });
 }
 
 function registerWithEmail() { // first time needs to be registered with this function
