@@ -1,40 +1,51 @@
+
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
 
+// Variabili di ambiente
+const FIREBASE_API_KEY       = process.env.FIREBASE_API_KEY;
+const FB_DATABASE_URL        = process.env.FB_DATABASE_URL;
+const SMTP_HOST              = process.env.SMTP_HOST;
+const SMTP_PORT              = parseInt(process.env.SMTP_PORT, 10);
+const SMTP_SECURE            = process.env.SMTP_SECURE === 'true';
+const SMTP_USER              = process.env.SMTP_USER;
+const SMTP_PASS              = process.env.SMTP_PASS;
 
-admin.initializeApp({
-  credential: admin.credential.cert({
+// Carica il service account: o come JSON intero (GOOGLE_APPLICATION_CREDENTIALS_JSON)
+// o come singoli campi FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
+let serviceAccount;
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+  serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+} else {
+  serviceAccount = {
     projectId:   process.env.FIREBASE_PROJECT_ID,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     privateKey:  process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-  }),
-  databaseURL: process.env.FB_DATABASE_URL
-});
+  };
+}
 
-module.exports = admin;
+// Inizializza Admin SDK **una sola volta**
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: FB_DATABASE_URL
+  });
+}
 
-const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://musebrush-app-default-rtdb.europe-west1.firebasedatabase.app'
-});
-
-const db = admin.database();
 const auth = admin.auth();
+const db   = admin.database();
 
-// Configuration nodemailer from variables .env
+// Configura Nodemailer
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT),
-  secure: process.env.SMTP_SECURE === 'true',
+  host: SMTP_HOST,
+  port: SMTP_PORT,
+  secure: SMTP_SECURE,
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
+    user: SMTP_USER,
+    pass: SMTP_PASS
   }
 });
-
 // user registration
 // firebaseService.js
 exports.registerUser = async (req, res) => {
