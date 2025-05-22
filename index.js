@@ -64,7 +64,7 @@ app.post('/api/login', async (req, res, next) => {
   try {
     const { uid, message } = await firebaseService.loginUserRaw(req.body.email, req.body.password);
     req.session.uid = uid;
-    // Forza il Set-Cookie
+    // Forza il salvataggio della sessione e invio del cookie
     req.session.save(err => {
       if (err) return next(err);
       res.json({ uid, message });
@@ -73,6 +73,7 @@ app.post('/api/login', async (req, res, next) => {
     res.status(err.statusCode || 400).json({ error: err.message });
   }
 });
+
 
 app.post('/api/resetPassword', firebaseService.resetPassword);
 app.post('/api/resendVerification', firebaseService.resendVerification);

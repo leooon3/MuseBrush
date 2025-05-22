@@ -96,11 +96,17 @@ export async function loginWithEmail() {
     const data = await res.json();
     if (!res.ok) return alert(data.error);
     alert(data.message);
-    window.location.reload();
+    // Forza il salvataggio della sessione prima di ricaricare
+    if (res.headers.get('set-cookie') || res.ok) {
+      window.location.reload();
+    } else {
+      alert('⚠️ Cookie di sessione non ricevuto. Riprova.');
+    }
   } catch (err) {
     alert('❌ Errore di rete: ' + err.message);
   }
 }
+
 
 function loginWithGoogle() {
   window.location.href = `${backendUrl}/api/googleLogin`;
