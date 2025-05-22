@@ -37,7 +37,7 @@ async function getCsrfToken() {
   return csrfToken;
 }
 
-async function saveProjectToBackend(projectName) {
+export async function saveProjectToBackend(projectName) {
   const project = {
     nome: projectName,
     layers: getCurrentCanvasState(),
