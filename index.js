@@ -31,7 +31,6 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'X-CSRF-Token']
 };
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 app.use(express.json({ limit: '40mb' }));
 app.use(express.urlencoded({ extended: false }));
@@ -103,5 +102,6 @@ app.put('/api/updateProject', ensureAuth, mongoService.updateProject);
 app.delete('/api/deleteProject', ensureAuth, mongoService.deleteProject);
 
 app.get('/', (req, res) => res.send('Server attivo 🚀'));
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
