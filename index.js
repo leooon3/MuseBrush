@@ -60,15 +60,20 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.post('/api/register', firebaseService.registerUser);
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', async (req, res, next) => {
   try {
     const { uid, message } = await firebaseService.loginUserRaw(req.body.email, req.body.password);
     req.session.uid = uid;
-    res.json({ uid, message });
+    // Forza il Set-Cookie
+    req.session.save(err => {
+      if (err) return next(err);
+      res.json({ uid, message });
+    });
   } catch (err) {
     res.status(err.statusCode || 400).json({ error: err.message });
   }
 });
+
 app.post('/api/resetPassword', firebaseService.resetPassword);
 app.post('/api/resendVerification', firebaseService.resendVerification);
 app.get('/api/googleLogin', passport.authenticate('google', { scope: ['profile'] }));
