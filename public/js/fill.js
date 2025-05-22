@@ -1,172 +1,170 @@
+// fill.js
+
 import { saveState } from './actions.js';
 import { updateStates } from './state.js';
 
-function hexToRgba(hex) { //transform the hexadecimal to rgba data
-  const bigint = parseInt(hex.replace('#', ''), 16);
+/**
+ * Converte un colore esadecimale in un array RGBA.
+ * @param {string} hex – E.g. "#ff0000"
+ * @returns {[number,number,number,number]}
+ */
+function hexToRgba(hex) {
+  const bigint = parseInt(hex.replace(/^#/, ''), 16);
   return [
-    (bigint >> 16) & 255,
-    (bigint >> 8) & 255,
-    bigint & 255,
-    255
+    (bigint >> 16) & 0xFF,
+    (bigint >>  8) & 0xFF,
+     bigint        & 0xFF,
+    0xFF
   ];
 }
 
-function getPixelColor(imgData, x, y) { // takes the color of the pixel 
-  const index = (y * imgData.width + x) * 4;
-  return imgData.data.slice(index, index + 4);
+/**
+ * Legge il colore di un pixel in ImageData.
+ */
+function getPixelColor(imgData, x, y) {
+  const idx = (y * imgData.width + x) * 4;
+  return imgData.data.slice(idx, idx + 4);
 }
 
-function setPixelColor(imgData, x, y, [r, g, b, a]) { // modify the pixel
-  const index = (y * imgData.width + x) * 4;
-  imgData.data[index] = r;
-  imgData.data[index + 1] = g;
-  imgData.data[index + 2] = b;
-  imgData.data[index + 3] = a;
+/**
+ * Scrive un colore RGBA in ImageData.
+ */
+function setPixelColor(imgData, x, y, [r, g, b, a]) {
+  const idx = (y * imgData.width + x) * 4;
+  imgData.data[idx    ] = r;
+  imgData.data[idx + 1] = g;
+  imgData.data[idx + 2] = b;
+  imgData.data[idx + 3] = a;
 }
 
-function colorsMatch(a, b, tolerance = 32) { // checks if the color is equal with a margin
-  return Math.abs(a[0] - b[0]) < tolerance &&
-         Math.abs(a[1] - b[1]) < tolerance &&
-         Math.abs(a[2] - b[2]) < tolerance &&
-         Math.abs(a[3] - b[3]) < tolerance;
+/**
+ * Confronta due colori RGBA entro una tolleranza.
+ */
+function colorsMatch(a, b, tol = 32) {
+  return Math.abs(a[0] - b[0]) < tol &&
+         Math.abs(a[1] - b[1]) < tol &&
+         Math.abs(a[2] - b[2]) < tol &&
+         Math.abs(a[3] - b[3]) < tol;
 }
 
-export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) { // the function to actually fill the space
-  const width = fabricCanvas.getWidth();
+/**
+ * Esegue il flood-fill a partire dal punto (x,y) nel fabricCanvas.
+ * @param {fabric.Canvas} fabricCanvas
+ * @param {number} x – coordinata canvas
+ * @param {number} y – coordinata canvas
+ * @param {string} fillColorHex – es. "#00ff00"
+ */
+export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
+  const width  = fabricCanvas.getWidth();
   const height = fabricCanvas.getHeight();
 
-  const fillCanvas = document.createElement("canvas");
-  fillCanvas.width = width;
-  fillCanvas.height = height;
-  const fillCtx = fillCanvas.getContext("2d");
+  // canvas offscreen per lettura e scrittura pixel
+  const readCanvas  = document.createElement('canvas');
+  const writeCanvas = document.createElement('canvas');
+  [readCanvas, writeCanvas].forEach(c => {
+    c.width  = width;
+    c.height = height;
+  });
+  const readCtx  = readCanvas.getContext('2d');
+  const writeCtx = writeCanvas.getContext('2d');
 
-  const renderCanvas = document.createElement("canvas");
-  renderCanvas.width = width;
-  renderCanvas.height = height;
-  const renderCtx = renderCanvas.getContext("2d");
-
-  const renderDataUrl = fabricCanvas.toDataURL({ format: 'png' });
+  // Disegna lo snapshot del fabricCanvas in readCanvas
+  const dataUrl = fabricCanvas.toDataURL({ format: 'png' });
   const img = new Image();
-
   img.onload = () => {
-    renderCtx.drawImage(img, 0, 0);
-    const renderData = renderCtx.getImageData(0, 0, width, height);
-    const fillData = fillCtx.getImageData(0, 0, width, height);
+    readCtx.drawImage(img, 0, 0, width, height);
+    writeCtx.drawImage(img, 0, 0, width, height);
 
-    const vt = fabricCanvas.viewportTransform;
+    const srcData = readCtx.getImageData(0, 0, width, height);
+    const dstData = writeCtx.getImageData(0, 0, width, height);
+
+    // Calcola coordinate reali considerando zoom e viewport
+    const [vt0, , , , vt4, vt5] = fabricCanvas.viewportTransform;
     const zoom = fabricCanvas.getZoom();
-    const rawX = Math.round(x * zoom + vt[4]);
-    const rawY = Math.round(y * zoom + vt[5]);
+    const startX = Math.round(x * zoom + vt4);
+    const startY = Math.round(y * zoom + vt5);
 
-    const startColor = getPixelColor(renderData, rawX, rawY);
-    const fillColor = hexToRgba(fillColorHex);
-    if (colorsMatch(startColor, fillColor)) return;
+    const targetColor = getPixelColor(srcData, startX, startY);
+    const fillColor   = hexToRgba(fillColorHex);
+    if (colorsMatch(targetColor, fillColor)) return;
 
-    const queue = [[rawX, rawY]];
+    // BFS per flood-fill
+    const queue   = [[startX, startY]];
     const visited = new Uint8Array(width * height);
 
-    while (queue.length > 0) {
+    while (queue.length) {
       const [cx, cy] = queue.shift();
       if (cx < 0 || cy < 0 || cx >= width || cy >= height) continue;
-
       const idx = cy * width + cx;
       if (visited[idx]) continue;
 
-      const currentColor = getPixelColor(renderData, cx, cy);
-      if (!colorsMatch(currentColor, startColor)) continue;
+      const current = getPixelColor(srcData, cx, cy);
+      if (!colorsMatch(current, targetColor)) continue;
 
-      setPixelColor(fillData, cx, cy, fillColor);
+      setPixelColor(dstData, cx, cy, fillColor);
       visited[idx] = 1;
 
-      queue.push([cx + 1, cy]);
-      queue.push([cx - 1, cy]);
-      queue.push([cx, cy + 1]);
-      queue.push([cx, cy - 1]);
+      queue.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
     }
 
+    // Trova il bounding box dell’area riempita
     let minX = width, minY = height, maxX = 0, maxY = 0;
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const i = (y * width + x) * 4 + 3;
-        if (fillData.data[i] !== 0) {
-          if (x < minX) minX = x;
-          if (y < minY) minY = y;
-          if (x > maxX) maxX = x;
-          if (y > maxY) maxY = y;
+    for (let py = 0; py < height; py++) {
+      for (let px = 0; px < width; px++) {
+        if (dstData.data[(py * width + px) * 4 + 3] !== 0) {
+          if (px < minX) minX = px;
+          if (py < minY) minY = py;
+          if (px > maxX) maxX = px;
+          if (py > maxY) maxY = py;
         }
       }
     }
+    const boxW = maxX - minX + 1;
+    const boxH = maxY - minY + 1;
 
-    const fillWidth = maxX - minX + 1;
-    const fillHeight = maxY - minY + 1;
+    // Crea un canvas ritagliato con solo l’area riempita
+    const cropCanvas = document.createElement('canvas');
+    cropCanvas.width  = boxW;
+    cropCanvas.height = boxH;
+    const cropCtx = cropCanvas.getContext('2d');
+    cropCtx.putImageData(
+      writeCtx.getImageData(minX, minY, boxW, boxH),
+      0, 0
+    );
 
-    const croppedCanvas = document.createElement("canvas");
-    croppedCanvas.width = fillWidth;
-    croppedCanvas.height = fillHeight;
-    const croppedCtx = croppedCanvas.getContext("2d");
-
-    const croppedImageData = croppedCtx.createImageData(fillWidth, fillHeight);
-    for (let y = 0; y < fillHeight; y++) {
-      for (let x = 0; x < fillWidth; x++) {
-        const srcIndex = ((y + minY) * width + (x + minX)) * 4;
-        const dstIndex = (y * fillWidth + x) * 4;
-        croppedImageData.data[dstIndex]     = fillData.data[srcIndex];
-        croppedImageData.data[dstIndex + 1] = fillData.data[srcIndex + 1];
-        croppedImageData.data[dstIndex + 2] = fillData.data[srcIndex + 2];
-        croppedImageData.data[dstIndex + 3] = fillData.data[srcIndex + 3];
-      }
-    }
-
-    croppedCtx.putImageData(croppedImageData, 0, 0);
-
-    fabric.Image.fromURL(croppedCanvas.toDataURL(), (fillImg) => {
-      const adjustedLeft = (minX - vt[4]) / zoom;
-      const adjustedTop = (minY - vt[5]) / zoom;
-
+    // Aggiunge l’immagine ritagliata al fabricCanvas
+    const croppedDataUrl = cropCanvas.toDataURL();
+    fabric.Image.fromURL(croppedDataUrl, fillImg => {
+      // Posiziona e scala correttamente l’overlay
+      const left = (minX - vt4) / zoom;
+      const top  = (minY - vt5) / zoom;
       fillImg.set({
-        left: adjustedLeft,
-        top: adjustedTop,
-        originX: 'left',
-        originY: 'top',
-        scaleX: 1 / zoom,
-        scaleY: 1 / zoom,
-        selectable: true,
-        evented: true
+        left, top,
+        originX: 'left', originY: 'top',
+        scaleX: 1 / zoom, scaleY: 1 / zoom,
+        selectable: true, evented: true
       });
 
-      let target = fabricCanvas.getObjects()
-        .filter(obj => obj.type !== 'image')
-        .find(obj => {
-          const bounds = obj.getBoundingRect(true);
-          return (
-            x >= bounds.left &&
-            x <= bounds.left + bounds.width &&
-            y >= bounds.top &&
-            y <= bounds.top + bounds.height
-          );
+      // Seleziona un oggetto vettoriale sotto il punto per raggrupparlo
+      const targetObj = fabricCanvas
+        .getObjects()
+        .filter(o => o.type !== 'image')
+        .find(o => {
+          const b = o.getBoundingRect(true);
+          return x >= b.left && x <= b.left + b.width &&
+                 y >= b.top  && y <= b.top  + b.height;
         });
 
-      if (target && fabricCanvas.getObjects().includes(target)) {
-        const originalLeft = target.left;
-        const originalTop = target.top;
-
-        target.set({ left: 0, top: 0, originX: 'left', originY: 'top' });
-
-        fillImg.set({
-          left: adjustedLeft - originalLeft,
-          top: adjustedTop - originalTop
+      if (targetObj) {
+        const origLeft = targetObj.left, origTop = targetObj.top;
+        targetObj.set({ left: 0, top: 0 });
+        fillImg.set({ left: left - origLeft, top: top - origTop });
+        const group = new fabric.Group([targetObj, fillImg], {
+          left: origLeft, top: origTop,
+          originX: 'left', originY: 'top',
+          selectable: true, evented: true
         });
-
-        const group = new fabric.Group([target, fillImg], {
-          left: originalLeft,
-          top: originalTop,
-          originX: 'left',
-          originY: 'top',
-          selectable: true,
-          evented: true
-        });
-
-        fabricCanvas.remove(target);
+        fabricCanvas.remove(targetObj);
         fabricCanvas.add(group);
         fabricCanvas.setActiveObject(group);
       } else {
@@ -176,12 +174,12 @@ export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) { // the fu
       fabricCanvas.requestRenderAll();
       saveState();
       updateStates({
-        isFilling: false,
+        isFilling:      false,
         isBucketActive: false,
         globalDrawingMode: true
       });
     });
   };
 
-  img.src = renderDataUrl;
+  img.src = dataUrl;
 }

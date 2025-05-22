@@ -4,39 +4,37 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MuseBrush</title>
-    <link rel="icon" type="image/x-icon" href="./images/favicon.ico" />
+    <link rel="icon" href="./images/favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="./style.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js" defer></script>
   </head>
   <body>
     <header id="menu">
       <div class="menu-container">
         <div class="menu-left">
-          <!-- BRUSH + COLOR PICKER -->
+          <!-- Pennelli + Color Picker -->
           <div class="dropdown-wrapper">
             <button id="brushes_tab" title="Pennelli">
               <img src="./images/brush.png" alt="Pennelli" />
             </button>
             <div id="brushDropdown" class="dropdown-content">
-              <button class="brush-option" data="Basic">Basic</button>
-              <button class="brush-option" data="Smooth">Smooth</button>
-              <button class="brush-option" data="Thick">Thick</button>
-              <button class="brush-option" data="Spray">Spray</button>
-              <button class="brush-option" data="Dotted">Dotted</button>
-              <button class="brush-option" data="Calligraphy">Calligraphy</button>
+              <button class="brush-option" data-brush="Basic">Basic</button>
+              <button class="brush-option" data-brush="Smooth">Smooth</button>
+              <button class="brush-option" data-brush="Thick">Thick</button>
+              <button class="brush-option" data-brush="Spray">Spray</button>
+              <button class="brush-option" data-brush="Dotted">Dotted</button>
+              <button class="brush-option" data-brush="Calligraphy">Calligraphy</button>
             </div>
           </div>
           <input type="color" id="colorInput" class="color-picker" title="Colore pennello" />
-          <!-- Color History -->
           <div id="recentColors" class="color-history"></div>
 
-          <!-- POINTER -->
+          <!-- Puntatore -->
           <button id="pointerToggleBtn" title="Pointer">
-            <img id="pointerIcon" src="./images/pointer-icon.png" alt="Pointer Icon" />
+            <img id="pointerIcon" src="./images/pointer-icon.png" alt="Pointer" />
           </button>
 
-          <!-- SHAPES -->
+          <!-- Forme -->
           <div class="dropdown-wrapper">
             <button id="shapes_tab" title="Forme">
               <img src="./images/square.png" alt="Forme" />
@@ -47,29 +45,33 @@
               <button class="shape-option" data-shape="line">Linea</button>
             </div>
           </div>
-          <!-- COLOR BUCKET -->
+
+          <!-- Secchiello -->
           <button id="bucket_tab" title="Riempimento">
-            <img src="./images/bucket.png" alt="Color Bucket" />
+            <img src="./images/bucket.png" alt="Riempimento" />
           </button>
-          <!-- TEXT -->
+
+          <!-- Testo -->
           <button id="text_tab" title="Testo">
             <img src="./images/text.png" alt="Testo" />
           </button>
-          <!-- GOMMA con dropdown -->
+
+          <!-- Gomma -->
           <div class="dropdown-wrapper">
             <button id="eraser_tab" title="Gomma">
               <img src="./images/eraser.png" alt="Gomma" />
             </button>
             <div id="eraserDropdown" class="dropdown-content">
-              <button class="eraser-option" data="Eraser">Gomma Base</button>
-              <button class="eraser-option" data="PixelEraser">Pixel Eraser</button>
+              <button class="brush-option" data-brush="Eraser">Base</button>
+              <button class="brush-option" data-brush="PixelEraser">Pixel</button>
             </div>
           </div>
-
         </div>
+
         <h1 class="logo">MuseBrush</h1>
+
         <div class="menu-right">
-          <!-- DOWNLOAD + LAYERS -->
+          <!-- Download -->
           <div class="dropdown-wrapper">
             <button id="download_tab" title="Download">
               <img src="./images/downloads.png" alt="Download" />
@@ -80,27 +82,33 @@
               <button class="download-option" value="svg">SVG</button>
             </div>
           </div>
+
+          <!-- Livelli -->
           <button id="layers_tab" title="Livelli">
             <img src="./images/layers.png" alt="Livelli" />
           </button>
-          <!-- ACCOUNT -->
+
+          <!-- Account -->
           <button id="authToggleBtn" title="Account">
             <img id="authIcon" src="./images/user.png" alt="Account" />
           </button>
-          <!-- GALLERY -->
+
+          <!-- Galleria -->
           <button id="galleryBtn" title="Galleria">
             <img src="./images/gallery.png" alt="Galleria" />
           </button>
+
+          <!-- Nuovo Canvas -->
           <button id="newCanvasBtn" title="Nuovo Canvas">
             <img src="./images/new-canva.png" alt="Nuovo Canvas" />
           </button>
 
-          <!-- UNDO / REDO / CLEAR -->
+          <!-- Undo / Redo / Clear -->
           <button id="undoBtn" title="Annulla">
-            <img src="./images/undo.png" alt="Undo" />
+            <img src="./images/undo.png" alt="Annulla" />
           </button>
           <button id="redoBtn" title="Ripeti">
-            <img src="./images/arrow.png" alt="Redo" />
+            <img src="./images/arrow.png" alt="Ripeti" />
           </button>
           <button id="clearBtn" title="Pulisci">
             <img src="https://icons.veryicon.com/png/o/miscellaneous/flat-wireframe-library/trash-bin-3.png" alt="Pulisci" />
@@ -109,23 +117,26 @@
       </div>
     </header>
 
-
-    <div id="globalDropdowns">
-
-    </div>
-
+    <!-- Responsive Menus -->
     <div id="responsiveTopMenu" class="responsive-top-menu hidden">
       <button id="toggleLeftMenu">☰</button>
       <span class="logo">MuseBrush</span>
       <button id="toggleRightMenu">⚙️</button>
     </div>
-
     <div id="responsiveLeftMenu" class="responsive-side-menu hidden"></div>
     <div id="responsiveRightMenu" class="responsive-side-menu hidden"></div>
 
-
+    <!-- Slider Spessore -->
     <div class="slider-container">
-      <input type="range" id="thicknessSlider" min="1" max="100" value="6" title="Spessore" class="slider" />
+      <input
+        type="range"
+        id="thicknessSlider"
+        min="1"
+        max="100"
+        value="6"
+        title="Spessore"
+        class="slider"
+      />
     </div>
 
     <main>
@@ -135,28 +146,25 @@
         <ul id="layersList"></ul>
       </aside>
     </main>
- 
+
+    <!-- Modal Autenticazione -->
     <div id="authModal" class="modal hidden">
       <div class="modal-content">
         <h2>👤 Accedi o Registrati</h2>
         <input type="email" id="emailInput" placeholder="Email" />
         <input type="password" id="passwordInput" placeholder="Password" />
-        <button id="forgotPasswordBtn" style="margin-top: 10px; background: none; color: #007bff; border: none; text-decoration: underline; cursor: pointer;">
-          Password dimenticata?
-        </button>
-        <div style="display:flex; gap:10px; margin-top:10px;">
+        <button id="forgotPasswordBtn">Password dimenticata?</button>
+        <div class="auth-actions">
           <button id="loginBtn">🔓 Accedi</button>
-          <button id="googleLoginBtn" style="background-color: #fff; border: 1px solid #ccc;">
-            <img src="https://img.icons8.com/color/16/000000/google-logo.png" style="margin-right: 6px;" />
-            Accedi con Google
-          </button>
+          <button id="googleLoginBtn">Accedi con Google</button>
           <button id="signupBtn">📝 Registrati</button>
           <button id="logoutBtn">🚪 Esci</button>
-          <button id="resendVerificationBtn">🔁 Reinvia Email di Verifica</button>          
+          <button id="resendVerificationBtn">🔁 Reinvia verifica</button>
         </div>
       </div>
     </div>
 
+    <!-- Modal Galleria -->
     <div id="galleryModal" class="modal hidden">
       <div class="modal-content">
         <h2>🎨 Galleria Progetti</h2>
@@ -165,28 +173,30 @@
           <button id="saveCanvasBtn">💾 Salva</button>
           <button id="updateProjectBtn">🔄 Aggiorna</button>
           <button id="exportProjectBtn">📁 Esporta Progetto</button>
-          <label for="importProjectInput" style="cursor:pointer; background:#f0f0f0; padding:10px 16px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; min-width:150px;">
-            📂 Importa Progetto
-          </label>          
-          <input type="file" id="importProjectInput" accept=".json" style="display:none" />
+          <label for="importProjectInput" class="import-label">📂 Importa Progetto</label>
+          <input type="file" id="importProjectInput" accept=".json" hidden />
         </div>
-        <div id="saveConfirmation" class="save-confirmation hidden">✅ Progetto salvato!</div>
+        <div id="saveConfirmation" class="save-confirmation hidden">
+          ✅ Progetto salvato!
+        </div>
         <div id="projectList" class="project-list"></div>
         <button id="closeGalleryBtn">Chiudi</button>
       </div>
     </div>
 
+    <!-- Modal Uscita -->
     <div id="exitModal" class="modal hidden">
       <div class="modal-content">
         <h3>⚠️ Uscita senza salvare</h3>
         <p>Hai modifiche non salvate. Vuoi salvarle prima di uscire?</p>
-        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <div class="exit-actions">
           <button id="confirmSaveExitBtn">💾 Salva</button>
           <button id="exitWithoutSavingBtn">❌ Esci senza salvare</button>
           <button id="cancelExitBtn">Annulla</button>
         </div>
       </div>
     </div>
-    <script type="module" src="./js/main.js"></script> 
+
+    <script type="module" src="./js/main.js"></script>
   </body>
 </html>

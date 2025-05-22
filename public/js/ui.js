@@ -1,47 +1,102 @@
-// here there is all the function that manage what every button does 
+// ui.js
+
 import { setBrush, setDrawingMode, disableDrawingSilently } from './tool.js';
-import { getActiveLayer, layers, initLayers } from './canvas.js';
+import { getActiveLayer, layers, initLayers, updateCanvasVisibility } from './canvas.js';
 import { undo, redo, saveState } from './actions.js';
 import {
-  currentBrush, brushColor, brushSize, globalDrawingMode,
-  setCurrentBrush, setBrushColor, setBrushSize,
-  setPreviousDrawingMode, getIsPointerMode, updateStates
+  currentBrush,
+  brushColor,
+  brushSize,
+  globalDrawingMode,
+  setCurrentBrush,
+  setBrushColor,
+  setBrushSize,
+  setPreviousDrawingMode,
+  getIsPointerMode,
+  updateStates
 } from './state.js';
+import { showConfirm } from './canvas-utils.js';
 
-export function initUIControls() { // this function links every button with their own functions
-  const brushButton = document.getElementById("brushes_tab");
-  const brushDropdown = document.getElementById("brushDropdown");
-  const downloadBtn = document.getElementById("download_tab");
-  const downloadDropdown = document.getElementById("downloadDropdown");
-  const shapesButton = document.getElementById("shapes_tab");
-  const shapeDropdown = document.getElementById("shapeDropdown");
-  const eraserButton = document.getElementById("eraser_tab");
-  const eraserDropdown = document.getElementById("eraserDropdown");
-  const layersButton    = document.getElementById("layers_tab");
-  const layersPanel     = document.getElementById("layersPanel");
-  brushButton.onclick = () => {
-    brushDropdown.style.display = brushDropdown.style.display === "block" ? "none" : "block";
-  };
+/**
+ * Evidenzia lo strumento attivo aggiungendo/rimuovendo la classe.
+ */
+function highlightTool(buttonId) {
+  document.querySelectorAll('.menu-left button, .menu-right button')
+    .forEach(btn => btn.classList.remove('tool-active'));
+  const btn = document.getElementById(buttonId);
+  if (btn) btn.classList.add('tool-active');
+}
 
-  downloadBtn.onclick = () => {
-    downloadDropdown.style.display = downloadDropdown.style.display === "block" ? "none" : "block";
-  }
+/**
+ * Gestisce l’apertura/chiusura di un dropdown a partire da due elementi.
+ */
+function toggleDropdown(buttonId, dropdownId) {
+  const btn = document.getElementById(buttonId);
+  const dd  = document.getElementById(dropdownId);
+  if (!btn || !dd) return;
 
-  document.querySelectorAll(".download-option").forEach(button => {
-    button.addEventListener("click", function () {
-      const format = this.getAttribute("value");
-      const width = window.innerWidth;
+  btn.addEventListener('click', () => {
+    dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+  });
+}
+
+/**
+ * Chiude tutti i dropdown specificati (usato in click fuori).
+ */
+function closeAllDropdowns(dropdownIds) {
+  dropdownIds.forEach(id => {
+    const dd = document.getElementById(id);
+    if (dd) dd.style.display = 'none';
+  });
+}
+
+/**
+ * Inizializza tutti i controlli UI: bottoni, slider, menu, ecc.
+ */
+export function initUIControls() {
+  // dropdown toggle
+  toggleDropdown('brushes_tab',    'brushDropdown');
+  toggleDropdown('shapes_tab',     'shapeDropdown');
+  toggleDropdown('eraser_tab',     'eraserDropdown');
+  toggleDropdown('download_tab',   'downloadDropdown');
+  toggleDropdown('layers_tab',     'layersPanel');
+
+  // click fuori per chiudere i dropdown
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#brushes_tab, #brushDropdown')) {
+      closeAllDropdowns(['brushDropdown']);
+    }
+    if (!e.target.closest('#shapes_tab, #shapeDropdown')) {
+      closeAllDropdowns(['shapeDropdown']);
+    }
+    if (!e.target.closest('#eraser_tab, #eraserDropdown')) {
+      closeAllDropdowns(['eraserDropdown']);
+    }
+    if (!e.target.closest('#download_tab, #downloadDropdown')) {
+      closeAllDropdowns(['downloadDropdown']);
+    }
+    if (!e.target.closest('#layers_tab, #layersPanel')) {
+      const panel = document.getElementById('layersPanel');
+      if (panel) panel.classList.remove('visible');
+    }
+  });
+
+  // download formati immagine
+  document.querySelectorAll('.download-option').forEach(button => {
+    button.addEventListener('click', () => {
+      const format = button.getAttribute('value');
+      const width  = window.innerWidth;
       const height = window.innerHeight * 0.85;
-      const mergedCanvas = document.createElement("canvas");
-      mergedCanvas.width = width;
-      mergedCanvas.height = height;
-      const ctx = mergedCanvas.getContext("2d");
+      const merged = document.createElement('canvas');
+      merged.width  = width;
+      merged.height = height;
+      const ctx = merged.getContext('2d');
       layers.forEach(layer => {
-        if (!layer.visible) return;
-        const layerEl = layer.canvas.lowerCanvasEl;
-        ctx.drawImage(layerEl, 0, 0);
+        if (layer.visible) {
+          ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
+        }
       });
-      const dataURL = mergedCanvas.toDataURL(`image/${format}`, 1.0);
+      const dataURL = merged.toDataURL(`image/${format}`, 1.0);
       const link = document.createElement('a');
       link.href = dataURL;
       link.download = `drawing.${format}`;
@@ -49,111 +104,105 @@ export function initUIControls() { // this function links every button with thei
     });
   });
 
-  shapesButton.onclick = () => {
-    shapeDropdown.style.display = shapeDropdown.style.display === "block" ? "none" : "block";
-  };
-
-  document.querySelectorAll(".shape-option").forEach(button => {
-    button.addEventListener("click", () => {
+  // selezione shape
+  document.querySelectorAll('.shape-option').forEach(button => {
+    button.addEventListener('click', () => {
       updateStates({
-        drawingShape: button.getAttribute("data-shape"),
+        drawingShape: button.dataset.shape,
         previousDrawingMode: globalDrawingMode,
         isFilling: false,
         isInsertingText: false
       });
       setDrawingMode(false);
-      highlightTool("shapes_tab");
-      shapeDropdown.style.display = "none";
+      highlightTool('shapes_tab');
+      document.getElementById('shapeDropdown').style.display = 'none';
     });
   });
 
-  document.querySelectorAll(".brush-option").forEach(button => {
-    button.addEventListener("click", () => {
-      const selected = button.getAttribute("data");
+  // selezione brush / gomma
+  document.querySelectorAll('.brush-option').forEach(button => {
+    button.addEventListener('click', () => {
+      const selected = button.dataset.brush || button.getAttribute('data');
       updateStates({ isFilling: false });
-      if (selected !== "Eraser") updateStates({ currentBrush: selected });
-      setBrush(selected);
-      if (selected !== "Eraser") {
-        updateStates({ globalDrawingMode: true });
+      if (selected !== 'Eraser') {
+        updateStates({ currentBrush: selected, globalDrawingMode: true });
+        setCurrentBrush(selected);
         setDrawingMode(true);
-        document.getElementById("pointerIcon").src = "./images/pencil-icon.png";
+        document.getElementById('pointerIcon').src = './images/pencil-icon.png';
+      } else {
+        updateStates({ currentBrush: selected });
+        setCurrentBrush(selected);
+        setDrawingMode(true);
       }
-      import('./canvas.js').then(({ updateCanvasVisibility }) => updateCanvasVisibility());
-      highlightTool("brushes_tab");
-      brushDropdown.style.display = "none";
+      updateCanvasVisibility();
+      highlightTool('brushes_tab');
+      document.getElementById('brushDropdown').style.display = 'none';
     });
   });
 
-  eraserButton.onclick = () => {
-    eraserDropdown.style.display = eraserDropdown.style.display === "block" ? "none" : "block";
-  };
+  // gomma: singolo pulsante (separato se necessario)
+  // già gestito dalle brush-option con brush="Eraser"
 
-  document.querySelectorAll(".eraser-option").forEach(button => {
-    button.addEventListener("click", () => {
-      const selected = button.getAttribute("data");
+  // toggle puntatore vs disegno
+  const pointerBtn = document.getElementById('pointerToggleBtn');
+  if (pointerBtn) {
+    pointerBtn.addEventListener('click', () => {
+      const newPointer = !getIsPointerMode();
       updateStates({
-        isPointerMode: false,
-        globalDrawingMode: true,
+        isPointerMode: newPointer,
+        globalDrawingMode: !newPointer,
         isFilling: false,
-        isInsertingText: false,
-        drawingShape: null
+        drawingShape: null,
+        isInsertingText: false
       });
-      setDrawingMode(true);
-      setBrush(selected);
-      document.getElementById("pointerIcon").src = "./images/pencil-icon.png";
-      highlightTool("eraser_tab");
-      eraserDropdown.style.display = "none";
+      setDrawingMode(!newPointer);
+      setCurrentBrush(currentBrush);
+      const icon = newPointer ? 'pointer-icon.png' : 'pencil-icon.png';
+      document.getElementById('pointerIcon').src = `./images/${icon}`;
+      const mobileIcon = document.getElementById('pointerIcon_mobile');
+      if (mobileIcon) mobileIcon.src = `./images/${icon}`;
     });
-  });
+  }
 
+  // slider spessore
+  const thickness = document.getElementById('thicknessSlider');
+  if (thickness) {
+    thickness.addEventListener('input', () => {
+      const size = parseInt(thickness.value, 10);
+      updateStates({ brushSize: size });
+      setBrush(currentBrush);
+    });
+  }
 
-  const pointerBtn = document.getElementById("pointerToggleBtn");
-pointerBtn.onclick = () => {
-  const newPointerState = !getIsPointerMode();
-  updateStates({
-    isPointerMode: newPointerState,
-    globalDrawingMode: !newPointerState,
-    isFilling: false,
-    drawingShape: null,
-    isInsertingText: false
-  });
-  setDrawingMode(!newPointerState);
-  setBrush(currentBrush);
+  // selettore colore
+  const colorInput = document.getElementById('colorInput');
+  if (colorInput) {
+    colorInput.addEventListener('input', () => {
+      const col = colorInput.value;
+      updateStates({ brushColor: col });
+      setBrush(col);
+      addRecentColor(col);
+    });
+  }
 
-  const iconSrc = newPointerState
-    ? "./images/pointer-icon.png"
-    : "./images/pencil-icon.png";
+  // undo / redo
+  document.getElementById('undoBtn')?.addEventListener('click', undo);
+  document.getElementById('redoBtn')?.addEventListener('click', redo);
 
-  document.getElementById("pointerIcon").src = iconSrc;
-  const mobileIcon = document.getElementById("pointerIcon_mobile");
-  if (mobileIcon) mobileIcon.src = iconSrc;
-};
-
-
-  document.getElementById("thicknessSlider").addEventListener("input", function () {
-    updateStates({ brushSize: parseInt(this.value) });
-    setBrush(currentBrush);
-  });
-
-  document.getElementById("colorInput").addEventListener("input", function () {
-    updateStates({ brushColor: this.value });
-    setBrush(currentBrush);
-    addRecentColor(this.value);
-  });
-
-  document.getElementById("undoBtn").onclick = undo;
-  document.getElementById("redoBtn").onclick = redo;
-
-  document.getElementById("clearBtn").onclick = () => {
+  // clear con conferma
+  document.getElementById('clearBtn')?.addEventListener('click', async () => {
+    const ok = await showConfirm('Sei sicuro di voler cancellare tutti i layer?');
+    if (!ok) return;
     layers.forEach(layer => {
       layer.canvas.clear();
       layer.canvas.backgroundColor = 'transparent';
       saveState();
       layer.canvas.renderAll();
     });
-  };
+  });
 
-  document.getElementById("text_tab").onclick = () => {
+  // testo
+  document.getElementById('text_tab')?.addEventListener('click', () => {
     updateStates({
       previousDrawingMode: getActiveLayer().canvas.isDrawingMode,
       drawingShape: null,
@@ -161,10 +210,11 @@ pointerBtn.onclick = () => {
       isFilling: false
     });
     disableDrawingSilently();
-    highlightTool("text_tab");
-  };
+    highlightTool('text_tab');
+  });
 
-  document.getElementById("bucket_tab").onclick = () => {
+  // secchiello
+  document.getElementById('bucket_tab')?.addEventListener('click', () => {
     updateStates({
       isFilling: true,
       isBucketActive: true,
@@ -173,238 +223,143 @@ pointerBtn.onclick = () => {
       isInsertingText: false
     });
     setDrawingMode(false);
-    highlightTool("bucket_tab");
-  };
-  document.addEventListener('click', function(e) {
-    if (
-      !e.target.closest('#brushes_tab') &&
-      !e.target.closest('#brushDropdown') &&
-      !e.target.closest('#brushes_tab_mobile')
-    ) {
-      document.getElementById('brushDropdown').style.display = 'none';
-    }
-    if (
-      !e.target.closest('#shapes_tab') &&
-      !e.target.closest('#shapeDropdown') &&
-      !e.target.closest('#shapes_tab_mobile')
-    ) {
-      document.getElementById('shapeDropdown').style.display = 'none';
-    }
-    if (
-      !e.target.closest('#eraser_tab') &&
-      !e.target.closest('#eraserDropdown') &&
-      !e.target.closest('#eraser_tab_mobile')
-    ) {
-      document.getElementById('eraserDropdown').style.display = 'none';
-    }
-    if (
-      !e.target.closest('#download_tab') &&
-      !e.target.closest('#downloadDropdown') &&
-      !e.target.closest('#download_tab_mobile')
-    ) {
-      document.getElementById('downloadDropdown').style.display = 'none';
-    }
-    if (
-      !e.target.closest('#layers_tab') &&
-      !e.target.closest('#layersPanel') &&
-      !e.target.closest('#layers_tab_mobile')
-    ) {
-      document.getElementById('layersPanel').classList.remove('visible');
-    }
+    highlightTool('bucket_tab');
   });
-}
 
-function highlightTool(buttonId) { // blue margin effect that let you know when your button is on
-  document.querySelectorAll(".menu-left button").forEach(btn => btn.classList.remove("tool-active"));
-  const btn = document.getElementById(buttonId);
-  if (btn) btn.classList.add("tool-active");
-}
-
-function addRecentColor(color) { // add the most recent colors
-  const recentColors = JSON.parse(localStorage.getItem("recentColors") || "[]");
-  const filtered = recentColors.filter(c => c !== color);
-  filtered.unshift(color);
-  const limited = filtered.slice(0, 6);
-  localStorage.setItem("recentColors", JSON.stringify(limited));
+  // inizializza recent colors
   renderRecentColors();
 }
 
-function renderRecentColors() { // is the list of the most recent colors 
-  const container = document.getElementById("recentColors");
-  container.innerHTML = "";
-  const recentColors = JSON.parse(localStorage.getItem("recentColors") || "[]");
-  recentColors.forEach(color => {
-    const btn = document.createElement("button");
-    btn.style.backgroundColor = color;
-    btn.title = color;
-    btn.onclick = () => {
-      updateStates({ brushColor: color });
-      document.getElementById("colorInput").value = color;
-      setBrush(color);
-      addRecentColor(color);
-    };
-    container.appendChild(btn);
-  });
+/**
+ * Gestisce la lista dei colori recenti.
+ */
+function addRecentColor(color) {
+  const recent = JSON.parse(localStorage.getItem('recentColors') || '[]')
+    .filter(c => c !== color);
+  recent.unshift(color);
+  localStorage.setItem('recentColors', JSON.stringify(recent.slice(0, 6)));
+  renderRecentColors();
 }
 
+function renderRecentColors() {
+  const container = document.getElementById('recentColors');
+  if (!container) return;
+  container.innerHTML = '';
+  JSON.parse(localStorage.getItem('recentColors') || '[]')
+    .forEach(col => {
+      const btn = document.createElement('button');
+      btn.style.backgroundColor = col;
+      btn.title = col;
+      btn.addEventListener('click', () => {
+        updateStates({ brushColor: col });
+        document.getElementById('colorInput').value = col;
+        setBrush(col);
+        addRecentColor(col);
+      });
+      container.appendChild(btn);
+    });
+}
+
+/**
+ * Imposta la variabile CSS --menu-height in base al menu attivo.
+ */
 export function updateMenuHeight() {
-  // Sceglie quale menu misurare a seconda del breakpoint 1068px
   const isMobile = window.innerWidth <= 1068;
-  const menuEl  = document.querySelector(isMobile ? '#responsiveTopMenu' : '#menu');
-  if (menuEl) {
-    const height = menuEl.offsetHeight + 'px';
-    document.documentElement.style.setProperty('--menu-height', height);
-    console.log('Impostato --menu-height a:', height);
-  }
+  const menuEl = document.querySelector(isMobile ? '#responsiveTopMenu' : '#menu');
+  if (!menuEl) return;
+  const h = menuEl.offsetHeight + 'px';
+  document.documentElement.style.setProperty('--menu-height', h);
 }
 
+/**
+ * Inizializza i menu responsive (mobile).
+ */
 export function initResponsiveMenus() {
-  const leftMenu  = document.getElementById("responsiveLeftMenu");
-  const rightMenu = document.getElementById("responsiveRightMenu");
-  const topMenu   = document.getElementById("responsiveTopMenu");
-  document.getElementById("toggleLeftMenu").onclick = () => {
-    leftMenu .classList.toggle("hidden");
-    rightMenu.classList.add("hidden");
-  };
-  document.getElementById("toggleRightMenu").onclick = () => {
-    rightMenu.classList.toggle("hidden");
-    leftMenu .classList.add("hidden");
-  };
+  const leftMenu  = document.getElementById('responsiveLeftMenu');
+  const rightMenu = document.getElementById('responsiveRightMenu');
+  const topMenu   = document.getElementById('responsiveTopMenu');
 
-function populateResponsiveMenus() {
-  leftMenu.innerHTML = `
-    <button id="brushes_tab_mobile">
-      <img src="./images/brush.png"/><span class="btn-label">Brushes</span>
-    </button>
-    <button id="shapes_tab_mobile">
-      <img src="./images/square.png"/><span class="btn-label">Shapes</span>
-    </button>
-    <button id="bucket_tab_mobile">
-      <img src="./images/bucket.png"/><span class="btn-label">Bucket</span>
-    </button>
-    <button id="text_tab_mobile">
-      <img src="./images/text.png"/><span class="btn-label">Text</span>
-    </button>
-    <button id="eraser_tab_mobile">
-      <img src="./images/eraser.png"/><span class="btn-label">Eraser</span>
-    </button>
-    <button id="pointerToggleBtn_mobile">
-      <img id="pointerIcon_mobile" src="./images/pointer-icon.png"/><span class="btn-label">Pointer</span>
-    </button>
-    <input type="color" id="colorInput_mobile" class="color-picker"/>
-  `;
-  rightMenu.innerHTML = `
-    <button id="download_tab_mobile">
-      <img src="./images/downloads.png"/><span class="btn-label">Download</span>
-    </button>
-    <button id="layers_tab_mobile">
-      <img src="./images/layers.png"/><span class="btn-label">Layers</span>
-    </button>
-    <button id="galleryBtn_mobile">
-      <img src="./images/gallery.png"/><span class="btn-label">Gallery</span>
-    </button>
-    <button id="authToggleBtn_mobile">
-      <img src="./images/user.png"/><span class="btn-label">User</span>
-    </button>
-    <button id="newCanvasBtn_mobile">
-      <img src="./images/new-canva.png"/><span class="btn-label">New Canvas</span>
-    </button>
-    <button id="undoBtn_mobile">
-      <img src="./images/undo.png"/><span class="btn-label">Undo</span>
-    </button>
-    <button id="redoBtn_mobile">
-      <img src="./images/arrow.png"/><span class="btn-label">Redo</span>
-    </button>
-    <button id="clearBtn_mobile">
-      <img src="https://icons.veryicon.com/png/o/miscellaneous/flat-wireframe-library/trash-bin-3.png"/>
-      <span class="btn-label">Clear</span>
-    </button>
-  `;
-  [
-    ["brushes_tab_mobile", "brushDropdown"],
-    ["shapes_tab_mobile",  "shapeDropdown"],
-    ["eraser_tab_mobile",  "eraserDropdown"],
-    ["download_tab_mobile","downloadDropdown"]
-  ].forEach(([btnId, ddId]) => {
-    const btn = document.getElementById(btnId);
-    btn.onclick = e => {
-      const dd = document.getElementById(ddId);
-      const portal = document.getElementById("globalDropdowns");
-      if (dd.parentElement !== portal) portal.appendChild(dd);
-      const { left, bottom } = e.currentTarget.getBoundingClientRect();
-      dd.style.position = "fixed";
-      dd.style.top      = `${bottom}px`;
-      dd.style.left     = `${left}px`;
-      dd.style.zIndex   = "2000";
-      dd.style.display  = dd.style.display === "block" ? "none" : "block";
-    };
+  if (!(leftMenu && rightMenu && topMenu)) return;
+
+  // toggle di visibilità
+  document.getElementById('toggleLeftMenu')?.addEventListener('click', () => {
+    leftMenu.classList.toggle('hidden');
+    rightMenu.classList.add('hidden');
+  });
+  document.getElementById('toggleRightMenu')?.addEventListener('click', () => {
+    rightMenu.classList.toggle('hidden');
+    leftMenu.classList.add('hidden');
   });
 
-  [
-    ["bucket_tab",       "bucket_tab_mobile"],
-    ["pointerToggleBtn", "pointerToggleBtn_mobile"],
-    ["layers_tab",       "layers_tab_mobile"],
-    ["galleryBtn",       "galleryBtn_mobile"],
-    ["authToggleBtn",    "authToggleBtn_mobile"],
-    ["newCanvasBtn",     "newCanvasBtn_mobile"],
-    ["undoBtn",          "undoBtn_mobile"],
-    ["redoBtn",          "redoBtn_mobile"],
-    ["clearBtn",         "clearBtn_mobile"],
-    ["text_tab",         "text_tab_mobile"]
-  ].forEach(([deskId, mobId]) => {
-    const desk = document.getElementById(deskId);
-    const mob  = document.getElementById(mobId);
-    if (desk && mob) mob.onclick = () => desk.click();
-  });
-  const cm = document.getElementById("colorInput_mobile");
-  const co = document.getElementById("colorInput");
-  if (cm && co) {
-    cm.value   = co.value;
-    cm.oninput = e => {
-      co.value = e.target.value;
-      co.dispatchEvent(new Event("input"));
-    };
-  }
-}
-function resetDropdowns() {
-  const leftWrappers = Array.from(
-    document.querySelectorAll('#menu .menu-left > .dropdown-wrapper')
-  );
-  const rightWrapper = document.querySelector(
-    '#menu .menu-right > .dropdown-wrapper'
-  );
-
-  const mappings = [
-    { id: 'brushDropdown',  wrapper: leftWrappers[0] },
-    { id: 'shapeDropdown',  wrapper: leftWrappers[1] },
-    { id: 'eraserDropdown', wrapper: leftWrappers[2] },
-    { id: 'downloadDropdown', wrapper: rightWrapper }
-  ];
-
-  mappings.forEach(({ id, wrapper }) => {
-    const dd = document.getElementById(id);
-    if (dd && wrapper && dd.parentElement !== wrapper) {
-      ['position', 'top', 'left', 'zIndex', 'display']
-        .forEach(prop => dd.style[prop] = '');
-      wrapper.appendChild(dd);
+  function populate() {
+    leftMenu.innerHTML = `
+      <button id="brushes_tab_mobile">Brushes</button>
+      <button id="shapes_tab_mobile">Shapes</button>
+      <button id="bucket_tab_mobile">Bucket</button>
+      <button id="text_tab_mobile">Text</button>
+      <button id="eraser_tab_mobile">Eraser</button>
+      <button id="pointerToggleBtn_mobile">Pointer</button>
+      <input type="color" id="colorInput_mobile" class="color-picker"/>
+    `;
+    rightMenu.innerHTML = `
+      <button id="download_tab_mobile">Download</button>
+      <button id="layers_tab_mobile">Layers</button>
+      <button id="galleryBtn_mobile">Gallery</button>
+      <button id="authToggleBtn_mobile">User</button>
+      <button id="newCanvasBtn_mobile">New Canvas</button>
+      <button id="undoBtn_mobile">Undo</button>
+      <button id="redoBtn_mobile">Redo</button>
+      <button id="clearBtn_mobile">Clear</button>
+    `;
+    // mappa mobile→desktop
+    [
+      ['brushes_tab',    'brushes_tab_mobile'],
+      ['shapes_tab',     'shapes_tab_mobile'],
+      ['bucket_tab',     'bucket_tab_mobile'],
+      ['text_tab',       'text_tab_mobile'],
+      ['eraser_tab',     'eraser_tab_mobile'],
+      ['pointerToggleBtn','pointerToggleBtn_mobile'],
+      ['download_tab',   'download_tab_mobile'],
+      ['layers_tab',     'layers_tab_mobile'],
+      ['galleryBtn',     'galleryBtn_mobile'],
+      ['authToggleBtn',  'authToggleBtn_mobile'],
+      ['newCanvasBtn',   'newCanvasBtn_mobile'],
+      ['undoBtn',        'undoBtn_mobile'],
+      ['redoBtn',        'redoBtn_mobile'],
+      ['clearBtn',       'clearBtn_mobile']
+    ].forEach(([desk, mob]) => {
+      const d = document.getElementById(desk);
+      const m = document.getElementById(mob);
+      if (d && m) m.addEventListener('click', () => d.click());
+    });
+    // sincronizza color picker mobile→desktop
+    const cm = document.getElementById('colorInput_mobile');
+    const cd = document.getElementById('colorInput');
+    if (cm && cd) {
+      cm.value = cd.value;
+      cm.addEventListener('input', e => {
+        cd.value = e.target.value;
+        cd.dispatchEvent(new Event('input'));
+      });
     }
-  });
-}
+  }
 
-  function handleResponsive() {
+  function handleResize() {
     if (window.innerWidth <= 1068) {
-      topMenu .classList.remove("hidden");
-      leftMenu.classList.remove("hidden");
-      rightMenu.classList.remove("hidden");
-      populateResponsiveMenus();
+      topMenu.classList.remove('hidden');
+      leftMenu.classList.remove('hidden');
+      rightMenu.classList.remove('hidden');
+      populate();
     } else {
-      topMenu .classList.add("hidden");
-      leftMenu.classList.add("hidden");
-      rightMenu.classList.add("hidden");
-      resetDropdowns();
+      topMenu.classList.add('hidden');
+      leftMenu.classList.add('hidden');
+      rightMenu.classList.add('hidden');
+      // rimetti i dropdown sui wrapper originali
+      updateMenuHeight();
+      closeAllDropdowns(['brushDropdown','shapeDropdown','eraserDropdown','downloadDropdown']);
     }
   }
 
-  window.addEventListener("resize", handleResponsive);
-  handleResponsive();
+  window.addEventListener('resize', handleResize);
+  handleResize();
 }

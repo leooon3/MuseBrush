@@ -1,42 +1,57 @@
 /* =====================================
-   BASE STYLES
-====================================== */
-body, html {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  overflow-x: hidden;
-  overflow-y: hidden;
-}
-/* Nasconde qualsiasi elemento con .hidden */
-.hidden {
-  display: none !important;
-}
-*,
-*::before,
-*::after {
-  box-sizing: inherit;
-}
-
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f8f9fa;
-  color: #333;
+   VARIABLES
+===================================== */
+:root {
+  --bg-light: #f8f9fa;
+  --bg-white-trans: rgba(255, 255, 255, 0.8);
+  --border-light: #ddd;
+  --border-medium: #ccc;
+  --text-dark: #333;
+  --primary: #007bff;
+  --primary-dark: #0056b3;
+  --success: #28a745;
+  --success-dark: #218838;
+  --info: #17a2b8;
+  --info-dark: #138496;
+  --button-bg: #f0f0f0;
+  --button-hover-bg: #e0e0e0;
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.2);
 }
 
 /* =====================================
+   BASE
+===================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+}
+
+/* Utility */
+.hidden { display: none !important; }
+
+/* =====================================
    HEADER & MENU
-====================================== */
+===================================== */
 header#menu {
   position: fixed;
-  top: 0;
-  left: 0;
+  top: 0; left: 0;
   width: 100%;
-  background-color: #ffffffcc;
+  background-color: var(--bg-white-trans);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   padding: 10px 20px;
@@ -45,51 +60,45 @@ header#menu {
 
 .menu-container {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
-  max-width: 100%;
   gap: 20px;
-  position: relative;
 }
 
 .menu-left,
 .menu-right {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
 }
 
 .logo {
-  font-size: 1.8em;
-  font-weight: bold;
-  color: #3a3a3a;
-  margin: 0 auto 10px;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #3a3a3a;
   white-space: nowrap;
 }
 
 /* =====================================
    BUTTONS & ICONS
-====================================== */
+===================================== */
 button {
-  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--button-bg);
   border: none;
   padding: 8px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
 button:hover {
-  background-color: #e0e0e0;
+  background-color: var(--button-hover-bg);
   transform: scale(1.05);
 }
 
@@ -98,59 +107,48 @@ button img {
   height: 24px;
 }
 
+button.tool-active {
+  border: 2px solid var(--primary);
+  box-shadow: 0 0 0 2px rgba(204, 229, 255, 1);
+}
+
 .layer-controls button {
   padding: 4px 6px;
   font-size: 14px;
-  border: none;
-  border-radius: 3px;
   background-color: #eee;
-  cursor: pointer;
+  border-radius: 3px;
 }
 
 .layer-controls button:hover {
   background-color: #ddd;
 }
 
-button.tool-active {
-  border: 2px solid #007bff;
-  box-shadow: 0 0 0 2px #cce5ff;
-}
-
 /* =====================================
    COLOR PICKER
-====================================== */
+===================================== */
 .color-picker {
   width: 36px;
   height: 36px;
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px var(--shadow-light);
   appearance: none;
   background: none;
-  padding: 0;
-  overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .color-picker:hover {
   transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px var(--shadow-medium);
 }
 
-.color-picker::-webkit-color-swatch-wrapper {
-  padding: 0;
-  border-radius: 50%;
-}
-
+.color-picker::-webkit-color-swatch-wrapper,
 .color-picker::-webkit-color-swatch,
 .color-picker::-moz-color-swatch {
-  border: none;
+  padding: 0;
   border-radius: 50%;
-}
-
-.color-picker::-moz-focus-inner {
-  border: 0;
+  border: none;
 }
 
 .color-history {
@@ -163,12 +161,10 @@ button.tool-active {
 .color-history button {
   width: 24px;
   height: 24px;
+  border: 2px solid var(--border-medium);
   border-radius: 50%;
-  border: 2px solid #ccc;
-  cursor: pointer;
-  padding: 0;
-  outline: none;
   background: transparent;
+  cursor: pointer;
   transition: transform 0.2s ease;
 }
 
@@ -179,15 +175,12 @@ button.tool-active {
 
 /* =====================================
    SLIDER (THICKNESS)
-====================================== */
+===================================== */
 .slider-container {
   position: fixed;
-  right: 20px;
   top: 50%;
+  right: 20px;
   transform: translateY(-50%) rotate(180deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 1001;
 }
 
@@ -198,9 +191,8 @@ button.tool-active {
   height: 150px;
   background: linear-gradient(to bottom, #9d9d9d, #ffffff);
   border-radius: 5px;
-  outline: none;
   opacity: 0.8;
-  transition: opacity 0.3s;
+  transition: opacity 0.3s ease;
   cursor: pointer;
 }
 
@@ -219,88 +211,62 @@ button.tool-active {
 
 /* =====================================
    DROPDOWNS
-====================================== */
+===================================== */
 .dropdown-wrapper {
   position: relative;
   display: inline-block;
-  z-index: 9999 !important;
+  z-index: 9999;
 }
 
 .dropdown-content {
   position: absolute;
-  top: 100%;
-  left: 0;
-  background-color: white;
-  border: 1px solid #ccc;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  top: 100%; left: 0;
+  background: var(--bg-light);
+  border: 1px solid var(--border-medium);
+  box-shadow: 0 4px 6px var(--shadow-light);
   border-radius: 6px;
   display: none;
-  z-index: 9999 !important; 
   padding: 5px;
   max-width: 100vw;
-  box-sizing: border-box;
-}
-
-.dropdown-content button {
-  padding: 8px 12px;
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-}
-
-.dropdown-content button:hover {
-  background-color: #f4f4f4;
 }
 
 /* =====================================
    CANVAS AREA
-====================================== */
+===================================== */
 .canvas-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   position: relative;
   width: 100%;
   height: calc(100vh - var(--menu-height, 61px));
   margin-top: var(--menu-height, 61px);
-  box-sizing: border-box;
-  overflow: visible; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-color: #0d042f;
 }
 
-.layer-canvas {
+.layer-canvas,
+.background-canvas {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 0; left: 0;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px var(--shadow-medium);
 }
 
-.layer-canvas.active {
-  pointer-events: auto;
-}
 .background-canvas {
-  position: static;
-  z-index: 0;
   pointer-events: none;
-  filter: none;
   box-shadow: none;
 }
- 
+
 /* =====================================
-   PANEL: LAYERS
-====================================== */
+   LAYERS PANEL
+===================================== */
 #layersPanel {
   position: fixed;
-  top: 80px;
-  right: -300px;
-  width: 250px;
-  height: 60vh;
-  background-color: #fff;
-  border-left: 1px solid #ccc;
-  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.05);
+  top: 80px; right: -300px;
+  width: 250px; height: 60vh;
+  background: #fff;
+  border-left: 1px solid var(--border-medium);
+  box-shadow: -4px 0 8px var(--shadow-light);
   padding: 15px;
   border-radius: 8px 0 0 8px;
   overflow-y: auto;
@@ -308,33 +274,23 @@ button.tool-active {
   z-index: 2000;
 }
 
-#layersPanel.visible {
-  right: 0;
-}
-
-#layersPanel h3 {
-  margin-top: 0;
-  font-size: 1.2em;
-  color: #444;
-  text-align: left;
-}
+#layersPanel.visible { right: 0; }
 
 #layersList {
   list-style: none;
-  padding: 0;
-  margin: 0;
+  margin: 0; padding: 0;
 }
 
 #layersList li {
-  padding: 6px 10px;
-  background: #f9f9f9;
-  margin-bottom: 6px;
-  border-radius: 6px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  background: #f9f9f9;
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
   cursor: pointer;
-  border: 1px solid #ccc;
 }
 
 #layersList li.active {
@@ -343,38 +299,29 @@ button.tool-active {
 }
 
 /* =====================================
-   GALLERY & MODALS
-====================================== */
-.modal {
+   MODALS & GALLERY
+===================================== */
+.modal,
+.modal.hidden {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0,0,0,0.5);
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 3000;
 }
 
-.modal.hidden {
-  display: none;
-}
+.modal.hidden { display: none; }
 
 .modal-content {
   background: #fff;
   padding: 20px;
   border-radius: 12px;
-  width: 80%;
-  max-width: 600px;
+  width: 80%; max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
-}
-
-.modal-content h2 {
-  margin-top: 0;
+  box-shadow: 0 6px 18px var(--shadow-medium);
 }
 
 .project-list {
@@ -385,13 +332,13 @@ button.tool-active {
 }
 
 .project-list .project {
-  border: 1px solid #ccc;
-  padding: 10px;
-  border-radius: 6px;
   width: 150px;
-  cursor: pointer;
-  text-align: center;
+  padding: 10px;
   background: #f9f9f9;
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
 }
 
 .project-list .project:hover {
@@ -400,7 +347,7 @@ button.tool-active {
 
 /* =====================================
    SAVE CONTROLS
-====================================== */
+===================================== */
 .save-controls {
   display: flex;
   gap: 10px;
@@ -412,188 +359,98 @@ button.tool-active {
   flex-grow: 1;
   padding: 10px;
   border-radius: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-medium);
   font-size: 16px;
 }
 
 #saveCanvasBtn {
   padding: 10px 16px;
-  background-color: #007bff;
-  color: white;
+  background: var(--primary);
+  color: #fff;
+  border: none;
   border-radius: 8px;
   font-weight: bold;
-  border: none;
   transition: background-color 0.2s ease;
 }
 
-#saveCanvasBtn:hover {
-  background-color: #0056b3;
-}
-
-.save-confirmation {
-  color: green;
-  font-weight: bold;
-  margin-bottom: 10px;
-  font-size: 14px;
-  transition: opacity 0.3s ease;
-}
-
-.save-confirmation.hidden {
-  display: none;
-}
+#saveCanvasBtn:hover { background: var(--primary-dark); }
 
 #updateProjectBtn {
   padding: 10px 16px;
-  background-color: #28a745;
-  color: white;
+  background: var(--success);
+  color: #fff;
+  border: none;
   border-radius: 8px;
   font-weight: bold;
-  border: none;
   transition: background-color 0.2s ease;
 }
 
-#updateProjectBtn:hover {
-  background-color: #218838;
-}
+#updateProjectBtn:hover { background: var(--success-dark); }
+
 #exportProjectBtn {
   padding: 10px 16px;
-  background-color: #17a2b8;
-  color: white;
+  background: var(--info);
+  color: #fff;
+  border: none;
   border-radius: 8px;
   font-weight: bold;
-  border: none;
   transition: background-color 0.2s ease;
 }
 
-#exportProjectBtn:hover {
-  background-color: #138496;
-}
+#exportProjectBtn:hover { background: var(--info-dark); }
 
-#exportProjectBtn,
-#importProjectInput + label {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 150px;
-  text-align: center;
-}
 /* =====================================
    RESPONSIVE
-====================================== */
-@media screen and (max-width: 1068px) {
-
+===================================== */
+@media (max-width: 1068px) {
   .menu-left > button,
   .menu-right > button,
   .slider-container {
     display: none !important;
   }
 
-  .menu-left > .dropdown-wrapper > button,
-  .menu-right > .dropdown-wrapper > button {
-    display: none !important;
-  }
-  .menu-left > .dropdown-wrapper,
-  .menu-right > .dropdown-wrapper {
-    display: inline-block !important;
+  .dropdown-content {
+    position: fixed !important;
+    z-index: 2000 !important;
+    white-space: nowrap;
   }
 
-  /* Top responsive */
   .responsive-top-menu {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 10px 20px;
     background: #fff;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid var(--border-medium);
     position: fixed;
-    top: 0;
-    width: 100%;
-    z-index: 1001;
+    top: 0; width: 100%; z-index: 1001;
   }
 
-  /* Side menus */
   .responsive-side-menu {
     position: fixed;
     top: 60px;
     width: 200px;
     height: calc(100% - 60px);
-    background: #ffffff;
-    border-right: 1px solid #ccc;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+    background: #fff;
+    border-right: 1px solid var(--border-medium);
+    box-shadow: 2px 0 8px var(--shadow-light);
     overflow-y: auto;
-    overflow: visible !important;
     z-index: 1001;
   }
-  #responsiveLeftMenu  { left:  0; }
-  #responsiveRightMenu { right: 0; }
-  .dropdown-content {
-    position: fixed !important;
-    z-index: 2000 !important;  
-    white-space: nowrap;
-  }
-@media screen and (max-width: 1068px) {
-  .responsive-top-menu button,
-  .responsive-side-menu button {
+
+  .responsive-side-menu button,
+  .responsive-top-menu button {
     display: inline-flex !important;
     align-items: center;
-    justify-content: flex-start;
     gap: 6px;
     padding: 8px 12px !important;
-    box-sizing: border-box;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: auto !important;
-    min-width: 0;
-  }
-    .responsive-side-menu {
-    display: flex;
-    flex-direction: column !important;
-    align-items: stretch;
-  }
-  .btn-label {
-    flex-shrink: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .color-picker {
-    margin-left: 6px;
-    padding: 0;
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: none;
-  }
-}
-
-  .slider-container {
-    display: flex !important;
   }
 
   .slider {
-    background: linear-gradient(to bottom, #666666, #dddddd) !important;
+    background: linear-gradient(to bottom, #666, #ddd) !important;
     opacity: 1 !important;
   }
-  .slider:hover {
-    opacity: 1 !important;
-  }
-  
-}
-
-/* =====================================
-   GLOBAL DROPDOWN PORTAL
-====================================== */
-#globalDropdowns {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 3000;      
-}
-
-#globalDropdowns .dropdown-content {
-  pointer-events: auto;
-  z-index: 3001 !important;
 }

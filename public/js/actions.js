@@ -1,33 +1,66 @@
-import { getActiveLayer } from './canvas.js';
+// actions.js
 
-export function saveState() { // saves the action just made for undo and redo
+import { getActiveLayer } from './canvas.js';
+import isEqual from 'lodash.isequal';
+
+/**
+ * saveState: salva lo stato corrente per le funzionalità di undo/redo.
+ */
+export function saveState() {
   const layer = getActiveLayer();
-  const current = JSON.stringify(layer.canvas);
-  if (layer.undoStack[layer.undoStack.length - 1] !== current) {
-    layer.undoStack.push(current);
-    layer.redoStack.length = 0;
+
+  // Serializziamo con toJSON(), non con JSON.stringify, per evitare riferimenti circolari
+  const currentState = layer.canvas.toJSON();
+  const lastState = layer.undoStack[layer.undoStack.length - 1];
+
+  // Confronto profondo degli oggetti JSON per decidere se pushare un nuovo snapshot
+  if (!isEqual(lastState, currentState)) {
+    layer.undoStack.push(currentState);
+    layer.redoStack.length = 0; // resetto il redoStack quando c'è una nuova azione
   }
 }
 
-export function undo() { //delete last action
+/**
+ * undo: torna allo stato precedente.
+ */
+export function undo() {
   const layer = getActiveLayer();
   if (layer.undoStack.length > 1) {
+    // Sposto lo stato corrente nel redoStack
     layer.redoStack.push(layer.undoStack.pop());
-    const previous = layer.undoStack[layer.undoStack.length - 1];
-    layer.canvas.loadFromJSON(previous, () => layer.canvas.renderAll());
+
+    // Ripristino l’ultimo stato utile
+    const previousState = layer.undoStack[layer.undoStack.length - 1];
+    layer.canvas.loadFromJSON(previousState, () => {
+      layer.canvas.renderAll();
+    });
   }
 }
 
-export function redo() { // make happen last action deleted
+/**
+ * redo: riapplica l’ultima azione annullata.
+ */
+export function redo() {
   const layer = getActiveLayer();
   if (layer.redoStack.length > 0) {
-    const next = layer.redoStack.pop();
-    layer.undoStack.push(next);
-    layer.canvas.loadFromJSON(next, () => layer.canvas.renderAll());
+    const nextState = layer.redoStack.pop();
+
+    // Ripristino lo stato e lo salvo di nuovo nell’undoStack
+    layer.canvas.loadFromJSON(nextState, () => {
+      layer.canvas.renderAll();
+    });
+    layer.undoStack.push(nextState);
   }
 }
 
-export function fabricToCanvasCoords(canvas, pointer) { // adapting the canvas coordinates
+/**
+ * fabricToCanvasCoords: converte le coordinate del puntatore nelle coordinate del canvas,
+ * tenendo conto di zoom e trasformazioni.
+ * @param {fabric.Canvas} canvas
+ * @param {{ x: number, y: number }} pointer
+ * @returns {{ x: number, y: number }}
+ */
+export function fabricToCanvasCoords(canvas, pointer) {
   const vt = canvas.viewportTransform;
   const zoom = canvas.getZoom();
   const x = (pointer.x * zoom + vt[4]) / zoom;

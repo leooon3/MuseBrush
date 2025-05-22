@@ -1,24 +1,28 @@
+// main.js
+
 import { authInit } from './auth.js';
-import { initUIControls } from './ui.js';
+import { initUIControls, updateMenuHeight, initResponsiveMenus } from './ui.js';
 import { initLayerPanel } from './layers.js';
 import { initStorage } from './storage.js';
 import { initGallery } from './gallery.js';
 import { initExitHandlers } from './exit.js';
 import { setupNewCanvas } from './canvas-utils.js';
-import { updateMenuHeight } from './ui.js';
-import { 
-  updateStates, 
-  currentBrush, 
-  isPointerMode 
-} from './state.js';
+import { updateStates, currentBrush, isPointerMode } from './state.js';
 import { initLayers, layers, fitCanvasToContainer, updateCanvasVisibility } from './canvas.js';
 import { attachCanvasEvents } from './events.js';
 import { setDrawingMode, setBrush } from './tool.js';
-import { initResponsiveMenus } from './ui.js';
 
-window.addEventListener('DOMContentLoaded', () => {
-  document.getElementById("newCanvasBtn").onclick = setupNewCanvas;
-  
+/**
+ * Initial setup after DOM is loaded.
+ */
+window.addEventListener('DOMContentLoaded', async () => {
+  // New canvas button
+  const newCanvasBtn = document.getElementById('newCanvasBtn');
+  if (newCanvasBtn) {
+    newCanvasBtn.onclick = setupNewCanvas;
+  }
+
+  // Initialize services and UI
   authInit();
   initUIControls();
   initLayerPanel();
@@ -26,35 +30,35 @@ window.addEventListener('DOMContentLoaded', () => {
   initGallery();
   initExitHandlers();
 
-  // Stato iniziale raggruppato
+  // Initial state
   updateStates({
     globalDrawingMode: true,
     isInsertingText: false,
     drawingShape: null
   });
 
+  // Initialize layers
   initLayers(1);
 
-  setTimeout(() => {
-    if (layers.length > 0) {
-      updateStates({ activeLayerIndex: 0 });
-      const firstLayer = layers[0];
-      attachCanvasEvents(firstLayer.canvas);
-      if (!isPointerMode) {
-        setDrawingMode(true);
-        setBrush(currentBrush);
-      }
-      updateCanvasVisibility();
+  // Setup first layer if exists
+  if (layers.length > 0) {
+    updateStates({ activeLayerIndex: 0 });
+    const firstLayer = layers[0];
+    attachCanvasEvents(firstLayer.canvas);
+    if (!isPointerMode) {
+      setDrawingMode(true);
+      setBrush(currentBrush);
     }
-  }, 0);
-    initResponsiveMenus();
-});
+    updateCanvasVisibility();
+  }
 
-document.addEventListener('DOMContentLoaded', function() {
+  // Responsive menus and layout
+  initResponsiveMenus();
   updateMenuHeight();
   window.addEventListener('resize', updateMenuHeight);
-});
 
-window.addEventListener('resize', () => {
-  layers.forEach(layer => fitCanvasToContainer(layer.canvas));
+  // Canvas resize on window resize
+  window.addEventListener('resize', () => {
+    layers.forEach(layer => fitCanvasToContainer(layer.canvas));
+  });
 });

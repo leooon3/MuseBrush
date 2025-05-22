@@ -1,135 +1,168 @@
-import { createLayer, updateCanvasVisibility , updateCanvasStacking } from './canvas.js';
-import { setBrush } from './tool.js';
+// layers.js
+
+import {
+  layers,
+  createBackgroundLayer,
+  createLayer,
+  updateCanvasVisibility,
+  updateCanvasStacking
+} from './canvas.js';
+import { setBrush, setDrawingMode } from './tool.js';
 import {
   activeLayerIndex,
   currentBrush,
   globalDrawingMode,
   updateStates
 } from './state.js';
+import { showConfirm } from './canvas-utils.js';
 
-const layersTab = document.getElementById('layers_tab');
-const layersPanel = document.getElementById('layersPanel');
+const layersTab    = document.getElementById('layers_tab');
+const layersPanel  = document.getElementById('layersPanel');
+const layersList   = document.getElementById('layersList');
 
-export function renderLayerList() { // show you the layers in their menù
-  const list = document.getElementById("layersList");
-  list.innerHTML = '';
+/**
+ * Ricostruisce la lista dei layer nel pannello.
+ */
+export function renderLayerList() {
+  if (!layersList) return;
+  layersList.innerHTML = '';
 
-  import('./canvas.js').then(({ layers }) => {
-    const addBtn = document.createElement('button');
-    addBtn.textContent = "+ Nuovo Livello";
-    addBtn.className = 'add-layer-btn';
-    addBtn.style.marginBottom = "10px";
-    addBtn.onclick = () => {
+  // ➕ Pulsante “Nuovo Livello”
+  const addBtn = document.createElement('button');
+  addBtn.textContent   = '+ Nuovo Livello';
+  addBtn.className     = 'add-layer-btn';
+  addBtn.style.margin  = '10px 0';
+  addBtn.addEventListener('click', () => {
+    const container = document.querySelector('.canvas-container');
+    createLayer(container, layers.length);
+    updateStates({ activeLayerIndex: layers.length - 1 });
+    updateCanvasVisibility();
+    renderLayerList();
+    setBrush(currentBrush);
+  });
+  layersList.appendChild(addBtn);
+
+  // ➖ Per ogni layer, un <li> con controlli
+  layers.forEach((layer, index) => {
+    const li = document.createElement('li');
+    li.className = index === activeLayerIndex ? 'active' : '';
+
+    // Nome layer (cliccabile per rinominare)
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent  = layer.name;
+    nameSpan.style.flexGrow = '1';
+    nameSpan.style.cursor  = 'pointer';
+    nameSpan.addEventListener('click', e => {
+      e.stopPropagation();
+      const newName = prompt('Inserisci nuovo nome per il layer:', layer.name);
+      if (newName && newName.trim()) {
+        layer.name = newName.trim();
+        renderLayerList();
+      }
+    });
+    li.appendChild(nameSpan);
+
+    // Contenitore bottoni azioni
+    const controls = document.createElement('div');
+    controls.className = 'layer-controls';
+
+    // Sposta su
+    const upBtn = document.createElement('button');
+    upBtn.textContent = '⬆️';
+    upBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (index > 0) {
+        [layers[index - 1], layers[index]] = [layers[index], layers[index - 1]];
+        updateCanvasStacking();
+        renderLayerList();
+      }
+    });
+    controls.appendChild(upBtn);
+
+    // Sposta giù
+    const downBtn = document.createElement('button');
+    downBtn.textContent = '⬇️';
+    downBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (index < layers.length - 1) {
+        [layers[index + 1], layers[index]] = [layers[index], layers[index + 1]];
+        updateCanvasStacking();
+        renderLayerList();
+      }
+    });
+    controls.appendChild(downBtn);
+
+    // Toggle visibilità
+    const visBtn = document.createElement('button');
+    visBtn.textContent = layer.visible ? '👁️' : '🚫';
+    visBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      layer.visible = !layer.visible;
+      updateCanvasVisibility();
+      renderLayerList();
+    });
+    controls.appendChild(visBtn);
+
+    // Elimina layer
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '🗑️';
+    delBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (layers.length === 1) {
+        return alert("Non puoi eliminare l'unico layer.");
+      }
+      const ok = await showConfirm(`Vuoi davvero eliminare il layer "${layer.name}"?`);
+      if (!ok) return;
+      // Rimuovi canvas dal DOM
       const container = document.querySelector('.canvas-container');
-      createLayer(container, layers.length);
-      updateStates({ activeLayerIndex: layers.length - 1 });
+      container.removeChild(layer.canvas.lowerCanvasEl);
+      container.removeChild(layer.canvas.upperCanvasEl);
+      layers.splice(index, 1);
+      // Aggiorna activeLayerIndex
+      const newIndex = Math.min(index, layers.length - 1);
+      updateStates({ activeLayerIndex: newIndex });
       updateCanvasVisibility();
       renderLayerList();
       setBrush(currentBrush);
-    };
-    list.appendChild(addBtn);
-
-    layers.forEach((layer, index) => {
-      const li = document.createElement('li');
-      li.className = index === activeLayerIndex ? 'active' : '';
-
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = layer.name;
-      nameSpan.style.flexGrow = '1';
-      nameSpan.style.cursor = 'pointer';
-      nameSpan.onclick = (e) => {
-        e.stopPropagation();
-        const newName = prompt("Inserisci un nuovo nome per il layer:", layer.name);
-        if (newName && newName.trim()) {
-          layer.name = newName.trim();
-          renderLayerList();
-        }
-      };
-
-      const controls = document.createElement('div');
-      controls.className = 'layer-controls';
-      const upBtn = document.createElement('button');
-      upBtn.textContent = '⬆️';
-      upBtn.onclick = (e) => {
-        e.stopPropagation();
-        if (index > 0) {
-          [layers[index], layers[index - 1]] = [layers[index - 1], layers[index]];
-          renderLayerList();
-          updateCanvasStacking();
-        }
-      };
-
-      const downBtn = document.createElement('button');
-      downBtn.textContent = '⬇️';
-      downBtn.onclick = (e) => {
-        e.stopPropagation();
-        if (index < layers.length - 1) {
-          [layers[index], layers[index + 1]] = [layers[index + 1], layers[index]];
-          renderLayerList();
-          updateCanvasStacking();
-        }
-      };
-
-      const visibilityBtn = document.createElement('button');
-      visibilityBtn.textContent = layer.visible ? '👁️' : '🚫';
-      visibilityBtn.onclick = (e) => {
-        e.stopPropagation();
-        layer.visible = !layer.visible;
-        updateCanvasVisibility();
-        renderLayerList();
-      };
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.textContent = '🗑️';
-      deleteBtn.onclick = (e) => {
-        e.stopPropagation();
-        if (layers.length === 1) return alert("Non puoi eliminare l'unico layer.");
-        if (confirm(`Vuoi davvero eliminare "${layer.name}"?`)) {
-          const container = document.querySelector('.canvas-container');
-          container.removeChild(layer.canvas.lowerCanvasEl);
-          container.removeChild(layer.canvas.upperCanvasEl);
-          layers.splice(index, 1);
-          updateStates({ activeLayerIndex: Math.max(0, activeLayerIndex - 1) });
-          updateCanvasVisibility();
-          renderLayerList();
-          setBrush(currentBrush);
-        }
-      };
-
-      controls.appendChild(upBtn);
-      controls.appendChild(downBtn);
-      controls.appendChild(visibilityBtn);
-      controls.appendChild(deleteBtn);
-      li.appendChild(nameSpan);
-      li.appendChild(controls);
-      li.onclick = () => {
-        updateStates({ activeLayerIndex: index });
-        updateCanvasVisibility();
-        renderLayerList();
-        const isVisible = layers[index].visible;
-        import('./tool.js').then(({ setDrawingMode }) => {
-          setDrawingMode(globalDrawingMode && isVisible);
-          setTimeout(() => setBrush(currentBrush), 0);
-        });
-      };
-      list.appendChild(li);
     });
+    controls.appendChild(delBtn);
+
+    li.appendChild(controls);
+
+    // Seleziona layer
+    li.addEventListener('click', () => {
+      updateStates({ activeLayerIndex: index });
+      updateCanvasVisibility();
+      renderLayerList();
+      // Imposta modalità e brush sul layer selezionato
+      const isVisible = layers[index].visible;
+      setDrawingMode(globalDrawingMode && isVisible);
+      // piccolo delay per assicurarsi che il canvas sia pronto
+      setTimeout(() => setBrush(currentBrush), 0);
+    });
+
+    layersList.appendChild(li);
   });
 }
 
-export function initLayerPanel() { //create the layer panel visible
-  layersTab.onclick = () => {
-    layersPanel.classList.toggle("visible");
-    renderLayerList();
-    const disable = layersPanel.classList.contains("visible");
+/**
+ * Inizializza il pannello layer (mostra/nasconde e render).
+ */
+export function initLayerPanel() {
+  if (!layersTab || !layersPanel) return;
 
-    document.querySelectorAll(".layer-canvas").forEach(c => {
-      c.style.pointerEvents = disable ? "none" : "auto";
+  layersTab.addEventListener('click', () => {
+    layersPanel.classList.toggle('visible');
+    renderLayerList();
+
+    const disable = layersPanel.classList.contains('visible');
+    document.querySelectorAll('.layer-canvas').forEach(el => {
+      el.style.pointerEvents = disable ? 'none' : 'auto';
     });
 
     if (!disable) {
       updateCanvasVisibility();
       setBrush(currentBrush);
     }
-  };
+  });
 }

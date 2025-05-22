@@ -1,70 +1,111 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
-const session = require('express-session');
-const helmet = require('helmet');
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const firebaseService = require('./firebaseService');
-const mongoService = require('./mongodbService');
-const csurf = require('csurf');
+// index.js
+
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import session from 'express-session';
+import helmet from 'helmet';
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import csurf from 'csurf';
+
+import * as firebaseService from './firebaseService.js';
+import * as mongoService    from './mongodbService.js';
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
+// --- SECURITY MIDDLEWARE ---
 app.set('trust proxy', 1);
 
 app.use(helmet());
-app.use(helmet.contentSecurityPolicy({
-  directives: {
-    defaultSrc: ["'self'"],
-    scriptSrc: ["'self'"],
-    styleSrc: ["'self'", "'unsafe-inline'"],
-    imgSrc: ["'self'", "data:"],
-    connectSrc: ["'self'", process.env.FRONTEND_URL, 'http://127.0.0.1:5500'],
-    frameSrc: ["'none'"],
-    objectSrc: ["'none'"]
-  }
-}));
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc:  ["'self'"],
+      styleSrc:   ["'self'", "'unsafe-inline'"],
+      imgSrc:     ["'self'", 'data:'],
+      connectSrc: [
+        "'self'",
+        process.env.FRONTEND_URL,
+        ...(process.env.ADDITIONAL_API_ORIGINS?.split(',') || [])
+      ],
+      frameSrc: ["'none'"],
+      objectSrc:["'none'"]
+    }
+  })
+);
 
-const corsOptions = {
-  origin: [process.env.FRONTEND_URL, 'http://127.0.0.1:5500'],
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'X-CSRF-Token']
-};
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin:      [process.env.FRONTEND_URL, ...(process.env.ADDITIONAL_API_ORIGINS?.split(',') || [])],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'X-CSRF-Token']
+  })
+);
 
 app.use(express.json({ limit: '40mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  proxy: true,
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 1000 * 60 * 60 * 24
-  }
-}));
 
+// --- SESSION SETUP ---
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    proxy: true,
+    cookie: {
+      httpOnly: true,
+      secure:   process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge:   24 * 60 * 60 * 1000 // 1 day
+    }
+  })
+);
+
+// --- PASSPORT GOOGLE OAUTH ---
 passport.serializeUser((user, done) => done(null, user));
-passport.deserializeUser((obj, done) => done(null, obj));
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: `${process.env.BACKEND_URL}/api/googleCallback`
-}, (accessToken, refreshToken, profile, done) => {
-  return done(null, { uid: profile.id, displayName: profile.displayName });
-}));
+passport.deserializeUser((obj,  done) => done(null, obj));
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID:     process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL:  `${process.env.BACKEND_URL}/api/googleCallback`
+    },
+    (accessToken, refreshToken, profile, done) => {
+      // mappatura profilo Google in sessione
+      return done(null, { uid: profile.id, displayName: profile.displayName });
+    }
+  )
+);
+
 app.use(passport.initialize());
 app.use(passport.session());
 
+// --- CSRF PROTECTION ---
+app.use(csurf({ cookie: true }));
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    return res.status(403).json({ error: 'Invalid CSRF token' });
+  }
+  next(err);
+});
+
+// --- AUTH ROUTES ---
+// Registration
 app.post('/api/register', firebaseService.registerUser);
+
+// Login (email/password)
 app.post('/api/login', async (req, res, next) => {
   try {
-    const { uid, message } = await firebaseService.loginUserRaw(req.body.email, req.body.password);
+    const { uid, message } = await firebaseService.loginUserRaw(
+      req.body.email, req.body.password
+    );
     req.session.uid = uid;
     req.session.save(err => {
       if (err) return next(err);
@@ -74,37 +115,58 @@ app.post('/api/login', async (req, res, next) => {
     res.status(err.statusCode || 400).json({ error: err.message });
   }
 });
-app.post('/api/resetPassword', firebaseService.resetPassword);
+
+// Password reset & verification
+app.post('/api/resetPassword',      firebaseService.resetPassword);
 app.post('/api/resendVerification', firebaseService.resendVerification);
-app.get('/api/googleLogin', passport.authenticate('google', { scope: ['profile'] }));
+
+// Google OAuth endpoints
+app.get(
+  '/api/googleLogin',
+  passport.authenticate('google', { scope: ['profile'] })
+);
+app.get(
+  '/api/googleCallback',
+  passport.authenticate('google', {
+    failureRedirect: process.env.FRONTEND_URL,
+    session: true
+  }),
+  (req, res) => res.redirect(process.env.FRONTEND_URL)
+);
+
+// Logout
 app.post('/api/logout', (req, res) => {
   req.session.destroy(err => {
-    if (err) return res.status(500).send('Logout failed');
+    if (err) return res.status(500).json({ error: 'Logout failed' });
     res.clearCookie('connect.sid');
     res.json({ message: 'Logged out' });
   });
 });
-app.get('/api/googleCallback',
-  passport.authenticate('google', { failureRedirect: process.env.FRONTEND_URL, session: true }),
-  (req, res) => res.redirect(process.env.FRONTEND_URL)
-);
 
-app.use(csurf({ cookie: true }));
-app.use((err, req, res, next) => {
-  if (err.code === 'EBADCSRFTOKEN') return res.status(403).json({ message: 'Invalid CSRF token' });
-  next(err);
+// Expose CSRF token
+app.get('/api/csrf-token', (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
 });
-app.get('/api/csrf-token', (req, res) => res.json({ csrfToken: req.csrfToken() }));
 
+// --- PROTECTED PROJECT ROUTES ---
 function ensureAuth(req, res, next) {
-  if (!req.session.uid) return res.status(401).json({ error: 'Non autenticato' });
+  if (!req.session.uid) {
+    return res.status(401).json({ error: 'Non autenticato' });
+  }
   next();
 }
-app.post('/api/saveProject', ensureAuth, mongoService.saveProject);
-app.get('/api/loadProjects', ensureAuth, mongoService.loadProjects);
-app.put('/api/updateProject', ensureAuth, mongoService.updateProject);
-app.delete('/api/deleteProject', ensureAuth, mongoService.deleteProject);
 
-app.get('/', (req, res) => res.send('Server attivo 🚀'));
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+app.post('/api/saveProject',    ensureAuth, mongoService.saveProject);
+app.get('/api/loadProjects',    ensureAuth, mongoService.loadProjects);
+app.put('/api/updateProject',   ensureAuth, mongoService.updateProject);
+app.delete('/api/deleteProject',ensureAuth, mongoService.deleteProject);
+
+// --- HEALTH CHECK ---
+app.get('/', (req, res) => {
+  res.send('Server attivo 🚀');
+});
+
+// --- START SERVER ---
+app.listen(PORT, () => {
+  console.log(`🚀 Server listening on port ${PORT}`);
+});

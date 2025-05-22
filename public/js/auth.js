@@ -1,90 +1,44 @@
-const backendUrl = 'https://musebrush.onrender.com';
+// auth.js
+
 import { updateStates } from './state.js';
 import { initGallery } from './gallery.js';
 
-export async function authInit() {
-  document.getElementById("loginBtn").onclick = loginWithEmail;
-  document.getElementById("signupBtn").onclick = registerWithEmail;
-  document.getElementById("googleLoginBtn").onclick = loginWithGoogle;
-  document.getElementById("logoutBtn").onclick = logoutUser;
-  document.getElementById("forgotPasswordBtn").onclick = resetPassword;
-  document.getElementById("resendVerificationBtn").onclick = resendVerification;
-  document.getElementById("authToggleBtn").onclick = () => {
-    document.getElementById("authModal").classList.toggle("hidden");
-  };
+const backendUrl = 'https://musebrush.onrender.com';
 
-  window.onclick = (e) => {
-    const modal = document.getElementById("authModal");
-    if (e.target === modal) modal.classList.add("hidden");
-  };
+let authModal, loginBtn, signupBtn, googleLoginBtn, logoutBtn,
+    forgotPasswordBtn, resendVerificationBtn, authToggleBtn;
 
-  try {
-    const res = await fetch(`${backendUrl}/api/csrf-token`, { credentials: 'include' });
-    if (res.ok) {
-      updateAuthIcon(true);
-      initGallery();
-    } else {
-      updateAuthIcon(false);
-    }
-  } catch {
-    updateAuthIcon(false);
+/**
+ * Mostra o nasconde l’icona di autenticazione.
+ * @param {boolean} loggedIn
+ */
+function updateAuthIcon(loggedIn) {
+  const authIcon = document.getElementById('authIcon');
+  if (!authIcon) return;
+  authIcon.src = loggedIn ? './images/user-auth.png' : './images/user.png';
+  authIcon.alt = loggedIn ? 'Utente autenticato' : 'Account';
+  updateStates({ isAuthenticated: loggedIn });
+}
+
+/**
+ * Recupera il token CSRF per sessione.
+ */
+async function fetchCsrfToken() {
+  const res = await fetch(`${backendUrl}/api/csrf-token`, {
+    credentials: 'include'
+  });
+  if (!res.ok) throw new Error('CSRF token non ottenuto');
+}
+
+/**
+ * Effettua il login via email/password.
+ */
+async function loginWithEmail() {
+  const email = document.getElementById('emailInput')?.value.trim();
+  const password = document.getElementById('passwordInput')?.value;
+  if (!email || !password) {
+    return alert('📧 Inserisci email e password.');
   }
-}
-
-async function resetPassword() {
-  const emailInput = document.getElementById("emailInput");
-  if (!emailInput || !emailInput.value.trim()) {
-    alert("📧 Inserisci un'email valida.");
-    return;
-  }
-  const email = emailInput.value.trim();
-  fetch(`${backendUrl}/api/resetPassword`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email })
-  })
-    .then(res => res.json())
-    .then(data => data.message ? alert(data.message) : alert(data.error))
-    .catch(err => alert('❌ Errore di rete: ' + err.message));
-}
-
-async function resendVerification() {
-  const emailInput = document.getElementById("emailInput");
-  if (!emailInput || !emailInput.value.trim()) {
-    alert("📧 Inserisci un'email valida.");
-    return;
-  }
-  const email = emailInput.value.trim();
-  fetch(`${backendUrl}/api/resendVerification`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email })
-  })
-    .then(res => res.json())
-    .then(data => data.message ? alert(data.message) : alert(data.error))
-    .catch(err => alert('❌ Errore di rete: ' + err.message));
-}
-
-async function registerWithEmail() {
-  const email = document.getElementById("emailInput").value;
-  const password = document.getElementById("passwordInput").value;
-  fetch(`${backendUrl}/api/register`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  })
-    .then(res => res.json())
-    .then(data => data.uid ? alert(data.message + " Controlla la tua email.") : alert(data.error))
-    .catch(err => alert('❌ Errore di rete: ' + err.message));
-}
-
-export async function loginWithEmail() {
-  const email = document.getElementById("emailInput").value.trim();
-  const password = document.getElementById("passwordInput").value;
-  if (!email || !password) return alert("📧 Inserisci email e password.");
 
   try {
     const res = await fetch(`${backendUrl}/api/login`, {
@@ -94,36 +48,159 @@ export async function loginWithEmail() {
       body: JSON.stringify({ email, password })
     });
     const data = await res.json();
-    if (!res.ok) return alert(data.error);
+    if (!res.ok) {
+      return alert(data.error || '❌ Login fallito');
+    }
     alert(data.message);
-    // Forza il salvataggio della sessione prima di ricaricare
-    if (res.headers.get('set-cookie') || res.ok) {
-      window.location.reload();
+    // Aggiorna stato e icona, poi ricarica per applicare sessione
+    updateAuthIcon(true);
+    initGallery();
+    window.location.reload();
+  } catch (err) {
+    alert('❌ Errore di rete: ' + err.message);
+  }
+}
+
+/**
+ * Effettua la registrazione via email/password.
+ */
+async function registerWithEmail() {
+  const email = document.getElementById('emailInput')?.value.trim();
+  const password = document.getElementById('passwordInput')?.value;
+  if (!email || !password) {
+    return alert('📧 Inserisci email e password per la registrazione.');
+  }
+
+  try {
+    const res = await fetch(`${backendUrl}/api/register`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (res.ok && data.uid) {
+      alert(data.message + ' Controlla la tua email per verificare l’account.');
     } else {
-      alert('⚠️ Cookie di sessione non ricevuto. Riprova.');
+      alert(data.error || '❌ Registrazione fallita');
     }
   } catch (err) {
     alert('❌ Errore di rete: ' + err.message);
   }
 }
 
-
+/**
+ * Effettua il login con Google (redirige al provider).
+ */
 function loginWithGoogle() {
   window.location.href = `${backendUrl}/api/googleLogin`;
 }
 
-function logoutUser() {
-  fetch(`${backendUrl}/api/logout`, { method: 'POST', credentials: 'include' })
-    .then(() => {
-      updateAuthIcon(false);
-      alert('🚪 Disconnesso!');
+/**
+ * Effettua il logout.
+ */
+async function logoutUser() {
+  try {
+    await fetch(`${backendUrl}/api/logout`, {
+      method: 'POST',
+      credentials: 'include'
     });
+    updateAuthIcon(false);
+    alert('🚪 Disconnesso!');
+  } catch (err) {
+    alert('❌ Errore durante il logout: ' + err.message);
+  }
 }
 
-function updateAuthIcon(loggedIn) {
-  const authIcon = document.getElementById("authIcon");
-  if (authIcon) {
-    authIcon.src = loggedIn ? "./images/user-auth.png" : "./images/user.png";
-    authIcon.alt = loggedIn ? "Utente autenticato" : "Account";
+/**
+ * Richiede reset password via email.
+ */
+async function resetPassword() {
+  const email = document.getElementById('emailInput')?.value.trim();
+  if (!email) {
+    return alert("📧 Inserisci un'email valida.");
+  }
+  try {
+    const res = await fetch(`${backendUrl}/api/resetPassword`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    alert(data.message || data.error);
+  } catch (err) {
+    alert('❌ Errore di rete: ' + err.message);
+  }
+}
+
+/**
+ * Richiede il reinvio email di verifica.
+ */
+async function resendVerification() {
+  const email = document.getElementById('emailInput')?.value.trim();
+  if (!email) {
+    return alert("📧 Inserisci un'email valida.");
+  }
+  try {
+    const res = await fetch(`${backendUrl}/api/resendVerification`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    alert(data.message || data.error);
+  } catch (err) {
+    alert('❌ Errore di rete: ' + err.message);
+  }
+}
+
+/**
+ * Collega tutti gli event handler agli elementi del DOM.
+ */
+function attachAuthHandlers() {
+  authModal = document.getElementById('authModal');
+  loginBtn = document.getElementById('loginBtn');
+  signupBtn = document.getElementById('signupBtn');
+  googleLoginBtn = document.getElementById('googleLoginBtn');
+  logoutBtn = document.getElementById('logoutBtn');
+  forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+  resendVerificationBtn = document.getElementById('resendVerificationBtn');
+  authToggleBtn = document.getElementById('authToggleBtn');
+
+  if (loginBtn) loginBtn.addEventListener('click', loginWithEmail);
+  if (signupBtn) signupBtn.addEventListener('click', registerWithEmail);
+  if (googleLoginBtn) googleLoginBtn.addEventListener('click', loginWithGoogle);
+  if (logoutBtn) logoutBtn.addEventListener('click', logoutUser);
+  if (forgotPasswordBtn) forgotPasswordBtn.addEventListener('click', resetPassword);
+  if (resendVerificationBtn) resendVerificationBtn.addEventListener('click', resendVerification);
+  if (authToggleBtn) {
+    authToggleBtn.addEventListener('click', () => {
+      authModal?.classList.toggle('hidden');
+    });
+  }
+
+  // Chiude il modal cliccando fuori
+  window.addEventListener('click', (e) => {
+    if (e.target === authModal) {
+      authModal.classList.add('hidden');
+    }
+  });
+}
+
+/**
+ * Inizializza il modulo di autenticazione:
+ * 1. Setta gli handler
+ * 2. Recupera CSRF e stato iniziale
+ */
+export async function authInit() {
+  attachAuthHandlers();
+  try {
+    await fetchCsrfToken();
+    updateAuthIcon(true);
+    initGallery();
+  } catch {
+    updateAuthIcon(false);
   }
 }
