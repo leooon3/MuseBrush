@@ -1,47 +1,41 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const helmet = require('helmet');
-const cookieParser = require('cookie-parser');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const firebaseService = require('./firebaseService');
 const mongoService = require('./mongodbService');
 const { loginUserRaw } = require('./firebaseService');
+const csurf = require('csurf');
 
 const app = express();
 
 app.use(helmet());
-app.use(
-  helmet.contentSecurityPolicy({
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:"],
-      connectSrc: ["'self'", process.env.FRONTEND_URL],
-      frameSrc: ["'none'"],
-      objectSrc: ["'none'"]
-    }
-  })
-);
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'"],
+    styleSrc: ["'self'", "'unsafe-inline'"],
+    imgSrc: ["'self'", "data:"],
+    connectSrc: ["'self'", process.env.FRONTEND_URL],
+    frameSrc: ["'none'"],
+    objectSrc: ["'none'"]
+  }
+}));
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      const allowed = [process.env.FRONTEND_URL, 'http://127.0.0.1:5500'];
-      if (!origin || allowed.includes(origin)) callback(null, true);
-      else callback(new Error('CORS policy: Origin not allowed'), false);
-    },
-    credentials: true,
-    optionsSuccessStatus: 200,
-    allowedHeaders: ['Content-Type', 'X-CSRF-Token']
-  })
-);
-app.options('*', cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  credentials: true,
+  allowedHeaders: ['Content-Type','X-CSRF-Token']
+}));
+app.options('/*', cors());
+
 app.use(express.json({ limit: '40mb' }));
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -49,10 +43,10 @@ app.use(session({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 1000 * 60 * 60 * 24
   }
 }));
-app.use(cookieParser());
 
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
@@ -91,7 +85,6 @@ app.get('/api/googleCallback',
   (req, res) => res.redirect(process.env.FRONTEND_URL)
 );
 
-const csurf = require('csurf');
 app.use(csurf({ cookie: true }));
 app.use((err, req, res, next) => {
   if (err.code === 'EBADCSRFTOKEN') return res.status(403).json({ message: 'Invalid CSRF token' });
@@ -110,5 +103,6 @@ app.put('/api/updateProject', ensureAuth, mongoService.updateProject);
 app.delete('/api/deleteProject', ensureAuth, mongoService.deleteProject);
 
 app.get('/', (req, res) => res.send('Server attivo 🚀'));
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server listening on port ${PORT}`));
