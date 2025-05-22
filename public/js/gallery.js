@@ -4,7 +4,7 @@ import { loadProject } from './projects.js';
 import { updateStates, getCurrentProjectId } from './state.js';
 
 const backendUrl = 'https://musebrush.onrender.com';
-const frontendLogin = process.env.FRONTEND_URL + '/login';
+const frontendLogin = `${window.location.origin}/login`;
 
 export function initGallery() {
   document.getElementById('galleryBtn').onclick = () => {
@@ -28,30 +28,58 @@ export async function loadProjectsFromBackend() {
     credentials: 'include',
     headers: { 'X-CSRF-Token': token }
   });
-  if (res.status === 401) return window.location.href = frontendLogin;
+  if (res.status === 401 || res.status === 403) {
+    window.location.href = frontendLogin;
+    return;
+  }
+  if (!res.ok) {
+    projectList.innerHTML = `<p>Errore ${res.status}</p>`;
+    return;
+  }
   const data = await res.json();
   projectList.innerHTML = '';
-  if (!data) return projectList.innerHTML = '<p>📭 Nessun progetto trovato.</p>';
+  if (!data || Object.keys(data).length === 0) {
+    projectList.innerHTML = '<p>📭 Nessun progetto trovato.</p>';
+    return;
+  }
   Object.entries(data).forEach(([id, progetto]) => {
     const div = document.createElement('div');
     div.className = 'project';
+
     const img = document.createElement('img');
     img.src = progetto.preview;
+    img.width = 100;
+    img.height = 75;
+    img.alt = progetto.nome;
     div.appendChild(img);
+
     const title = document.createElement('strong');
     title.textContent = progetto.nome;
     div.appendChild(title);
+    div.appendChild(document.createElement('br'));
+
     const openBtn = document.createElement('button');
-    openBtn.textContent = 'Apri';
+    openBtn.textContent = '📂 Apri';
     openBtn.onclick = () => {
       loadProject({ id, ...progetto });
+      updateStates({ currentProjectName: progetto.nome, currentProjectId: id });
       document.getElementById('galleryModal').classList.add('hidden');
     };
     div.appendChild(openBtn);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = '🗑️ Elimina';
+    deleteBtn.style.marginLeft = '5px';
+    deleteBtn.onclick = async () => {
+      if (confirm(`Vuoi davvero eliminare il progetto "${progetto.nome}"?`)) {
+        await deleteProjectFromBackend(id);
+      }
+    };
+    div.appendChild(deleteBtn);
+
     projectList.appendChild(div);
   });
 }
-
 
 export async function saveProjectToBackend(projectName) {
   const project = {
@@ -67,10 +95,15 @@ export async function saveProjectToBackend(projectName) {
     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
     body: JSON.stringify({ project })
   });
+  if (res.status === 401 || res.status === 403) {
+    window.location.href = frontendLogin;
+    return;
+  }
   const data = await res.json();
   showGalleryMessage(data.message);
   loadProjectsFromBackend();
 }
+
 async function updateProjectToBackend(projectId, projectName) {
   const project = {
     nome: projectName,
@@ -85,6 +118,10 @@ async function updateProjectToBackend(projectId, projectName) {
     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
     body: JSON.stringify({ projectId, project })
   });
+  if (res.status === 401 || res.status === 403) {
+    window.location.href = frontendLogin;
+    return;
+  }
   const data = await res.json();
   showGalleryMessage(data.message);
   loadProjectsFromBackend();
@@ -98,6 +135,10 @@ async function deleteProjectFromBackend(projectId) {
     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
     body: JSON.stringify({ projectId })
   });
+  if (res.status === 401 || res.status === 403) {
+    window.location.href = frontendLogin;
+    return;
+  }
   const data = await res.json();
   showGalleryMessage(data.message);
   loadProjectsFromBackend();
