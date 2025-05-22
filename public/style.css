@@ -595,6 +595,5 @@ button.tool-active {
 
 #globalDropdowns .dropdown-content {
   pointer-events: auto;
-
   z-index: 3001 !important;
 }
