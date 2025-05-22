@@ -11,6 +11,7 @@ const mongoService = require('./mongodbService');
 const csurf = require('csurf');
 
 const app = express();
+app.set('trust proxy', 1);
 
 app.use(helmet());
 app.use(helmet.contentSecurityPolicy({
@@ -39,6 +40,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  proxy: true,
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -64,7 +66,6 @@ app.post('/api/login', async (req, res, next) => {
   try {
     const { uid, message } = await firebaseService.loginUserRaw(req.body.email, req.body.password);
     req.session.uid = uid;
-    // Forza il salvataggio della sessione e invio del cookie
     req.session.save(err => {
       if (err) return next(err);
       res.json({ uid, message });
@@ -73,8 +74,6 @@ app.post('/api/login', async (req, res, next) => {
     res.status(err.statusCode || 400).json({ error: err.message });
   }
 });
-
-
 app.post('/api/resetPassword', firebaseService.resetPassword);
 app.post('/api/resendVerification', firebaseService.resendVerification);
 app.get('/api/googleLogin', passport.authenticate('google', { scope: ['profile'] }));
@@ -101,13 +100,11 @@ function ensureAuth(req, res, next) {
   if (!req.session.uid) return res.status(401).json({ error: 'Non autenticato' });
   next();
 }
-
 app.post('/api/saveProject', ensureAuth, mongoService.saveProject);
 app.get('/api/loadProjects', ensureAuth, mongoService.loadProjects);
 app.put('/api/updateProject', ensureAuth, mongoService.updateProject);
 app.delete('/api/deleteProject', ensureAuth, mongoService.deleteProject);
 
 app.get('/', (req, res) => res.send('Server attivo 🚀'));
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
