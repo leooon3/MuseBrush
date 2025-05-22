@@ -8,7 +8,6 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const firebaseService = require('./firebaseService');
 const mongoService = require('./mongodbService');
-const { loginUserRaw } = require('./firebaseService');
 const csurf = require('csurf');
 
 const app = express();
@@ -29,9 +28,8 @@ app.use(helmet.contentSecurityPolicy({
 app.use(cors({
   origin: process.env.FRONTEND_URL,
   credentials: true,
-  allowedHeaders: ['Content-Type','X-CSRF-Token']
+  allowedHeaders: ['Content-Type', 'X-CSRF-Token']
 }));
-app.options('/*', cors());
 
 app.use(express.json({ limit: '40mb' }));
 app.use(express.urlencoded({ extended: false }));
@@ -63,7 +61,7 @@ app.use(passport.session());
 app.post('/api/register', firebaseService.registerUser);
 app.post('/api/login', async (req, res) => {
   try {
-    const { uid, message } = await loginUserRaw(req.body.email, req.body.password);
+    const { uid, message } = await firebaseService.loginUserRaw(req.body.email, req.body.password);
     req.session.uid = uid;
     res.json({ uid, message });
   } catch (err) {
