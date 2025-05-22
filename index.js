@@ -19,14 +19,14 @@ app.use(helmet.contentSecurityPolicy({
     scriptSrc: ["'self'"],
     styleSrc: ["'self'", "'unsafe-inline'"],
     imgSrc: ["'self'", "data:"],
-    connectSrc: ["'self'", process.env.FRONTEND_URL],
+    connectSrc: ["'self'", process.env.FRONTEND_URL, 'http://127.0.0.1:5500'],
     frameSrc: ["'none'"],
     objectSrc: ["'none'"]
   }
 }));
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: [process.env.FRONTEND_URL, 'http://127.0.0.1:5500'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'X-CSRF-Token']
 }));
@@ -101,6 +101,6 @@ app.put('/api/updateProject', ensureAuth, mongoService.updateProject);
 app.delete('/api/deleteProject', ensureAuth, mongoService.deleteProject);
 
 app.get('/', (req, res) => res.send('Server attivo 🚀'));
-
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server listening on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
+

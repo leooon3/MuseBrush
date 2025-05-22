@@ -1,30 +1,15 @@
-import { getActiveLayer } from './canvas.js';
-import { layers } from './canvas.js';
-import { getBackgroundCanvas } from './canvas.js';
+import { layers, getBackgroundCanvas } from './canvas.js';
 import { getCurrentCanvasState } from './storage.js';
 import { loadProject } from './projects.js';
 import { updateStates, getCurrentProjectId } from './state.js';
 
 const backendUrl = 'https://musebrush.onrender.com';
+const frontendLogin = process.env.FRONTEND_URL + '/login';
 
 export function initGallery() {
-  document.getElementById('saveCanvasBtn').onclick = () => {
-    const name = document.getElementById('projectNameInput').value.trim();
-    if (!name) return showGalleryMessage('📛 Inserisci un nome progetto.');
-    saveProjectToBackend(name);
-  };
-  document.getElementById('updateProjectBtn').onclick = () => {
-    const projectId = getCurrentProjectId();
-    if (!projectId) return showGalleryMessage('⚠️ Nessun progetto selezionato per aggiornare.');
-    const name = document.getElementById('projectNameInput').value.trim();
-    updateProjectToBackend(projectId, name);
-  };
   document.getElementById('galleryBtn').onclick = () => {
     document.getElementById('galleryModal').classList.remove('hidden');
     loadProjectsFromBackend();
-  };
-  document.getElementById('closeGalleryBtn').onclick = () => {
-    document.getElementById('galleryModal').classList.add('hidden');
   };
 }
 
@@ -33,6 +18,40 @@ async function getCsrfToken() {
   const { csrfToken } = await res.json();
   return csrfToken;
 }
+
+export async function loadProjectsFromBackend() {
+  const projectList = document.getElementById('projectList');
+  projectList.innerHTML = '<p>⏳ Caricamento...</p>';
+  const token = await getCsrfToken();
+  const res = await fetch(`${backendUrl}/api/loadProjects`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: { 'X-CSRF-Token': token }
+  });
+  if (res.status === 401) return window.location.href = frontendLogin;
+  const data = await res.json();
+  projectList.innerHTML = '';
+  if (!data) return projectList.innerHTML = '<p>📭 Nessun progetto trovato.</p>';
+  Object.entries(data).forEach(([id, progetto]) => {
+    const div = document.createElement('div');
+    div.className = 'project';
+    const img = document.createElement('img');
+    img.src = progetto.preview;
+    div.appendChild(img);
+    const title = document.createElement('strong');
+    title.textContent = progetto.nome;
+    div.appendChild(title);
+    const openBtn = document.createElement('button');
+    openBtn.textContent = 'Apri';
+    openBtn.onclick = () => {
+      loadProject({ id, ...progetto });
+      document.getElementById('galleryModal').classList.add('hidden');
+    };
+    div.appendChild(openBtn);
+    projectList.appendChild(div);
+  });
+}
+
 
 export async function saveProjectToBackend(projectName) {
   const project = {
@@ -52,58 +71,6 @@ export async function saveProjectToBackend(projectName) {
   showGalleryMessage(data.message);
   loadProjectsFromBackend();
 }
-
-export async function loadProjectsFromBackend() {
-  const projectList = document.getElementById('projectList');
-  if (!projectList) return;
-  projectList.innerHTML = '<p>⏳ Caricamento.</p>';
-  const csrfToken = await getCsrfToken();
-  const res = await fetch(`${backendUrl}/api/loadProjects`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: { 'X-CSRF-Token': csrfToken }
-  });
-  if (res.status === 401) {
-    window.location.href = '/login';
-    return;
-  }
-  const data = await res.json();
-  projectList.innerHTML = '';
-  if (!data) return showGalleryMessage('📭 Nessun progetto trovato.');
-  Object.entries(data).forEach(([id, progetto]) => {
-    const div = document.createElement('div');
-    div.className = 'project';
-    const img = document.createElement('img');
-    img.src = progetto.preview;
-    img.width = 100;
-    img.height = 75;
-    img.alt = progetto.nome;
-    div.appendChild(img);
-    const title = document.createElement('strong');
-    title.textContent = progetto.nome;
-    div.appendChild(title);
-    div.appendChild(document.createElement('br'));
-    const openBtn = document.createElement('button');
-    openBtn.textContent = '📂 Apri';
-    openBtn.onclick = () => {
-      loadProject({ id, ...progetto });
-      updateStates({ currentProjectName: progetto.nome, currentProjectId: id });
-      document.getElementById('galleryModal').classList.add('hidden');
-    };
-    div.appendChild(openBtn);
-    const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = '🗑️ Elimina';
-    deleteBtn.style.marginLeft = '5px';
-    deleteBtn.onclick = () => {
-      if (confirm(`Vuoi davvero eliminare il progetto "${progetto.nome}"?`)) {
-        deleteProjectFromBackend(id);
-      }
-    };
-    div.appendChild(deleteBtn);
-    projectList.appendChild(div);
-  });
-}
-
 async function updateProjectToBackend(projectId, projectName) {
   const project = {
     nome: projectName,
