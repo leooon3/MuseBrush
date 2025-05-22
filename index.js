@@ -8,6 +8,7 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const firebaseService = require('./firebaseService');
 const mongoService = require('./mongodbService');
+const { loginUserRaw, loginUser } = require('./firebaseService');
 
 const app = express();
 
@@ -50,7 +51,19 @@ app.use(passport.session());
 
 // Public auth routes (no CSRF)
 app.post('/api/register', firebaseService.registerUser);
-app.post('/api/login', firebaseService.loginUser);
+// …
+// non monta più direttamente loginUser qui
+// app.post('/api/login', firebaseService.loginUser);
+app.post('/api/login', async (req, res) => {
+  try {
+    const { uid, message } = await loginUserRaw(req.body.email, req.body.password);
+    req.session.uid = uid;
+    res.json({ uid, message });
+  } catch (err) {
+    res.status(err.statusCode || 400).json({ error: err.message });
+  }
+});
+
 app.post('/api/resetPassword', firebaseService.resetPassword);
 app.post('/api/resendVerification', firebaseService.resendVerification);
 app.get('/api/googleLogin', passport.authenticate('google', { scope: ['profile'] }));

@@ -31,23 +31,20 @@ export function initGallery() {
   };
 }
 
-function buildProjectData(name) {
-  return {
-    nome: name,
-    layers: getCurrentCanvasState(),
-    preview: generateProjectPreview(),
-    timestamp: Date.now()
-  };
-}
-
 async function getCsrfToken() {
   const res = await fetch(`${backendUrl}/api/csrf-token`, { credentials: 'include' });
   const { csrfToken } = await res.json();
   return csrfToken;
 }
 
-export async function saveProjectToBackend(projectName) {
-  const project = buildProjectData(projectName);
+async function saveProjectToBackend(projectName) {
+  const project = {
+    nome: projectName,
+    layers: getCurrentCanvasState(),
+    preview: generateProjectPreview(),
+    timestamp: Date.now()
+  };
+
   try {
     const csrfToken = await getCsrfToken();
     const res = await fetch(`${backendUrl}/api/saveProject`, {
@@ -61,13 +58,20 @@ export async function saveProjectToBackend(projectName) {
     });
     const data = await res.json();
     showGalleryMessage(data.message);
+    loadProjectsFromBackend();
   } catch (error) {
     showGalleryMessage('❌ Errore salvataggio: ' + error.message);
   }
 }
 
-export async function updateProjectToBackend(projectId, projectName) {
-  const project = buildProjectData(projectName);
+async function updateProjectToBackend(projectId, projectName) {
+  const project = {
+    nome: projectName,
+    layers: getCurrentCanvasState(),
+    preview: generateProjectPreview(),
+    timestamp: Date.now()
+  };
+
   try {
     const csrfToken = await getCsrfToken();
     const res = await fetch(`${backendUrl}/api/updateProject`, {
@@ -81,6 +85,7 @@ export async function updateProjectToBackend(projectId, projectName) {
     });
     const data = await res.json();
     showGalleryMessage(data.message);
+    loadProjectsFromBackend();
   } catch (error) {
     showGalleryMessage('❌ Errore aggiornamento: ' + error.message);
   }
@@ -90,18 +95,18 @@ export async function loadProjectsFromBackend() {
   const projectList = document.getElementById('projectList');
   if (!projectList) return;
   projectList.innerHTML = '<p>⏳ Caricamento...</p>';
+
   try {
     const csrfToken = await getCsrfToken();
     const res = await fetch(`${backendUrl}/api/loadProjects`, {
       method: 'GET',
       credentials: 'include',
-      headers: {
-        'X-CSRF-Token': csrfToken
-      }
+      headers: { 'X-CSRF-Token': csrfToken }
     });
     const data = await res.json();
     projectList.innerHTML = '';
     if (!data) return showGalleryMessage('📭 Nessun progetto trovato.');
+
     Object.entries(data).forEach(([id, progetto]) => {
       const div = document.createElement('div');
       div.className = 'project';
@@ -144,7 +149,7 @@ export async function loadProjectsFromBackend() {
   }
 }
 
-export async function deleteProjectFromBackend(projectId) {
+async function deleteProjectFromBackend(projectId) {
   try {
     const csrfToken = await getCsrfToken();
     const res = await fetch(`${backendUrl}/api/deleteProject`, {
@@ -174,21 +179,16 @@ function showGalleryMessage(message) {
 function generateProjectPreview() {
   const background = getBackgroundCanvas();
   if (!background) return '';
-
   const width = background.getWidth();
   const height = background.getHeight();
-
   const mergedCanvas = document.createElement('canvas');
   mergedCanvas.width = width;
   mergedCanvas.height = height;
   const ctx = mergedCanvas.getContext('2d');
-
   ctx.drawImage(background.lowerCanvasEl, 0, 0);
-
   layers.forEach(layer => {
     if (!layer.visible) return;
     ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
   });
-
   return mergedCanvas.toDataURL('image/jpeg', 0.6);
 }

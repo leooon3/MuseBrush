@@ -75,29 +75,43 @@ exports.registerUser = async (req, res) => {
 
 // Login (check only if the user exist)
 // firebaseService.js
-exports.loginUser = async (req, res) => {
-  const { email, password } = req.body;
+// in firebaseService.js
+
+// Esporta una nuova funzione loginUserRaw
+exports.loginUserRaw = async (email, password) => {
   if (!email || !password) {
-    return res.status(400).json({ error: "Email e password richiesti." });
+    const e = new Error("Email e password richiesti.");
+    e.statusCode = 400;
+    throw e;
   }
   try {
-    // 1) Sign-in con REST API di Firebase
     const { data } = await axios.post(
       `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`,
       { email, password, returnSecureToken: true }
     );
-    // 2) Verifica il token e la proprietà email_verified
     const decoded = await admin.auth().verifyIdToken(data.idToken);
     if (!decoded.email_verified) {
-      return res.status(400).json({ error: "❌ Verifica la tua e-mail prima di accedere." });
+      const e = new Error("❌ Verifica la tua e-mail prima di accedere.");
+      e.statusCode = 400;
+      throw e;
     }
-    // 3) OK!
-    res.json({ uid: decoded.uid, message: "✅ Login riuscito!" });
+    return { uid: decoded.uid, message: "✅ Login riuscito!" };
   } catch (err) {
     const msg = err.response?.data?.error?.message || err.message;
-    res.status(400).json({ error: "Login fallito: " + msg });
+    const e = new Error("Login fallito: " + msg);
+    e.statusCode = 400;
+    throw e;
   }
 };
+
+// Mantieni la vecchia loginUser per compatibilità, ma rinominala in modo che non venga montata su /api/login
+exports.loginUser = (req, res) => {
+  const { email, password } = req.body;
+  firebaseService.loginUserRaw(email, password)
+    .then(({ uid, message }) => res.json({ uid, message }))
+    .catch(err => res.status(err.statusCode || 400).json({ error: err.message }));
+};
+
 // --- RISPEDISCI LINK DI VERIFICA ---
 // 🔁 Reinvia link di verifica via mail
 exports.resendVerification = async (req, res) => {
