@@ -1,8 +1,18 @@
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
-const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY;
 
+
+admin.initializeApp({
+  credential: admin.credential.cert({
+    projectId:   process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey:  process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  }),
+  databaseURL: process.env.FB_DATABASE_URL
+});
+
+module.exports = admin;
 
 const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
 
@@ -59,67 +69,47 @@ exports.loginUser = async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ error: "Email e password richiesti." });
   }
-
   try {
     // 1) Sign-in con REST API di Firebase
-    const loginResp = await axios.post(
+    const { data } = await axios.post(
       `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`,
       { email, password, returnSecureToken: true }
     );
-    const idToken = loginResp.data.idToken;
-
-    // 2) Verifica token e controlla email_verified
-    const decoded = await auth.verifyIdToken(idToken);
+    // 2) Verifica il token e la proprietà email_verified
+    const decoded = await admin.auth().verifyIdToken(data.idToken);
     if (!decoded.email_verified) {
-      return res.status(400).json({ error: "❌ Devi verificare la tua e-mail prima di entrare." });
+      return res.status(400).json({ error: "❌ Verifica la tua e-mail prima di accedere." });
     }
-
-    // 3) Tutto OK
+    // 3) OK!
     res.json({ uid: decoded.uid, message: "✅ Login riuscito!" });
   } catch (err) {
-    const serverMsg = err.response?.data?.error?.message || err.message;
-    res.status(400).json({ error: "Login fallito: " + serverMsg });
+    const msg = err.response?.data?.error?.message || err.message;
+    res.status(400).json({ error: "Login fallito: " + msg });
   }
 };
-
 // --- RISPEDISCI LINK DI VERIFICA ---
 exports.resendVerification = async (req, res) => {
   const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: "Email mancante nella richiesta." });
-  }
-
+  if (!email) return res.status(400).json({ error: "Email mancante." });
   try {
-    const link = await auth.generateEmailVerificationLink(email);
-    await transporter.sendMail({
-      from: process.env.FROM_EMAIL,
-      to: email,
-      subject: "Verifica il tuo indirizzo e-mail per MuseBrush",
-      html: `<p>Clicca qui per verificare:</p><p><a href="${link}">${link}</a></p>`
-    });
+    const link = await admin.auth().generateEmailVerificationLink(email);
+    // usa il tuo transporter SMTP per inviare `link` all’indirizzo
     res.json({ link });
   } catch (err) {
-    res.status(400).json({ error: "Errore invio verifica: " + err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 
 // --- RISPEDISCI LINK DI RESET PASSWORD ---
 exports.resetPassword = async (req, res) => {
   const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: "Email mancante nella richiesta." });
-  }
-
+  if (!email) return res.status(400).json({ error: "Email mancante." });
   try {
-    const link = await auth.generatePasswordResetLink(email);
-    await transporter.sendMail({
-      from: process.env.FROM_EMAIL,
-      to: email,
-      subject: "Reset password per MuseBrush",
-      html: `<p>Clicca qui per resettare la password:</p><p><a href="${link}">${link}</a></p>`
-    });
+    const link = await admin.auth().generatePasswordResetLink(email);
+    // invia `link` via mail
     res.json({ link });
   } catch (err) {
-    res.status(400).json({ error: "Errore reset password: " + err.message });
+    res.status(400).json({ error: err.message });
   }
 };
+

@@ -98,9 +98,6 @@ function registerWithEmail() { // first time needs to be registered with this fu
     })
     .catch(error => alert('Errore di rete: ' + error.message));
 }
-
-import { updateAuthIcon } from './auth.js'; // se necessario
-
 export async function loginWithEmail() {
   const email = document.getElementById("emailInput").value.trim();
   const password = document.getElementById("passwordInput").value;
@@ -108,30 +105,17 @@ export async function loginWithEmail() {
     alert("📧 Inserisci email e password.");
     return;
   }
-
-  try {
-    const response = await fetch(`${backendUrl}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await response.json();
-
-    if (response.ok && data.uid) {
-      // login OK
-      localStorage.setItem('userId', data.uid);
-      updateAuthIcon(true);
-      alert(data.message);
-      document.getElementById("authModal").classList.add("hidden");
-    } else {
-      // login KO (incluso “Devi verificare...”)
-      alert(data.error || '❌ Errore login');
-    }
-  } catch (err) {
-    alert('❌ Errore di rete: ' + err.message);
-  }
+  const res = await fetch('https://musebrush.onrender.com/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error);
+  localStorage.setItem('userId', data.uid);
+  alert(data.message);
+  updateAuthIcon(true);
 }
-
 
 
 function loginWithGoogle() { // login with google is totally backend
