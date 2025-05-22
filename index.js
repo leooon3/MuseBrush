@@ -106,12 +106,15 @@ app.use((err, req, res, next) => {
   next(err);
 });
 app.get('/api/csrf-token', (req, res) => res.json({ csrfToken: req.csrfToken() }));
-
+function ensureAuth(req, res, next) {
+  if (!req.session.uid) return res.status(401).json({ error: 'Non autenticato' });
+  next();
+}
 // Protected project routes
-app.post('/api/saveProject', mongoService.saveProject);
-app.get('/api/loadProjects', mongoService.loadProjects);
-app.put('/api/updateProject', mongoService.updateProject);
-app.delete('/api/deleteProject', mongoService.deleteProject);
+app.post('/api/saveProject',     ensureAuth, mongoService.saveProject);
+app.get ('/api/loadProjects',    ensureAuth, mongoService.loadProjects);
+app.put ('/api/updateProject',   ensureAuth, mongoService.updateProject);
+app.delete('/api/deleteProject', ensureAuth, mongoService.deleteProject);
 
 app.get('/', (req, res) => res.send('Server attivo 🚀'));
 const PORT = process.env.PORT || 3000;

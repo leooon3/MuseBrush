@@ -13,14 +13,17 @@ async function connect() {
 }
 
 exports.saveProject = async (req, res) => {
-  const { uid, project } = req.body;
+  const uid = req.session.uid;
+  if (!uid) return res.status(401).json({ error: 'Non autenticato' });
+  const { project } = req.body;
   const col = await connect();
   const result = await col.insertOne({ uid, ...project });
   res.json({ message: '✅ Progetto salvato!', id: result.insertedId });
 };
 
 exports.loadProjects = async (req, res) => {
-  const { uid } = req.query;
+  const uid = req.session.uid;
+  if (!uid) return res.status(401).json({ error: 'Non autenticato' });
   const col = await connect();
   const results = await col.find({ uid }).toArray();
   const mapped = {};
@@ -36,7 +39,9 @@ exports.loadProjects = async (req, res) => {
 };
 
 exports.updateProject = async (req, res) => {
-  const { uid, projectId, project } = req.body;
+  const uid = req.session.uid;
+  if (!uid) return res.status(401).json({ error: 'Non autenticato' });
+  const { projectId, project } = req.body;
   const col = await connect();
   const result = await col.updateOne(
     { _id: new ObjectId(projectId), uid },
@@ -46,7 +51,9 @@ exports.updateProject = async (req, res) => {
 };
 
 exports.deleteProject = async (req, res) => {
-  const { uid, projectId } = req.body;
+  const uid = req.session.uid;
+  if (!uid) return res.status(401).json({ error: 'Non autenticato' });
+  const { projectId } = req.body;
   const col = await connect();
   await col.deleteOne({ _id: new ObjectId(projectId), uid });
   res.json({ message: '✅ Progetto eliminato!' });
