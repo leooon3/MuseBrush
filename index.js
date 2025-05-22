@@ -12,7 +12,23 @@ const { loginUserRaw, loginUser } = require('./firebaseService');
 
 const app = express();
 
+// index.js
+
 app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],            // accetta solo script dal tuo dominio
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'", process.env.FRONTEND_URL],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"]
+    }
+  })
+);
+
 app.use(cors({
   origin: (origin, callback) => {
     const allowed = [process.env.FRONTEND_URL, 'http://127.0.0.1:5500'];
