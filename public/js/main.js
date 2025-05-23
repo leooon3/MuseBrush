@@ -1,6 +1,6 @@
 // main.js
 
-import { authInit, updateAuthIcon } from './auth.js';
+import { authInit } from './auth.js';
 import { initUIControls, updateMenuHeight, initResponsiveMenus } from './ui.js';
 import { initLayerPanel } from './layers.js';
 import { initStorage } from './storage.js';
@@ -12,120 +12,53 @@ import { initLayers, layers, fitCanvasToContainer, updateCanvasVisibility } from
 import { attachCanvasEvents } from './events.js';
 import { setDrawingMode, setBrush } from './tool.js';
 
-const backendUrl = 'https://musebrush.onrender.com';
-
 /**
  * Initial setup after DOM is loaded.
  */
-document.addEventListener('DOMContentLoaded', () => {
-  registerMessageListener();
-  setupNewCanvasButton();
-  initializeServicesAndUI();
-  initializeCanvasState();
-  initializeResponsiveLayout();
-});
+window.addEventListener('DOMContentLoaded', async () => {
+  // New canvas button
+  const newCanvasBtn = document.getElementById('newCanvasBtn');
+  if (newCanvasBtn) {
+    newCanvasBtn.onclick = setupNewCanvas;
+  }
 
-function registerMessageListener() {
-  window.addEventListener('message', event => {
-    if (event.origin !== backendUrl) return;
-    const { type, uid } = event.data || {};
-    if (type === 'google-login' && uid) {
-      finalizeLogin(uid);
-    }
-  });
-
-  window.addEventListener('storage', event => {
-    if (event.key === 'googleLoginUid' && event.newValue) {
-      finalizeLogin(event.newValue);
-      localStorage.removeItem('googleLoginUid');
-    }
-  });
-}
-
-function finalizeLogin(uid) {
-  localStorage.setItem('userId', uid);
-  updateAuthIcon(true);
-  initGallery();
-  window.location.reload();
-}
-
-document.getElementById('googleLoginBtn').addEventListener('click', () => {
-  registerMessageListener();
-  window.open(`${backendUrl}/auth/google`, 'GoogleLogin', 'width=600,height=600');
-});
-/**
- * Listen for Google login messages from the popup and handle authentication.
- */
-function registerMessageListener() {
-  window.addEventListener('message', event => {
-    if (event.origin !== backendUrl) return;
-
-    const { type, uid } = event.data || {};
-    if (type === 'google-login' && uid) {
-      localStorage.setItem('userId', uid);
-      updateAuthIcon(true);
-      initGallery();
-      window.location.reload();
-    }
-  });
-}
-
-/**
- * Attach event listener to the "New Canvas" button.
- */
-function setupNewCanvasButton() {
-  const btn = document.getElementById('newCanvasBtn');
-  if (btn) btn.addEventListener('click', setupNewCanvas);
-}
-
-/**
- * Initialize authentication, UI controls, panels, and storage.
- */
-function initializeServicesAndUI() {
+  // Initialize services and UI
   authInit();
   initUIControls();
   initLayerPanel();
   initStorage();
   initGallery();
   initExitHandlers();
-}
 
-/**
- * Set up canvas layers, state, and attach events.
- */
-function initializeCanvasState() {
+  // Initial state
   updateStates({
     globalDrawingMode: true,
     isInsertingText: false,
-    drawingShape: null,
+    drawingShape: null
   });
 
+  // Initialize layers
   initLayers(1);
 
+  // Setup first layer if exists
   if (layers.length > 0) {
     updateStates({ activeLayerIndex: 0 });
     const firstLayer = layers[0];
     attachCanvasEvents(firstLayer.canvas);
-
     if (!isPointerMode) {
       setDrawingMode(true);
       setBrush(currentBrush);
     }
-
     updateCanvasVisibility();
   }
-}
 
-
-/**
- * Handle responsive menus and canvas resizing on window events.
- */
-function initializeResponsiveLayout() {
+  // Responsive menus and layout
   initResponsiveMenus();
   updateMenuHeight();
+  window.addEventListener('resize', updateMenuHeight);
 
+  // Canvas resize on window resize
   window.addEventListener('resize', () => {
-    updateMenuHeight();
     layers.forEach(layer => fitCanvasToContainer(layer.canvas));
   });
-}
+});

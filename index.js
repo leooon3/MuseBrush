@@ -74,7 +74,7 @@ app.use(
   })
 );
 
-// --- PASSPORT GOOGLE OAUTH SETUP ---
+// --- PASSPORT GOOGLE OAUTH ---
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj,  done) => done(null, obj));
 
@@ -86,6 +86,7 @@ passport.use(
       callbackURL:  `${process.env.BACKEND_URL}/api/googleCallback`
     },
     (accessToken, refreshToken, profile, done) => {
+      // mappatura profilo Google in sessione
       return done(null, { uid: profile.id, displayName: profile.displayName });
     }
   )
@@ -123,18 +124,19 @@ app.post('/api/login', async (req, res, next) => {
 app.post('/api/resetPassword',      firebaseService.resetPassword);
 app.post('/api/resendVerification', firebaseService.resendVerification);
 
-// 4. Google OAuth
-app.get('/api/googleLogin',
+// Google OAuth endpoints
+app.get(
+  '/api/googleLogin',
   passport.authenticate('google', { scope: ['profile'] })
 );
-
-// callback di Google: dopo passport.authenticate, rispondi SOLO con il file statico
-app.get('/auth/google/callback', async (req, res) => {
-  const { code } = req.query;
-  const uid = await exchangeCodeForUid(code);
-  // Redirect al frontend callback **nel popup**
-  res.redirect(`https://muse-brush.vercel.app/google-callback.html?uid=${uid}`);
-});
+app.get(
+  '/api/googleCallback',
+  passport.authenticate('google', {
+    failureRedirect: process.env.FRONTEND_URL,
+    session: true
+  }),
+  (req, res) => res.redirect(process.env.FRONTEND_URL)
+);
 
 // 5. Logout
 app.post('/api/logout', (req, res) => {

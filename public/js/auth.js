@@ -114,61 +114,8 @@ export async function logoutUser() {
     alert('❌ Errore di rete: ' + e.message);
   }
 }
-
-/**
- * Funzione per il login Google via popup + polling
- */
-
-
-
-export function loginWithGoogle() {
-  const popup = window.open(
-    `${backendUrl}/api/googleLogin`,
-    'googleLogin',
-    'width=600,height=700'
-  );
-  if (!popup) {
-    return alert('❌ Impossibile aprire il popup. Controlla il tuo blocker.');
-  }
-
-  const pollTimer = setInterval(async () => {
-    if (popup.closed) {
-      clearInterval(pollTimer);
-      console.warn('[google-poll] Il popup è stato chiuso prematuramente');
-      return;
-    }
-
-    let href;
-    try {
-      href = popup.location.href;
-    } catch {
-      // popup è ancora su google.com, aspetta
-      return;
-    }
-
-    // **Confronta con backendUrl**, non con window.location.origin
-    const callbackBase = `${backendUrl}/google-callback.html`;
-    if (href.startsWith(callbackBase)) {
-      clearInterval(pollTimer);
-
-      // Estrai uid e aggiorna UI
-      const params = new URLSearchParams(popup.location.search);
-      const uid    = params.get('uid');
-      if (uid) {
-        localStorage.setItem('userId', uid);
-        updateAuthIcon(true);
-        initGallery();
-
-        // Ricarica la pagina principale per includere il cookie di sessione
-        window.location.reload();
-
-        // Ora, e solo ora, chiudi il popup
-        popup.close();
-      } else {
-        console.error('[google-poll] UID non trovato nella callback');
-      }
-    }
-  }, 500);
+function loginWithGoogle() {
+  window.location.href = `${backendUrl}/api/googleLogin`;
 }
 function attachAuthHandlers() {
   document.getElementById('loginBtn')?.addEventListener('click', loginWithEmail);
