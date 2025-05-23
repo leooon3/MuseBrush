@@ -40,11 +40,17 @@ app.use(
 
 app.use(
   cors({
-    origin:      [process.env.FRONTEND_URL,'http://127.0.0.1:5500', ...(process.env.ADDITIONAL_API_ORIGINS?.split(',') || [])],
+    origin: [
+      process.env.FRONTEND_URL,
+      'https://muse-brush.vercel.app',
+      'http://127.0.0.1:5500',
+      ...(process.env.ADDITIONAL_API_ORIGINS?.split(',') || [])
+    ],
     credentials: true,
     allowedHeaders: ['Content-Type', 'X-CSRF-Token']
   })
 );
+
 
 app.use(express.json({ limit: '40mb' }));
 app.use(express.urlencoded({ extended: false }));
