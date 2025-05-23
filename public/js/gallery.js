@@ -7,7 +7,7 @@ import { updateStates, getCurrentProjectId } from './state.js';
 import { showConfirm } from './canvas-utils.js';
 
 const backendUrl = 'https://musebrush.onrender.com';
-const frontendLogin = `${window.location.origin}/login`;
+const frontendLogin = `${window.location.origin}`;
 
 /**
  * Recupera e ritorna il token CSRF per le chiamate protette.
@@ -30,13 +30,6 @@ export function initGallery() {
     openBtn.addEventListener('click', () => {
       document.getElementById('galleryModal').classList.remove('hidden');
       loadProjectsFromBackend();
-    });
-  }
-
-  const closeBtn = document.getElementById('closeGalleryBtn');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      document.getElementById('galleryModal').classList.add('hidden');
     });
   }
 

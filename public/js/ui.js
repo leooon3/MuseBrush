@@ -1,5 +1,5 @@
 import { setBrush, setDrawingMode, disableDrawingSilently } from './tool.js'
-import { getActiveLayer, layers, updateCanvasVisibility } from './canvas.js'
+import { getActiveLayer, layers, updateCanvasVisibility, getBackgroundCanvas } from './canvas.js'
 import { undo, redo, saveState } from './actions.js'
 import {
   currentBrush,
@@ -61,6 +61,10 @@ export function initUIControls() {
 
   downloadBtn.addEventListener('click', () => {
     downloadDropdown.style.display = downloadDropdown.style.display === 'block' ? 'none' : 'block'
+  })
+   // Toggle eraser dropdown on desktop
+  eraserButton.addEventListener('click', () => {
+    eraserDropdown.style.display = eraserDropdown.style.display === 'block' ? 'none' : 'block'
   })
 
   document.querySelectorAll('.download-option').forEach(button => {
@@ -209,6 +213,21 @@ export function initUIControls() {
       document.getElementById('layersPanel').classList.remove('visible')
     }
   })
+  // Toggle di apertura/chiusura modali
+
+  const galleryToggle = document.getElementById('galleryBtn');
+  const galleryModal = document.getElementById('galleryModal');
+  galleryToggle?.addEventListener('click', () => {
+    galleryModal.classList.toggle('hidden');
+  });
+
+  // Pulsanti “×”: chiudi il modal
+  document.querySelectorAll('.close-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const modal = btn.closest('.modal');
+      modal?.classList.add('hidden');
+    });
+  });
 }
 
 export function updateMenuHeight() {
@@ -328,8 +347,8 @@ export function initResponsiveMenus() {
   function handleResponsive() {
     if (window.innerWidth <= 1068) {
       topMenu.classList.remove('hidden')
-      leftMenu.classList.remove('hidden')
-      rightMenu.classList.remove('hidden')
+      leftMenu.classList.add('hidden')
+      rightMenu.classList.add('hidden')
       populateResponsiveMenus()
     } else {
       topMenu.classList.add('hidden')

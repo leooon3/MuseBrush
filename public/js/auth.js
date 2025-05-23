@@ -174,15 +174,15 @@ export async function logoutUser() {
     alert('❌ Errore di rete: ' + err.message);
   }
 }
-
-
-
-
 /**
  * Effettua il login con Google (redirige al provider).
  */
 function loginWithGoogle() {
-  window.location.href = `${backendUrl}/api/googleLogin`;
+  window.open(
+    `${backendUrl}/api/googleLogin`,
+    '_blank',
+    'noopener,noreferrer'
+  );
 }
 /**
  * Collega tutti gli event handler agli elementi del DOM.

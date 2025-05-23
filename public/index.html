@@ -115,8 +115,9 @@
     </aside>
   </main>
 
-  <div id="authModal" class="modal hidden">
+  <div id="authModal" class="modal modal-auth hidden">
     <div class="modal-content">
+      <button class="close-btn" aria-label="Chiudi modal">×</button>
       <h2>👤 Accedi o Registrati</h2>
       <input type="email" id="emailInput" placeholder="Email" />
       <input type="password" id="passwordInput" placeholder="Password" />
@@ -131,8 +132,9 @@
     </div>
   </div>
 
-  <div id="galleryModal" class="modal hidden">
+  <div id="galleryModal" class="modal modal-gallery hidden">
     <div class="modal-content">
+      <button class="close-btn" aria-label="Chiudi modal">×</button>
       <h2>🎨 Galleria Progetti</h2>
       <div class="save-controls">
         <input type="text" id="projectNameInput" placeholder="Nome progetto" />
@@ -143,8 +145,7 @@
         <input type="file" id="importProjectInput" accept=".json" hidden />
       </div>
       <div id="saveConfirmation" class="save-confirmation hidden">✅ Progetto salvato!</div>
-      <div id="projectList" class="project-list"></div>
-      <button id="closeGalleryBtn">Chiudi</button>
+      <div id="projectList" class="gallery-grid project-list"></div>
     </div>
   </div>
 
