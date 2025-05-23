@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <title>Login completato</title>
+</head>
+<body>
+  <script>
+    // salva l'uid in localStorage
+    const params = new URLSearchParams(window.location.search);
+    const uid = params.get('uid');
+    if (uid) localStorage.setItem('userId', uid);
+    // ricarica la finestra principale e chiudi il popup
+    if (window.opener && !window.opener.closed) {
+      window.opener.location.reload();
+    }
+    window.close();
+  </script>
+</body>
+</html>

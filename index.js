@@ -81,7 +81,7 @@ passport.use(
     {
       clientID:     process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL:  `${process.env.FRONTEND_URL}`
+      callbackURL:  `${process.env.BACKEND_URL}/api/googleCallback`
     },
     (accessToken, refreshToken, profile, done) => {
       // mappatura profilo Google in sessione
@@ -122,31 +122,18 @@ app.get(
   '/api/googleLogin',
   passport.authenticate('google', { scope: ['profile'] })
 );
-app.get('/api/googleCallback',
-  passport.authenticate('google', { failureRedirect: '/' }),
+app.get(
+  '/api/googleCallback',
+  passport.authenticate('google', {
+    failureRedirect: process.env.FRONTEND_URL,
+    session: true
+  }),
 (req, res) => {
-    // Callback Google in popup: ricarica opener e chiudi
-    res.send(`
-      <!DOCTYPE html>
-      <html lang="it">
-        <head>
-          <meta charset="utf-8">
-          <title>Login riuscito</title>
-          <!-- permettiamo gli inline script solo qui -->
-          <meta http-equiv="Content-Security-Policy"
-                content="script-src 'self' 'unsafe-inline'">
-        </head
-        <body>
-          <script>
-            if (window.opener && !window.opener.closed) {
-              window.opener.location.reload();
-            }
-            window.close();
-          </script>
-        </body>
-      </html>
-    `);
-  }
+ // prendi l'uid che hai messo in req.user
+ const uid = req.user.uid;
+ // redirect verso la pagina statica sul front-end
+ res.redirect(`${process.env.FRONTEND_URL}/google-callback.html?uid=${uid}`);
+}
 );
 
 // Logout
