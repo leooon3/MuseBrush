@@ -1,19 +1,34 @@
 // public/js/google-callback.js
 
-(() => {
-  // Estrai l'uid dalla query string
+(function() {
+  // 0) Log di debug
+  console.group('[google-callback] Debug info');
+  console.log('window.location.href:', window.location.href);
+  console.log('window.opener:', window.opener);
+  if (window.opener) {
+    try {
+      console.log('window.opener.location.origin:', window.opener.location.origin);
+    } catch(err) {
+      console.warn('Cannot read opener.location.origin:', err);
+    }
+  }
+  console.groupEnd();
+
+  // 1) Prendi l’uid dalla query string
   const params = new URLSearchParams(window.location.search);
   const uid = params.get('uid');
+  console.log('[google-callback] estratto uid:', uid);
 
+  // 2) Verifica e invio
   if (uid && window.opener && !window.opener.closed) {
-    // Invia il messaggio al parent (aggiorna UI e sessione già impostata dal server)
     window.opener.postMessage(
       { type: 'google-login', uid },
-      window.opener.location.origin
+      // se opener.location.origin non è accessibile, usa '*' temporaneamente
+      window.opener.location?.origin || '*'
     );
     console.log('[google-callback] UID inviato al parent:', uid);
   } else {
     console.error('[google-callback] UID mancante o opener non disponibile');
   }
-  // Non chiudiamo più automaticamente il popup
+  // 3) Non chiudiamo più automaticamente
 })();
