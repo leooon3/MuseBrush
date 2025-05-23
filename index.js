@@ -74,23 +74,31 @@ app.use(
   })
 );
 
-// --- PASSPORT GOOGLE OAUTH ---
-passport.serializeUser((user, done) => done(null, user));
-passport.deserializeUser((obj,  done) => done(null, obj));
+passport.serializeUser((user, done) => done(null, user.uid));
+
+passport.deserializeUser((uid, done) => done(null, { uid }));
 
 passport.use(
   new GoogleStrategy(
     {
-      clientID:     process.env.GOOGLE_CLIENT_ID,
+      clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL:  `${process.env.BACKEND_URL}/api/googleCallback`
+      callbackURL: `${process.env.BACKEND_URL}/api/googleCallback`
     },
     (accessToken, refreshToken, profile, done) => {
-      // mappatura profilo Google in sessione
-      return done(null, { uid: profile.id, displayName: profile.displayName });
+      // Assicurati che uid venga passato correttamente
+      return done(null, { uid: profile.id });
     }
   )
 );
+
+// Middleware per copiare uid in req.session.uid
+app.use((req, res, next) => {
+  if (req.isAuthenticated() && req.session.passport && req.session.passport.user) {
+    req.session.uid = req.session.passport.user;
+  }
+  next();
+});
 
 app.use(passport.initialize());
 app.use(passport.session());
