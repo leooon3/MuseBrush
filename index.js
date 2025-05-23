@@ -138,7 +138,7 @@ app.get(
     // Dopo autenticazione, prendo l'UID da req.user
     const uid = req.user.uid;
     // Faccio un redirect vero al file statico includendo uid in query
-    res.redirect(`${process.env.FRONTEND_URL}/google-callback.html?uid=${encodeURIComponent(uid)}`);
+     res.redirect(`${process.env.BACKEND_URL}/google-callback.html?uid=${encodeURIComponent(uid)}`);
   }
 );
 
