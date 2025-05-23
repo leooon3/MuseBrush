@@ -124,12 +124,18 @@ app.get(
 );
 app.get('/api/googleCallback',
   passport.authenticate('google', { failureRedirect: '/' }),
-  (req, res) => {
+(req, res) => {
     // Callback Google in popup: ricarica opener e chiudi
     res.send(`
       <!DOCTYPE html>
       <html lang="it">
-        <head><meta charset="utf-8"><title>Login riuscito</title></head>
+        <head>
+          <meta charset="utf-8">
+          <title>Login riuscito</title>
+          <!-- permettiamo gli inline script solo qui -->
+          <meta http-equiv="Content-Security-Policy"
+                content="script-src 'self' 'unsafe-inline'">
+        </head
         <body>
           <script>
             if (window.opener && !window.opener.closed) {
