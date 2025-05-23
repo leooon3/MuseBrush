@@ -224,6 +224,14 @@ function attachAuthHandlers() {
  */
 export async function authInit() {
   attachAuthHandlers();
+  // Se siamo appena tornati dal popup Google, usiamo il uid salvato
+  const storedUid = localStorage.getItem('userId');
+  if (storedUid) {
+    updateAuthIcon(true);
+    initGallery();
+    return;
+  }
+  // Altrimenti fallback alla verifica CSRF/sessione
   try {
     await fetchCsrfToken();
     updateAuthIcon(true);
