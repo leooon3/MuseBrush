@@ -135,18 +135,10 @@ app.get(
     session: true
   }),
   (req, res) => {
-    // Dopo autenticazione, invio il file statico con uid in query
+    // Dopo autenticazione, prendo l'UID da req.user
     const uid = req.user.uid;
-    res.sendFile(
-      path.join(__dirname, 'public', 'google-callback.html'),
-      { headers: { 'Content-Type': 'text/html' } },
-      err => {
-        if (err) {
-          console.error('Errore invio google-callback.html:', err);
-          res.status(500).send('Errore interno');
-        }
-      }
-    );
+    // Faccio un redirect vero al file statico includendo uid in query
+    res.redirect(`${process.env.FRONTEND_URL}/google-callback.html?uid=${encodeURIComponent(uid)}`);
   }
 );
 
