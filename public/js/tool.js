@@ -2,146 +2,134 @@
 
 import { getActiveLayer, layers } from './canvas.js';
 import {
-  activeLayerIndex,
-  currentBrush,
-  brushColor,
-  brushSize,
+  getBrushColor,
+  getBrushSize,
+  getIsPointerMode,
   isFilling,
   isInsertingText,
   drawingShape,
-  globalDrawingMode,
-  isDrawingShape,
-  getIsPointerMode,
+  currentBrush,
   updateStates
 } from './state.js';
 
 /**
- * setBrush: configura il pennello selezionato dall'utente.
- * Supporta diversi tipi, incluso eraser che rimuove gli oggetti intersecati.
+ * Applica il pennello selezionato o la gomma sul layer attivo.
+ * @param {'Basic'|'Smooth'|'Thick'|'Spray'|'Dotted'|'Calligraphy'|'Eraser'|'PixelEraser'} type
  */
 export function setBrush(type) {
   const layer = getActiveLayer();
-  updateStates({ currentBrush: type });
-  if (!layer || !layer.canvas) return;
-
+  if (!layer) return;
   const canvas = layer.canvas;
-  // Rimuovo eventuali listener eraser precedenti per evitare duplicazioni
+
+  // Disabilita drawing mode durante il cambio brush
+  canvas.isDrawingMode = false;
   canvas.off('path:created');
 
+  const color = getBrushColor();
+  const size  = getBrushSize();
   let brush;
-  const realColor = type === 'Eraser' ? 'rgba(0,0,0,0)' : brushColor;
 
   switch (type) {
     case 'Basic':
       brush = new fabric.PencilBrush(canvas);
-      brush.width = brushSize;
-      brush.color = brushColor;
+      brush.color = color; brush.width = size;
       break;
     case 'Smooth':
       brush = new fabric.PencilBrush(canvas);
-      brush.width = brushSize * 1.5;
-      brush.color = brushColor;
+      brush.color = color; brush.width = size * 1.5;
       break;
     case 'Thick':
       brush = new fabric.PencilBrush(canvas);
-      brush.width = brushSize * 3;
-      brush.color = brushColor;
+      brush.color = color; brush.width = size * 3;
       break;
     case 'Spray':
       brush = new fabric.SprayBrush(canvas);
-      brush.width = brushSize;
-      brush.density = 20;
-      brush.color = realColor;
-      break;
-    case 'Calligraphy':
-      brush = new fabric.PencilBrush(canvas);
-      brush.width = brushSize * 1.5;
-      brush.color = realColor;
-      brush.strokeLineCap = 'square';
+      brush.color = color; brush.width = size; brush.density = 20;
       break;
     case 'Dotted':
       brush = new fabric.CircleBrush(canvas);
-      brush.width = brushSize;
-      brush.color = realColor;
+      brush.color = color; brush.width = size;
+      break;
+    case 'Calligraphy':
+      brush = new fabric.PencilBrush(canvas);
+      brush.color = color; brush.width = size * 1.5;
+      brush.strokeLineCap = 'square';
       break;
     case 'PixelEraser':
       brush = new fabric.PencilBrush(canvas);
-      brush.width = brushSize;
-      brush.color = 'white';
+      brush.color = '#ffffff'; brush.width = size;
       break;
     case 'Eraser':
-      // Gomma: disabilito selezione e lascio il listener per rimuovere oggetti
-      canvas.selection = false;
-      canvas.skipTargetFind = true;
-      canvas.getObjects().forEach(obj => {
-        obj.selectable = false;
-        obj.evented    = false;
-      });
+      // Gomma vettoriale: rimuove gli oggetti che interseca il tracciato
       brush = new fabric.PencilBrush(canvas);
-      brush.width = brushSize;
-      brush.color = 'rgba(0,0,0,0)';
-      // Listener che rimuove oggetti intersecati al path creato
-      canvas.on('path:created', function handleEraserPath(e) {
+      brush.color = 'rgba(0,0,0,0)'; brush.width = size;
+      canvas.on('path:created', e => {
         const path = e.path;
-        const toRemove = canvas.getObjects().filter(obj =>
-          obj !== path && path.intersectsWithObject(obj)
-        );
-        toRemove.forEach(obj => canvas.remove(obj));
+        layers.forEach(l => {
+          l.canvas.getObjects().forEach(obj => {
+            if (obj !== path && path.intersectsWithObject(obj)) {
+              canvas.remove(obj);
+            }
+          });
+        });
         canvas.remove(path);
-        canvas.requestRenderAll();
       });
       break;
     default:
-      // Se tipo non riconosciuto, fallback pencil
+      // fallback a Basic
       brush = new fabric.PencilBrush(canvas);
-      brush.width = brushSize;
-      brush.color = brushColor;
+      brush.color = color; brush.width = size;
   }
 
-  // Applica il brush e attiva isDrawingMode se non in pointer mode
+  // aggiorno stato globale e applico
+  updateStates({ currentBrush: type });
   canvas.freeDrawingBrush = brush;
-  if (!getIsPointerMode()) {
-    canvas.isDrawingMode = true;
-  }
+  // riattiva drawing mode se non in pointer mode
+  canvas.isDrawingMode = !getIsPointerMode() && !drawingShape && !isInsertingText && !isFilling;
 }
 
 /**
- * setDrawingMode: abilita/disabilita la modalità di disegno sul layer attivo.
+ * Abilita o disabilita la modalità di disegno sul layer attivo.
  * @param {boolean} active
  */
 export function setDrawingMode(active) {
-  const layer = layers[activeLayerIndex];
+  const layer = getActiveLayer();
   if (!layer) return;
-
   const canvas = layer.canvas;
-  const fillingNow = isFilling;
+
   const allowDraw = active && layer.visible && !getIsPointerMode();
+  // se stiamo disegnando forme o inserendo testo o riempiendo, override
+  const drawing = allowDraw && !drawingShape && !isInsertingText && !isFilling;
 
-  canvas.isDrawingMode = allowDraw && !drawingShape && !isInsertingText;
-  canvas.selection      = !(canvas.isDrawingMode || fillingNow);
-  canvas.skipTargetFind = canvas.isDrawingMode || fillingNow;
+  canvas.isDrawingMode = drawing;
+  canvas.selection      = !drawing;
+  canvas.skipTargetFind = drawing;
 
-  // Aggiorna selettabilità degli oggetti
+  // aggiorna interattività degli oggetti
   canvas.getObjects().forEach(obj => {
-    obj.selectable = canvas.selection;
-    obj.evented    = canvas.selection;
+    obj.selectable = !canvas.isDrawingMode;
+    obj.evented    = !canvas.isDrawingMode;
   });
+}
 
-  // Aggiorna icona puntatore
-  const pointerIcon = document.getElementById('pointerIcon');
-  if (pointerIcon) {
-    pointerIcon.src = active
-      ? './images/pencil-icon.png'
-      : './images/pointer-icon.png';
+/**
+ * Pulisce il contenuto del layer attivo e ripristina lo sfondo, se presente.
+ */
+export function clearCanvas() {
+  const layer = getActiveLayer();
+  if (!layer) return;
+  const canvas = layer.canvas;
+  canvas.clear();
+  if (canvas.backgroundColor) {
+    canvas.setBackgroundColor(canvas.backgroundColor, () => canvas.renderAll());
   }
 }
 
 /**
- * disableDrawingSilently: disabilita drawingMode su tutti i layer
- * senza modificare la UI (icone, dropdown, ecc.).
+ * Disabilita drawingMode su tutti i layer senza toccare la UI.
  */
 export function disableDrawingSilently() {
-  layers.forEach(({ canvas }) => {
-    canvas.isDrawingMode = false;
+  layers.forEach(l => {
+    l.canvas.isDrawingMode = false;
   });
 }

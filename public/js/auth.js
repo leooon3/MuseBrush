@@ -27,66 +27,54 @@ async function fetchCsrfToken() {
   const res = await fetch(`${backendUrl}/api/csrf-token`, {
     credentials: 'include'
   });
-  if (!res.ok) throw new Error('CSRF token non ottenuto');
+  if (!res.ok) {
+    throw new Error('CSRF token non ottenuto');
+  }
+  const { csrfToken } = await res.json();
+  return csrfToken;
 }
+
 
 /**
  * Effettua il login via email/password.
  */
-async function loginWithEmail() {
-  const email = document.getElementById('emailInput')?.value.trim();
-  const password = document.getElementById('passwordInput')?.value;
-  if (!email || !password) {
-    return alert('📧 Inserisci email e password.');
+async function loginWithEmail(email, password) {
+  const token = await fetchCsrfToken();
+  const res = await fetch(`${backendUrl}/api/login`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': token
+    },
+    body: JSON.stringify({ email, password })
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Errore durante il login');
   }
-
-  try {
-    const res = await fetch(`${backendUrl}/api/login`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      return alert(data.error || '❌ Login fallito');
-    }
-    alert(data.message);
-    // Aggiorna stato e icona, poi ricarica per applicare sessione
-    updateAuthIcon(true);
-    initGallery();
-    window.location.reload();
-  } catch (err) {
-    alert('❌ Errore di rete: ' + err.message);
-  }
+  return await res.json();
 }
 
 /**
  * Effettua la registrazione via email/password.
  */
-async function registerWithEmail() {
-  const email = document.getElementById('emailInput')?.value.trim();
-  const password = document.getElementById('passwordInput')?.value;
-  if (!email || !password) {
-    return alert('📧 Inserisci email e password per la registrazione.');
+async function registerWithEmail(email, password) {
+  const token = await fetchCsrfToken();
+  const res = await fetch(`${backendUrl}/api/register`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': token
+    },
+    body: JSON.stringify({ email, password })
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Errore durante la registrazione');
   }
-
-  try {
-    const res = await fetch(`${backendUrl}/api/register`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (res.ok && data.uid) {
-      alert(data.message + ' Controlla la tua email per verificare l’account.');
-    } else {
-      alert(data.error || '❌ Registrazione fallita');
-    }
-  } catch (err) {
-    alert('❌ Errore di rete: ' + err.message);
-  }
+  return await res.json();
 }
 
 /**
@@ -100,60 +88,62 @@ function loginWithGoogle() {
  * Effettua il logout.
  */
 async function logoutUser() {
-  try {
-    await fetch(`${backendUrl}/api/logout`, {
-      method: 'POST',
-      credentials: 'include'
-    });
-    updateAuthIcon(false);
-    alert('🚪 Disconnesso!');
-  } catch (err) {
-    alert('❌ Errore durante il logout: ' + err.message);
+  const token = await fetchCsrfToken();
+  const res = await fetch(`${backendUrl}/api/logout`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': token
+    }
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Errore durante il logout');
   }
 }
+
 
 /**
  * Richiede reset password via email.
  */
-async function resetPassword() {
-  const email = document.getElementById('emailInput')?.value.trim();
-  if (!email) {
-    return alert("📧 Inserisci un'email valida.");
+async function resetPassword(email) {
+  const token = await fetchCsrfToken();
+  const res = await fetch(`${backendUrl}/api/resetPassword`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': token
+    },
+    body: JSON.stringify({ email })
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Errore durante il reset della password');
   }
-  try {
-    const res = await fetch(`${backendUrl}/api/resetPassword`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    const data = await res.json();
-    alert(data.message || data.error);
-  } catch (err) {
-    alert('❌ Errore di rete: ' + err.message);
-  }
+  return await res.json();
 }
 
 /**
  * Richiede il reinvio email di verifica.
  */
-async function resendVerification() {
-  const email = document.getElementById('emailInput')?.value.trim();
-  if (!email) {
-    return alert("📧 Inserisci un'email valida.");
+async function resendVerification(email) {
+  const token = await fetchCsrfToken();
+  const res = await fetch(`${backendUrl}/api/resendVerification`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': token
+    },
+    body: JSON.stringify({ email })
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Errore durante invio della verifica');
   }
-  try {
-    const res = await fetch(`${backendUrl}/api/resendVerification`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    const data = await res.json();
-    alert(data.message || data.error);
-  } catch (err) {
-    alert('❌ Errore di rete: ' + err.message);
-  }
+  return await res.json();
 }
 
 /**

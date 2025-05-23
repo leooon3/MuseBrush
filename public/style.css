@@ -20,7 +20,7 @@
 }
 
 /* =====================================
-   BASE
+   RESET & BASE
 ===================================== */
 *,
 *::before,
@@ -39,8 +39,9 @@ html, body {
   color: var(--text-dark);
 }
 
-/* Utility */
-.hidden { display: none !important; }
+.hidden {
+  display: none !important;
+}
 
 /* =====================================
    HEADER & MENU
@@ -78,7 +79,7 @@ header#menu {
   transform: translateX(-50%);
   font-size: 1.8em;
   font-weight: bold;
-  color: #3a3a3a;
+  color: var(--text-dark);
   white-space: nowrap;
 }
 
@@ -97,14 +98,14 @@ button {
   transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
-button:hover {
-  background-color: var(--button-hover-bg);
-  transform: scale(1.05);
-}
-
 button img {
   width: 24px;
   height: 24px;
+}
+
+button:hover {
+  background-color: var(--button-hover-bg);
+  transform: scale(1.05);
 }
 
 button.tool-active {
@@ -112,19 +113,8 @@ button.tool-active {
   box-shadow: 0 0 0 2px rgba(204, 229, 255, 1);
 }
 
-.layer-controls button {
-  padding: 4px 6px;
-  font-size: 14px;
-  background-color: #eee;
-  border-radius: 3px;
-}
-
-.layer-controls button:hover {
-  background-color: #ddd;
-}
-
 /* =====================================
-   COLOR PICKER
+   COLOR PICKER & HISTORY
 ===================================== */
 .color-picker {
   width: 36px;
@@ -143,19 +133,10 @@ button.tool-active {
   box-shadow: 0 4px 12px var(--shadow-medium);
 }
 
-.color-picker::-webkit-color-swatch-wrapper,
-.color-picker::-webkit-color-swatch,
-.color-picker::-moz-color-swatch {
-  padding: 0;
-  border-radius: 50%;
-  border: none;
-}
-
 .color-history {
   display: flex;
   gap: 6px;
   margin-top: 6px;
-  flex-wrap: wrap;
 }
 
 .color-history button {
@@ -220,8 +201,9 @@ button.tool-active {
 
 .dropdown-content {
   position: absolute;
-  top: 100%; left: 0;
-  background: var(--bg-light);
+  top: 100%;
+  left: 0;
+  background: var(--bg-white-trans);
   border: 1px solid var(--border-medium);
   box-shadow: 0 4px 6px var(--shadow-light);
   border-radius: 6px;
@@ -238,10 +220,10 @@ button.tool-active {
   width: 100%;
   height: calc(100vh - var(--menu-height, 61px));
   margin-top: var(--menu-height, 61px);
+  background-color: #0d042f;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #0d042f;
 }
 
 .layer-canvas,
@@ -262,8 +244,10 @@ button.tool-active {
 ===================================== */
 #layersPanel {
   position: fixed;
-  top: 80px; right: -300px;
-  width: 250px; height: 60vh;
+  top: 80px;
+  right: -300px;
+  width: 250px;
+  height: 60vh;
   background: #fff;
   border-left: 1px solid var(--border-medium);
   box-shadow: -4px 0 8px var(--shadow-light);
@@ -274,11 +258,14 @@ button.tool-active {
   z-index: 2000;
 }
 
-#layersPanel.visible { right: 0; }
+#layersPanel.visible {
+  right: 0;
+}
 
 #layersList {
   list-style: none;
-  margin: 0; padding: 0;
+  margin: 0;
+  padding: 0;
 }
 
 #layersList li {
@@ -301,48 +288,30 @@ button.tool-active {
 /* =====================================
    MODALS & GALLERY
 ===================================== */
-.modal,
-.modal.hidden {
+.modal {
   position: fixed;
   top: 0; left: 0;
-  width: 100vw; height: 100vh;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 3000;
 }
 
-.modal.hidden { display: none; }
+.modal.hidden {
+  display: none;
+}
 
 .modal-content {
   background: #fff;
   padding: 20px;
   border-radius: 12px;
-  width: 80%; max-width: 600px;
+  width: 80%;
+  max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 6px 18px var(--shadow-medium);
-}
-
-.project-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.project-list .project {
-  width: 150px;
-  padding: 10px;
-  background: #f9f9f9;
-  border: 1px solid var(--border-medium);
-  border-radius: 6px;
-  text-align: center;
-  cursor: pointer;
-}
-
-.project-list .project:hover {
-  background: #e0f0ff;
 }
 
 /* =====================================
@@ -363,40 +332,23 @@ button.tool-active {
   font-size: 16px;
 }
 
-#saveCanvasBtn {
-  padding: 10px 16px;
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  transition: background-color 0.2s ease;
-}
-
-#saveCanvasBtn:hover { background: var(--primary-dark); }
-
-#updateProjectBtn {
-  padding: 10px 16px;
-  background: var(--success);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  transition: background-color 0.2s ease;
-}
-
-#updateProjectBtn:hover { background: var(--success-dark); }
-
+#saveCanvasBtn,
+#updateProjectBtn,
 #exportProjectBtn {
   padding: 10px 16px;
-  background: var(--info);
-  color: #fff;
   border: none;
   border-radius: 8px;
   font-weight: bold;
   transition: background-color 0.2s ease;
 }
 
+#saveCanvasBtn { background: var(--primary); color: #fff; }
+#saveCanvasBtn:hover { background: var(--primary-dark); }
+
+#updateProjectBtn { background: var(--success); color: #fff; }
+#updateProjectBtn:hover { background: var(--success-dark); }
+
+#exportProjectBtn { background: var(--info); color: #fff; }
 #exportProjectBtn:hover { background: var(--info-dark); }
 
 /* =====================================
@@ -423,7 +375,9 @@ button.tool-active {
     background: #fff;
     border-bottom: 1px solid var(--border-medium);
     position: fixed;
-    top: 0; width: 100%; z-index: 1001;
+    top: 0;
+    width: 100%;
+    z-index: 1001;
   }
 
   .responsive-side-menu {

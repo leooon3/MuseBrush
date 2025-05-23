@@ -87,15 +87,6 @@ passport.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// --- CSRF PROTECTION ---
-app.use(csurf({ cookie: true }));
-app.use((err, req, res, next) => {
-  if (err.code === 'EBADCSRFTOKEN') {
-    return res.status(403).json({ error: 'Invalid CSRF token' });
-  }
-  next(err);
-});
-
 // --- AUTH ROUTES ---
 // Registration
 app.post('/api/register', firebaseService.registerUser);
@@ -143,6 +134,14 @@ app.post('/api/logout', (req, res) => {
   });
 });
 
+// --- CSRF PROTECTION ---
+app.use(csurf({ cookie: true }));
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    return res.status(403).json({ error: 'Invalid CSRF token' });
+  }
+  next(err);
+});
 // Expose CSRF token
 app.get('/api/csrf-token', (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
