@@ -3,7 +3,7 @@ import { initGallery } from './gallery.js';
 
 const backendUrl = 'https://musebrush.onrender.com';
 
-function updateAuthIcon(loggedIn) {
+export function updateAuthIcon(loggedIn) {
   const authIcon = document.getElementById('authIcon');
   if (!authIcon) return;
   authIcon.src = loggedIn ? './images/user-auth.png' : './images/user.png';
@@ -115,45 +115,61 @@ export async function logoutUser() {
   }
 }
 
-// Login con Google tramite popup e polling dell'URL di callback
+/**
+ * Funzione per il login Google via popup + polling
+ */
+
+
+
 export function loginWithGoogle() {
   const popup = window.open(
     `${backendUrl}/api/googleLogin`,
     'googleLogin',
     'width=600,height=700'
   );
+  if (!popup) {
+    return alert('❌ Impossibile aprire il popup. Controlla il tuo blocker.');
+  }
+
   const pollTimer = setInterval(async () => {
-    if (!popup || popup.closed) {
+    if (popup.closed) {
       clearInterval(pollTimer);
-      console.warn('[google-poll] Il popup è stato chiuso prima del callback');
+      console.warn('[google-poll] Il popup è stato chiuso prematuramente');
       return;
     }
+
     let href;
     try {
       href = popup.location.href;
     } catch {
-      return; // ancora in google.com, aspetto
+      // popup è ancora su google.com, aspetta
+      return;
     }
-    const expected = `${window.location.origin}/google-callback.html`;
-    if (href.startsWith(expected)) {
+
+    // **Confronta con backendUrl**, non con window.location.origin
+    const callbackBase = `${backendUrl}/google-callback.html`;
+    if (href.startsWith(callbackBase)) {
       clearInterval(pollTimer);
+
+      // Estrai uid e aggiorna UI
       const params = new URLSearchParams(popup.location.search);
-      const uid = params.get('uid');
+      const uid    = params.get('uid');
       if (uid) {
-        // 1) Aggiorna UI e stato
         localStorage.setItem('userId', uid);
         updateAuthIcon(true);
         initGallery();
-        // 2) Ricarica il main per i cookie di sessione
+
+        // Ricarica la pagina principale per includere il cookie di sessione
         window.location.reload();
-        // 3) Solo **dopo** un secondo, chiudi il popup
-        setTimeout(() => popup.close(), 1000);
+
+        // Ora, e solo ora, chiudi il popup
+        popup.close();
+      } else {
+        console.error('[google-poll] UID non trovato nella callback');
       }
     }
   }, 500);
 }
-
-
 function attachAuthHandlers() {
   document.getElementById('loginBtn')?.addEventListener('click', loginWithEmail);
   document.getElementById('signupBtn')?.addEventListener('click', registerWithEmail);

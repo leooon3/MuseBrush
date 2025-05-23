@@ -1,6 +1,6 @@
 // main.js
 
-import { authInit } from './auth.js';
+import { authInit, updateAuthIcon } from './auth.js';
 import { initUIControls, updateMenuHeight, initResponsiveMenus } from './ui.js';
 import { initLayerPanel } from './layers.js';
 import { initStorage } from './storage.js';
@@ -12,62 +12,91 @@ import { initLayers, layers, fitCanvasToContainer, updateCanvasVisibility } from
 import { attachCanvasEvents } from './events.js';
 import { setDrawingMode, setBrush } from './tool.js';
 
+const backendUrl = 'https://musebrush.onrender.com';
+
 /**
  * Initial setup after DOM is loaded.
  */
-window.addEventListener('DOMContentLoaded', async () => {
-  // --- Gestione messaggio di login dal popup Google ---
+document.addEventListener('DOMContentLoaded', () => {
+  registerMessageListener();
+  setupNewCanvasButton();
+  initializeServicesAndUI();
+  initializeCanvasState();
+  initializeResponsiveLayout();
+});
+
+/**
+ * Listen for Google login messages from the popup and handle authentication.
+ */
+function registerMessageListener() {
   window.addEventListener('message', event => {
-    if (event.origin !== window.location.origin) return;
-    if (event.data?.type === 'google-login' && event.data.uid) {
-      // Salva uid e ricarica l’app
-      localStorage.setItem('userId', event.data.uid);
+    if (event.origin !== backendUrl) return;
+
+    const { type, uid } = event.data || {};
+    if (type === 'google-login' && uid) {
+      localStorage.setItem('userId', uid);
+      updateAuthIcon(true);
+      initGallery();
       window.location.reload();
     }
   });
-  // New canvas button
-  const newCanvasBtn = document.getElementById('newCanvasBtn');
-  if (newCanvasBtn) {
-    newCanvasBtn.onclick = setupNewCanvas;
-  }
+}
 
-  // Initialize services and UI
+/**
+ * Attach event listener to the "New Canvas" button.
+ */
+function setupNewCanvasButton() {
+  const btn = document.getElementById('newCanvasBtn');
+  if (btn) btn.addEventListener('click', setupNewCanvas);
+}
+
+/**
+ * Initialize authentication, UI controls, panels, and storage.
+ */
+function initializeServicesAndUI() {
   authInit();
   initUIControls();
   initLayerPanel();
   initStorage();
   initGallery();
   initExitHandlers();
+}
 
-  // Initial state
+/**
+ * Set up canvas layers, state, and attach events.
+ */
+function initializeCanvasState() {
   updateStates({
     globalDrawingMode: true,
     isInsertingText: false,
-    drawingShape: null
+    drawingShape: null,
   });
 
-  // Initialize layers
   initLayers(1);
 
-  // Setup first layer if exists
   if (layers.length > 0) {
     updateStates({ activeLayerIndex: 0 });
     const firstLayer = layers[0];
     attachCanvasEvents(firstLayer.canvas);
+
     if (!isPointerMode) {
       setDrawingMode(true);
       setBrush(currentBrush);
     }
+
     updateCanvasVisibility();
   }
+}
 
-  // Responsive menus and layout
+/**
+ * Handle responsive menus and canvas resizing on window events.
+ */
+function initializeResponsiveLayout() {
   initResponsiveMenus();
   updateMenuHeight();
-  window.addEventListener('resize', updateMenuHeight);
 
-  // Canvas resize on window resize
   window.addEventListener('resize', () => {
+    updateMenuHeight();
     layers.forEach(layer => fitCanvasToContainer(layer.canvas));
   });
-});
+}
