@@ -1,61 +1,46 @@
-// events.js
-
 import {
-  getCurrentBrush,
-  getBrushColor,
-  getBrushSize,
-  getIsFilling,
-  getIsBucketActive,
-  getIsInsertingText,
-  getDrawingShape,
-  getPreviousDrawingMode,
-  getShapeObject,
-  getShapeOrigin,
-  getIsDrawingShape,
+  getCurrentBrush, getBrushColor, getBrushSize,
+  getIsFilling, getIsBucketActive, getIsInsertingText,
+  getDrawingShape, getPreviousDrawingMode,
+  getShapeObject, getShapeOrigin, getIsDrawingShape,
   updateStates
 } from './state.js';
 import { fabricToCanvasCoords, saveState } from './actions.js';
 import { floodFillFromPoint } from './fill.js';
 import { setBrush, setDrawingMode } from './tool.js';
 
-/**
- * Registra tutti gli event handler sul canvas Fabric.
- * @param {fabric.Canvas} canvas
- */
 export function attachCanvasEvents(canvas) {
-  // 🔖 Path created: salva lo stato dopo ogni tracciato disegnato
+  console.log('attachCanvasEvents:', canvas.lowerCanvasEl.id);
+
   canvas.on('path:created', () => {
+    console.log('event path:created');
     canvas.renderAll();
     saveState();
   });
 
-  // 🖱 Mouse down: gestione bucket-fill, inserimento testo e inizio shape draw
-  canvas.on('mouse:down', opt => {
-    const pointer = canvas.getPointer(opt.e, false);
+  canvas.on('mouse:down', event => {
+    console.log('event mouse:down');
+    const ptr = canvas.getPointer(event.e, false);
 
-    // 1️⃣ Bucket fill
     if (getIsFilling() && getIsBucketActive()) {
-      const { x, y } = fabricToCanvasCoords(canvas, pointer);
+      console.log('bucket fill at', ptr);
+      const { x, y } = fabricToCanvasCoords(canvas, ptr);
       floodFillFromPoint(canvas, x, y, getBrushColor());
       saveState();
       canvas.renderAll();
-      updateStates({
-        isFilling: false,
-        isBucketActive: false,
-        globalDrawingMode: true
-      });
+      updateStates({ isFilling: false, isBucketActive: false, globalDrawingMode: true });
       setDrawingMode(true);
       setBrush(getCurrentBrush());
       return;
     }
 
-    // 2️⃣ Inserimento testo
     if (getIsInsertingText()) {
-      const text = new fabric.IText('Testo', {
-        left: pointer.x,
-        top: pointer.y,
+      console.log('inserting text at', ptr);
+      const text = new fabric.IText('Text', {
+        left: ptr.x,
+        top: ptr.y,
         fontFamily: 'Arial',
-        fontSize: 24,
+        fontSize: 20,
         fill: getBrushColor()
       });
       canvas.add(text).setActiveObject(text);
@@ -65,50 +50,35 @@ export function attachCanvasEvents(canvas) {
       return;
     }
 
-    // 3️⃣ Inizio disegno shape
-    if (!getDrawingShape()) return;
+    if (!getDrawingShape()) {
+      console.log('no shape active');
+      return;
+    }
 
+    console.log('start drawing shape:', getDrawingShape());
     canvas.isDrawingMode = false;
-    updateStates({
-      isDrawingShape: true,
-      shapeOrigin: { x: pointer.x, y: pointer.y }
-    });
+    updateStates({ isDrawingShape: true, shapeOrigin: { x: ptr.x, y: ptr.y } });
   });
 
-  // 🖌 Mouse move: aggiornamento shape in corso
-  canvas.on('mouse:move', opt => {
+  canvas.on('mouse:move', event => {
     if (!getIsDrawingShape()) return;
-    const pointer = canvas.getPointer(opt.e, false);
+    const ptr = canvas.getPointer(event.e, false);
     let shape = getShapeObject();
+    const origin = getShapeOrigin();
+    const stroke = getBrushColor();
+    const width = getBrushSize();
+    const type = getDrawingShape();
 
-    // Se non esiste ancora l’oggetto shape, lo creiamo
     if (!shape) {
-      const origin = getShapeOrigin();
-      const stroke = getBrushColor();
-      const width = getBrushSize();
-
-      switch (getDrawingShape()) {
+      switch (type) {
         case 'rect':
-          shape = new fabric.Rect({
-            left: origin.x, top: origin.y,
-            width: 1, height: 1,
-            fill: null, stroke, strokeWidth: width,
-            erasable: true, selectable: true
-          });
+          shape = new fabric.Rect({ left: origin.x, top: origin.y, width: 0, height: 0, stroke, strokeWidth: width, fill: null });
           break;
         case 'circle':
-          shape = new fabric.Circle({
-            left: origin.x, top: origin.y,
-            radius: 1,
-            fill: null, stroke, strokeWidth: width,
-            erasable: true, selectable: true
-          });
+          shape = new fabric.Circle({ left: origin.x, top: origin.y, radius: 0, stroke, strokeWidth: width, fill: null });
           break;
         case 'line':
-          shape = new fabric.Line(
-            [origin.x, origin.y, origin.x, origin.y],
-            { stroke, strokeWidth: width, fill: null, erasable: true, selectable: true }
-          );
+          shape = new fabric.Line([origin.x, origin.y, origin.x, origin.y], { stroke, strokeWidth: width });
           break;
         default:
           return;
@@ -117,29 +87,18 @@ export function attachCanvasEvents(canvas) {
       updateStates({ shapeObject: shape });
     }
 
-    // Modifica le dimensioni/coordinate in base al puntatore
-    const origin = getShapeOrigin();
-    switch (getDrawingShape()) {
+    switch (type) {
       case 'rect':
-        shape.set({
-          width:  Math.abs(pointer.x - origin.x),
-          height: Math.abs(pointer.y - origin.y),
-          left:   Math.min(pointer.x, origin.x),
-          top:    Math.min(pointer.y, origin.y)
-        });
+        shape.set({ width: Math.abs(ptr.x - origin.x), height: Math.abs(ptr.y - origin.y), left: Math.min(ptr.x, origin.x), top: Math.min(ptr.y, origin.y) });
         break;
       case 'circle':
-        const dx = pointer.x - origin.x;
-        const dy = pointer.y - origin.y;
-        const r  = Math.sqrt(dx * dx + dy * dy) / 2;
-        shape.set({
-          radius: r,
-          left:   (pointer.x + origin.x) / 2 - r,
-          top:    (pointer.y + origin.y) / 2 - r
-        });
+        const dx = ptr.x - origin.x;
+        const dy = ptr.y - origin.y;
+        const r = Math.sqrt(dx*dx + dy*dy) / 2;
+        shape.set({ radius: r, left: (ptr.x + origin.x)/2 - r, top: (ptr.y + origin.y)/2 - r });
         break;
       case 'line':
-        shape.set({ x2: pointer.x, y2: pointer.y });
+        shape.set({ x2: ptr.x, y2: ptr.y });
         break;
     }
 
@@ -147,15 +106,12 @@ export function attachCanvasEvents(canvas) {
     canvas.requestRenderAll();
   });
 
-  // 🖐 Mouse up: fine disegno shape
   canvas.on('mouse:up', () => {
+    console.log('event mouse:up');
     if (getIsDrawingShape()) {
+      console.log('end shape:', getDrawingShape());
       setDrawingMode(getPreviousDrawingMode());
-      updateStates({
-        isDrawingShape: false,
-        shapeObject:    null,
-        drawingShape:   null
-      });
+      updateStates({ isDrawingShape: false, shapeObject: null, drawingShape: null });
       setBrush(getCurrentBrush());
       saveState();
     }

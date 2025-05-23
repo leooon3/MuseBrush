@@ -11,6 +11,7 @@ import {
   currentBrush,
   updateStates
 } from './state.js';
+import { saveState } from './actions.js';
 
 /**
  * Applica il pennello selezionato o la gomma sul layer attivo.
@@ -21,7 +22,7 @@ export function setBrush(type) {
   if (!layer) return;
   const canvas = layer.canvas;
 
-  // Disabilita drawing mode durante il cambio brush
+  // Disabilita drawing mode e rimuove handler precedenti
   canvas.isDrawingMode = false;
   canvas.off('path:created');
 
@@ -32,37 +33,45 @@ export function setBrush(type) {
   switch (type) {
     case 'Basic':
       brush = new fabric.PencilBrush(canvas);
-      brush.color = color; brush.width = size;
+      brush.color = color;
+      brush.width = size;
       break;
     case 'Smooth':
       brush = new fabric.PencilBrush(canvas);
-      brush.color = color; brush.width = size * 1.5;
+      brush.color = color;
+      brush.width = size * 1.5;
       break;
     case 'Thick':
       brush = new fabric.PencilBrush(canvas);
-      brush.color = color; brush.width = size * 3;
+      brush.color = color;
+      brush.width = size * 3;
       break;
     case 'Spray':
       brush = new fabric.SprayBrush(canvas);
-      brush.color = color; brush.width = size; brush.density = 20;
+      brush.color = color;
+      brush.width = size;
+      brush.density = 20;
       break;
     case 'Dotted':
       brush = new fabric.CircleBrush(canvas);
-      brush.color = color; brush.width = size;
+      brush.color = color;
+      brush.width = size;
       break;
     case 'Calligraphy':
       brush = new fabric.PencilBrush(canvas);
-      brush.color = color; brush.width = size * 1.5;
+      brush.color = color;
+      brush.width = size * 1.5;
       brush.strokeLineCap = 'square';
       break;
     case 'PixelEraser':
       brush = new fabric.PencilBrush(canvas);
-      brush.color = '#ffffff'; brush.width = size;
+      brush.color = '#ffffff';
+      brush.width = size;
       break;
     case 'Eraser':
-      // Gomma vettoriale: rimuove gli oggetti che interseca il tracciato
       brush = new fabric.PencilBrush(canvas);
-      brush.color = 'rgba(0,0,0,0)'; brush.width = size;
+      brush.color = 'rgba(0,0,0,0)';
+      brush.width = size;
       canvas.on('path:created', e => {
         const path = e.path;
         layers.forEach(l => {
@@ -73,19 +82,25 @@ export function setBrush(type) {
           });
         });
         canvas.remove(path);
+        saveState();
       });
       break;
     default:
-      // fallback a Basic
       brush = new fabric.PencilBrush(canvas);
-      brush.color = color; brush.width = size;
+      brush.color = color;
+      brush.width = size;
   }
 
-  // aggiorno stato globale e applico
   updateStates({ currentBrush: type });
   canvas.freeDrawingBrush = brush;
-  // riattiva drawing mode se non in pointer mode
+
+  // Riattiva drawing mode se consentito
   canvas.isDrawingMode = !getIsPointerMode() && !drawingShape && !isInsertingText && !isFilling;
+
+  // Riattacca saveState per tutti i brush (eccetto eraser gestito sopra)
+  canvas.on('path:created', () => {
+    saveState();
+  });
 }
 
 /**
@@ -98,14 +113,12 @@ export function setDrawingMode(active) {
   const canvas = layer.canvas;
 
   const allowDraw = active && layer.visible && !getIsPointerMode();
-  // se stiamo disegnando forme o inserendo testo o riempiendo, override
   const drawing = allowDraw && !drawingShape && !isInsertingText && !isFilling;
 
   canvas.isDrawingMode = drawing;
   canvas.selection      = !drawing;
   canvas.skipTargetFind = drawing;
 
-  // aggiorna interattività degli oggetti
   canvas.getObjects().forEach(obj => {
     obj.selectable = !canvas.isDrawingMode;
     obj.evented    = !canvas.isDrawingMode;
@@ -113,7 +126,7 @@ export function setDrawingMode(active) {
 }
 
 /**
- * Pulisce il contenuto del layer attivo e ripristina lo sfondo, se presente.
+ * Pulisce il contenuto del layer attivo e ripristina lo sfondo.
  */
 export function clearCanvas() {
   const layer = getActiveLayer();
@@ -126,10 +139,8 @@ export function clearCanvas() {
 }
 
 /**
- * Disabilita drawingMode su tutti i layer senza toccare la UI.
+ * Disabilita drawing mode su tutti i layer.
  */
 export function disableDrawingSilently() {
-  layers.forEach(l => {
-    l.canvas.isDrawingMode = false;
-  });
+  layers.forEach(l => l.canvas.isDrawingMode = false);
 }

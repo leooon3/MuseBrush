@@ -1,79 +1,36 @@
+
 // actions.js
-
 import { getActiveLayer } from './canvas.js';
-
-/**
- * deepEqual: semplice confronto ricorsivo di oggetti/array.
- * @param {*} a 
- * @param {*} b 
- * @returns {boolean}
- */
-function deepEqual(a, b) {
-  if (a === b) return true;
-  if (typeof a !== 'object' || a === null
-   || typeof b !== 'object' || b === null) {
-    return false;
-  }
-  if (Array.isArray(a) !== Array.isArray(b)) return false;
-  const keysA = Object.keys(a);
-  const keysB = Object.keys(b);
-  if (keysA.length !== keysB.length) return false;
-  for (let key of keysA) {
-    if (!keysB.includes(key) || !deepEqual(a[key], b[key])) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/**
- * saveState: salva lo stato corrente per le funzionalità di undo/redo.
- */
+function deepEqual(a, b) { if (a === b) return true; if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) return false; if (Array.isArray(a) !== Array.isArray(b)) return false; const ka = Object.keys(a), kb = Object.keys(b); if (ka.length !== kb.length) return false; for (let k of ka) if (!kb.includes(k) || !deepEqual(a[k], b[k])) return false; return true; }
 export function saveState() {
   const layer = getActiveLayer();
-
-  // Serializziamo con toJSON(), non con JSON.stringify, per evitare riferimenti circolari
-  const currentState = layer.canvas.toJSON();
-  const lastState    = layer.undoStack[layer.undoStack.length - 1];
-
-  // Confronto profondo degli oggetti JSON per decidere se pushare un nuovo snapshot
-  if (!deepEqual(lastState, currentState)) {
-    layer.undoStack.push(currentState);
-    layer.redoStack.length = 0; // resetto il redoStack quando c'è una nuova azione
-  }
+  if (!layer) { console.log('[saveState] no layer'); return; }
+  console.log('[saveState]');
+  const cur = layer.canvas.toJSON();
+  const last = layer.undoStack[layer.undoStack.length - 1];
+  console.log('[saveState] last=', last, 'cur=', cur);
+  if (!deepEqual(last, cur)) { layer.undoStack.push(cur); layer.redoStack.length = 0; console.log('[saveState] pushed, undo=', layer.undoStack.length); }
 }
-
-/**
- * undo: torna allo stato precedente.
- */
 export function undo() {
   const layer = getActiveLayer();
-  if (layer.undoStack.length > 1) {
-    // Sposto lo stato corrente nel redoStack
-    layer.redoStack.push(layer.undoStack.pop());
-
-    // Ripristino l’ultimo stato utile
-    const previousState = layer.undoStack[layer.undoStack.length - 1];
-    layer.canvas.loadFromJSON(previousState, () => {
-      layer.canvas.renderAll();
-    });
-  }
+  console.log('[undo] undo=', layer.undoStack.length, 'redo=', layer.redoStack.length);
+  if (layer && layer.undoStack.length > 1) {
+    const curr = layer.undoStack.pop(); layer.redoStack.push(curr);
+    const prev = layer.undoStack[layer.undoStack.length - 1];
+    console.log('[undo] prev=', prev);
+    layer.canvas.loadFromJSON(prev, () => { layer.canvas.renderAll(); console.log('[undo] done'); });
+  } else console.log('[undo] none');
 }
-
-/**
- * redo: riapplica l’ultima azione annullata.
- */
 export function redo() {
   const layer = getActiveLayer();
-  if (layer.redoStack.length > 0) {
-    const nextState = layer.redoStack.pop();
-
-    // Ripristino lo stato e lo salvo di nuovo nell’undoStack
-    layer.canvas.loadFromJSON(nextState, () => {
-      layer.canvas.renderAll();
-    });
-    layer.undoStack.push(nextState);
-  }
+  console.log('[redo] redo=', layer.redoStack.length);
+  if (layer && layer.redoStack.length > 0) {
+    const nxt = layer.redoStack.pop();
+    console.log('[redo] nxt=', nxt);
+    layer.canvas.loadFromJSON(nxt, () => { layer.canvas.renderAll(); console.log('[redo] done'); });
+    layer.undoStack.push(nxt);
+    console.log('[redo] pushed, undo=', layer.undoStack.length);
+  } else console.log('[redo] none');
 }
 
 /**

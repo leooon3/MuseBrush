@@ -25,13 +25,29 @@ async function getCsrfToken() {
  * Inizializza il gallery modal e il bottone di apertura.
  */
 export function initGallery() {
-  const btn = document.getElementById('galleryBtn');
-  if (!btn) return console.warn('galleryBtn non trovato in DOM');
-  btn.addEventListener('click', () => {
-    document.getElementById('galleryModal').classList.remove('hidden');
-    loadProjectsFromBackend();
+  const openBtn = document.getElementById('galleryBtn');
+  if (openBtn) {
+    openBtn.addEventListener('click', () => {
+      document.getElementById('galleryModal').classList.remove('hidden');
+      loadProjectsFromBackend();
+    });
+  }
+
+  const closeBtn = document.getElementById('closeGalleryBtn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      document.getElementById('galleryModal').classList.add('hidden');
+    });
+  }
+
+  window.addEventListener('click', (e) => {
+    const modal = document.getElementById('galleryModal');
+    if (e.target === modal) {
+      modal.classList.add('hidden');
+    }
   });
 }
+
 
 /**
  * Carica la lista dei progetti da backend e la renderizza.

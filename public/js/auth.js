@@ -19,7 +19,6 @@ function updateAuthIcon(loggedIn) {
   authIcon.alt = loggedIn ? 'Utente autenticato' : 'Account';
   updateStates({ isAuthenticated: loggedIn });
 }
-
 /**
  * Recupera il token CSRF per sessione.
  */
@@ -34,48 +33,150 @@ async function fetchCsrfToken() {
   return csrfToken;
 }
 
-
 /**
  * Effettua il login via email/password.
  */
-async function loginWithEmail(email, password) {
-  const token = await fetchCsrfToken();
-  const res = await fetch(`${backendUrl}/api/login`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': token
-    },
-    body: JSON.stringify({ email, password })
-  });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || 'Errore durante il login');
+export async function loginWithEmail() {
+  const emailInput = document.getElementById('emailInput');
+  const passwordInput = document.getElementById('passwordInput');
+  const email = emailInput?.value.trim();
+  const password = passwordInput?.value;
+  if (!email || !password) {
+    return alert('📧 Inserisci email e password.');
   }
-  return await res.json();
+  try {
+    const token = await fetchCsrfToken();
+    const res = await fetch(`${backendUrl}/api/login`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': token
+      },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return alert(data.error || '❌ Errore durante il login');
+    }
+    alert(data.message);
+    updateStates({ isAuthenticated: true });
+    initGallery();
+    window.location.reload();
+  } catch (err) {
+    alert('❌ Errore di rete: ' + err.message);
+  }
 }
 
 /**
  * Effettua la registrazione via email/password.
  */
-async function registerWithEmail(email, password) {
-  const token = await fetchCsrfToken();
-  const res = await fetch(`${backendUrl}/api/register`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': token
-    },
-    body: JSON.stringify({ email, password })
-  });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || 'Errore durante la registrazione');
+export async function registerWithEmail() {
+  const email = document.getElementById('emailInput')?.value.trim();
+  const password = document.getElementById('passwordInput')?.value;
+  if (!email || !password) {
+    return alert('📧 Inserisci email e password per la registrazione.');
   }
-  return await res.json();
+  try {
+    const token = await fetchCsrfToken();
+    const res = await fetch(`${backendUrl}/api/register`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': token
+      },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (res.ok && data.uid) {
+      alert(data.message + ' Controlla la tua email per verificare l’account.');
+    } else {
+      alert(data.error || '❌ Registrazione fallita');
+    }
+  } catch (err) {
+    alert('❌ Errore di rete: ' + err.message);
+  }
 }
+
+/**
+ * Richiede reset password via email.
+ */
+export async function resetPassword() {
+  const email = document.getElementById('emailInput')?.value.trim();
+  if (!email) {
+    return alert("📧 Inserisci un'email valida.");
+  }
+  try {
+    const token = await fetchCsrfToken();
+    const res = await fetch(`${backendUrl}/api/resetPassword`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': token
+      },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    alert(data.message || data.error);
+  } catch (err) {
+    alert('❌ Errore di rete: ' + err.message);
+  }
+}
+
+/**
+ * Richiede il reinvio email di verifica.
+ */
+export async function resendVerification() {
+  const email = document.getElementById('emailInput')?.value.trim();
+  if (!email) {
+    return alert("📧 Inserisci un'email valida.");
+  }
+  try {
+    const token = await fetchCsrfToken();
+    const res = await fetch(`${backendUrl}/api/resendVerification`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': token
+      },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    alert(data.message || data.error);
+  } catch (err) {
+    alert('❌ Errore di rete: ' + err.message);
+  }
+}
+
+/**
+ * Effettua il logout.
+ */
+export async function logoutUser() {
+  try {
+    const token = await fetchCsrfToken();
+    const res = await fetch(`${backendUrl}/api/logout`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'X-CSRF-Token': token
+      }
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Errore durante il logout');
+    }
+    updateStates({ isAuthenticated: false });
+    alert('🚪 Disconnesso!');
+  } catch (err) {
+    alert('❌ Errore di rete: ' + err.message);
+  }
+}
+
+
+
 
 /**
  * Effettua il login con Google (redirige al provider).
@@ -83,69 +184,6 @@ async function registerWithEmail(email, password) {
 function loginWithGoogle() {
   window.location.href = `${backendUrl}/api/googleLogin`;
 }
-
-/**
- * Effettua il logout.
- */
-async function logoutUser() {
-  const token = await fetchCsrfToken();
-  const res = await fetch(`${backendUrl}/api/logout`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': token
-    }
-  });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || 'Errore durante il logout');
-  }
-}
-
-
-/**
- * Richiede reset password via email.
- */
-async function resetPassword(email) {
-  const token = await fetchCsrfToken();
-  const res = await fetch(`${backendUrl}/api/resetPassword`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': token
-    },
-    body: JSON.stringify({ email })
-  });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || 'Errore durante il reset della password');
-  }
-  return await res.json();
-}
-
-/**
- * Richiede il reinvio email di verifica.
- */
-async function resendVerification(email) {
-  const token = await fetchCsrfToken();
-  const res = await fetch(`${backendUrl}/api/resendVerification`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': token
-    },
-    body: JSON.stringify({ email })
-  });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || 'Errore durante invio della verifica');
-  }
-  return await res.json();
-}
-
 /**
  * Collega tutti gli event handler agli elementi del DOM.
  */
