@@ -178,10 +178,10 @@ export async function logoutUser() {
  * Effettua il login con Google (redirige al provider).
  */
 function loginWithGoogle() {
-  window.open(
+ window.open(
     `${backendUrl}/api/googleLogin`,
-    '_blank',
-    'noopener,noreferrer'
+    'googleLogin',
+    'width=600,height=700'
   );
 }
 /**
