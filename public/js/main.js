@@ -87,6 +87,15 @@ function initializeCanvasState() {
     updateCanvasVisibility();
   }
 }
+const urlParams = new URLSearchParams(window.location.search);
+const uidFromQuery = urlParams.get('uid');
+if (uidFromQuery) {
+  localStorage.setItem('userId', uidFromQuery);
+  updateAuthIcon(true);
+  initGallery();
+  window.history.replaceState({}, '', '/'); // pulisce la query
+}
+
 
 /**
  * Handle responsive menus and canvas resizing on window events.
