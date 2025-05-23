@@ -1,26 +1,11 @@
-<!-- google-callback.html -->
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Login completato</title>
 </head>
 <body>
-<script>
-  // 1) Estrai uid dalla query string
-  const params = new URLSearchParams(window.location.search);
-  const uid = params.get('uid');
-
-  // 2) Invia un messaggio al parent (aggiorna UI)
-  if (uid && window.opener && !window.opener.closed) {
-    window.opener.postMessage(
-      { type: 'google-login', uid },
-      window.opener.location.origin
-    );
-  }
-
-  // NOTA: non chiudiamo più automaticamente il popup
-  console.log('[DEBUG] google-callback eseguito, UID:', uid);
-</script>
+  <!-- Il tuo HTML può rimanere vuoto, tutto il JS è in un file esterno -->
+  <script src="/js/google-callback.js"></script>
 </body>
 </html>
