@@ -18,6 +18,28 @@ const backendUrl = 'https://musebrush.onrender.com';
  * Initial setup after DOM is loaded.
  */
 document.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener('storage', event => {
+  if (event.key === 'googleLoginUid' && event.newValue) {
+    const uid = event.newValue;
+    // Clear the storage key
+    localStorage.removeItem('googleLoginUid');
+
+    // Process login
+    localStorage.setItem('userId', uid);
+    updateAuthIcon(true);
+    initGallery();
+    // Reload page to finalize state
+    window.location.reload();
+  }
+});
+const urlParams = new URLSearchParams(window.location.search);
+const uidFromQuery = urlParams.get('uid');
+if (uidFromQuery) {
+  localStorage.setItem('userId', uidFromQuery);
+  updateAuthIcon(true);
+  initGallery();
+  window.history.replaceState({}, '', '/'); // pulisce la query
+}
   registerMessageListener();
   setupNewCanvasButton();
   initializeServicesAndUI();
@@ -86,14 +108,6 @@ function initializeCanvasState() {
 
     updateCanvasVisibility();
   }
-}
-const urlParams = new URLSearchParams(window.location.search);
-const uidFromQuery = urlParams.get('uid');
-if (uidFromQuery) {
-  localStorage.setItem('userId', uidFromQuery);
-  updateAuthIcon(true);
-  initGallery();
-  window.history.replaceState({}, '', '/'); // pulisce la query
 }
 
 

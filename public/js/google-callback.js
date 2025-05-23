@@ -1,4 +1,3 @@
-// public/js/google-callback.js
 (async function() {
   const backendUrl = 'https://musebrush.onrender.com';
   console.group('[google-callback] Debug info');
@@ -7,8 +6,8 @@
   console.groupEnd();
 
   const params = new URLSearchParams(window.location.search);
-  const code = params.get('code') || params.get('uid'); // fallback for uid param
-  console.log('[google-callback] extracted code/uid:', code);
+  const code = params.get('code');
+  console.log('[google-callback] extracted code:', code);
 
   if (!code) {
     console.error('[google-callback] Missing code parameter');
@@ -16,32 +15,28 @@
   }
 
   try {
-    let uid;
-    // If 'uid' passed directly (previous flow), skip backend fetch
-    if (params.has('uid')) {
-      uid = code;
-    } else {
-      // exchange code for uid
-      const resp = await fetch(
-        `${backendUrl}/auth/google/callback?code=${encodeURIComponent(code)}`,
-        { method: 'GET', credentials: 'include' }
-      );
-      if (!resp.ok) throw new Error(`Server responded ${resp.status}`);
-      const data = await resp.json();
-      uid = data.uid;
-      console.log('[google-callback] received UID from backend:', uid);
-    }
+    // Exchange code for UID
+    const resp = await fetch(
+      `${backendUrl}/auth/google/callback?code=${encodeURIComponent(code)}`,
+      { method: 'GET', credentials: 'include' }
+    );
+    if (!resp.ok) throw new Error(`Server responded ${resp.status}`);
+    const { uid } = await resp.json();
+    console.log('[google-callback] received UID:', uid);
 
     if (window.opener && !window.opener.closed) {
+      // Send via postMessage
       window.opener.postMessage({ type: 'google-login', uid }, window.opener.location.origin);
-      console.log('[google-callback] UID sent via postMessage:', uid);
-      window.close();
+      console.log('[google-callback] UID sent via postMessage');
     } else {
-      console.warn('[google-callback] No opener, falling back to redirect parent');
-      // Fallback: redirect top window with uid
-      window.location.href = `/?uid=${encodeURIComponent(uid)}`;
+      // Fallback: store in localStorage
+      localStorage.setItem('googleLoginUid', uid);
+      console.log('[google-callback] No opener: UID saved to localStorage');
     }
   } catch (err) {
     console.error('[google-callback] Error in callback:', err);
+  } finally {
+    // Close popup in all cases
+    window.close();
   }
 })();
