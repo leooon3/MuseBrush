@@ -16,6 +16,15 @@ import { setDrawingMode, setBrush } from './tool.js';
  * Initial setup after DOM is loaded.
  */
 window.addEventListener('DOMContentLoaded', async () => {
+  // --- Gestione messaggio di login dal popup Google ---
+  window.addEventListener('message', event => {
+    if (event.origin !== window.location.origin) return;
+    if (event.data?.type === 'google-login' && event.data.uid) {
+      // Salva uid e ricarica l’app
+      localStorage.setItem('userId', event.data.uid);
+      window.location.reload();
+    }
+  });
   // New canvas button
   const newCanvasBtn = document.getElementById('newCanvasBtn');
   if (newCanvasBtn) {
