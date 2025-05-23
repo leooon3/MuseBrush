@@ -127,7 +127,7 @@ function createProjectItem(id, project) {
   return div;
 }
 
-async function deleteProjectFromBackend(projectId) {
+export async function deleteProjectFromBackend(projectId) {
   const token = await getCsrfToken();
   await fetch(`${backendUrl}/api/deleteProject`, {
     method: 'DELETE',
@@ -138,7 +138,7 @@ async function deleteProjectFromBackend(projectId) {
   loadProjectsFromBackend();
 }
 
-async function saveProjectToBackend(projectName) {
+export async function saveProjectToBackend(projectName) {
   const project = {
     nome: projectName,
     layers: getCurrentCanvasState(),
@@ -155,7 +155,7 @@ async function saveProjectToBackend(projectName) {
   loadProjectsFromBackend();
 }
 
-async function updateProjectOnBackend(projectId, projectName) {
+export async function updateProjectOnBackend(projectId, projectName) {
   const token = await getCsrfToken();
   await fetch(`${backendUrl}/api/updateProject`, {
     method: 'PUT',
