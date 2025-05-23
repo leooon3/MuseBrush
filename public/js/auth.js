@@ -117,40 +117,48 @@ export async function logoutUser() {
 
 // Login con Google tramite popup e polling dell'URL di callback
 export function loginWithGoogle() {
+  // 1) Apro il popup verso l'endpoint Google OAuth sul backend
   const popup = window.open(
     `${backendUrl}/api/googleLogin`,
     'googleLogin',
     'width=600,height=700'
   );
-
+  
+  // 2) Ogni 500ms guardo se il popup è tornato sulla mia pagina callback statica
   const pollTimer = setInterval(async () => {
     if (!popup || popup.closed) {
       clearInterval(pollTimer);
+      console.warn('[google-poll] Il popup è stato chiuso prima del callback');
       return;
     }
     let href;
     try {
       href = popup.location.href;
     } catch {
-      return; // cross-origin, attendi
+      // è ancora su google.com o un'origine diversa, aspetto
+      return;
     }
-    const callbackUrl = window.location.origin + '/google-callback.html';
-    if (href.startsWith(callbackUrl)) {
+    const expected = `${window.location.origin}/google-callback.html`;
+    if (href.startsWith(expected)) {
+      // 3) estraggo uid dalla query string
       const params = new URLSearchParams(popup.location.search);
       const uid = params.get('uid');
       if (uid) {
         clearInterval(pollTimer);
-        // Completa la sessione sul backend
-        await fetch(
-          `${backendUrl}/api/googleLogin/finish?uid=${encodeURIComponent(uid)}`,
-          { credentials: 'include' }
-        );
+
+        // 4) Qui NON fai postMessage (opener è null), bensì:
+        //    a) Aggiorni la UI
         localStorage.setItem('userId', uid);
         updateAuthIcon(true);
         initGallery();
-        // RIMOSSA la chiamata a popup.close()
-        console.log('[DEBUG] callback Google rilevato, popup rimane aperto per debug');
+
+        //    b) Ricarichi la pagina principale per includere il cookie di sessione
         window.location.reload();
+
+        //    c) Se vuoi chiudere il popup, fallo **da qui**, dopo un paio di secondi
+        setTimeout(() => {
+          if (!popup.closed) popup.close();
+        }, 1000);
       }
     }
   }, 500);
