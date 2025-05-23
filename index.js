@@ -129,17 +129,12 @@ app.get('/api/googleLogin',
 );
 
 // callback di Google: dopo passport.authenticate, rispondi SOLO con il file statico
-app.get('/api/googleCallback',
-  passport.authenticate('google', {
-    failureRedirect: process.env.FRONTEND_URL,
-    session: true
-  }),
-  (req, res) => {
-    const uid = req.user.uid;
-    // Invia il tuo Google callback statico **includendo** ?uid=
-    res.redirect(`${process.env.BACKEND_URL}/google-callback.html?uid=${encodeURIComponent(uid)}`);
-  }
-);
+app.get('/auth/google/callback', async (req, res) => {
+  const { code } = req.query;
+  const uid = await exchangeCodeForUid(code);
+  // Redirect al frontend callback **nel popup**
+  res.redirect(`https://muse-brush.vercel.app/google-callback.html?uid=${uid}`);
+});
 
 // 5. Logout
 app.post('/api/logout', (req, res) => {
