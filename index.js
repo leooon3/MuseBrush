@@ -122,23 +122,13 @@ app.get(
   '/api/googleLogin',
   passport.authenticate('google', { scope: ['profile'] })
 );
-app.get('/api/googleCallback',
-  passport.authenticate('google', { failureRedirect: '/' }),
-  (req, res) => {
-    // Callback Google in popup: ricarica opener e chiudi
-    res.send(`
-      <!DOCTYPE html>
-      <html lang="it">
-      <head><meta charset="utf-8"><title>Login riuscito</title></head>
-      <body>
-        <script>
-          window.close();
-        </script>
-      </body>
-      </html>
-    `);
-  }
-);
+function loginWithGoogle() {
+  window.open(
+    `${backendUrl}/api/googleLogin`,
+    'googleLogin',
+    'width=600,height=700'
+  );
+}
 
 // Logout
 app.post('/api/logout', (req, res) => {
