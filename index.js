@@ -122,7 +122,14 @@ app.post('/api/logout', (req, res) => {
   });
 });
 
-app.use(csurf({ cookie: true }));
+app.use(csurf({
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  }
+}));
+
 app.use((err, req, res, next) => {
   if (err.code === 'EBADCSRFTOKEN') {
     return res.status(403).json({ error: 'Token CSRF non valido' });
