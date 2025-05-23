@@ -6,7 +6,7 @@ import { updateStates } from './state.js';
 import { showConfirm } from './canvas-utils.js';
 
 /**
- * Esporta lo stato corrente dei layer in un file JSON scaricabile.
+ * Exports the current project data to a downloadable JSON file.
  */
 async function handleExportProject() {
   const defaultName = localStorage.getItem('currentProjectName') || 'progetto-musebrush';
@@ -38,7 +38,8 @@ async function handleExportProject() {
 }
 
 /**
- * Importa un progetto da file JSON, dopo conferma utente.
+ * Imports project data from a JSON file selected by the user.
+ * @param {Event} event - Change event from file input element.
  */
 async function handleImportProject(event) {
   const file = event.target.files[0];
@@ -63,7 +64,7 @@ async function handleImportProject(event) {
 }
 
 /**
- * Inizializza i listener per import/export dei progetti.
+ * Initializes import/export button handlers for project file management.
  */
 export function initStorage() {
   const exportBtn = document.getElementById('exportProjectBtn');
@@ -83,7 +84,7 @@ export function initStorage() {
 }
 
 /**
- * Restituisce lo stato serializzato dei canvas attivi (per salvataggi interni).
+ * Returns the current canvas state, used for saving the project.
  */
 export function getCurrentCanvasState() {
   return layers.map(layer => ({

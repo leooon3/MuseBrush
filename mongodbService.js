@@ -2,6 +2,7 @@
 
 import { MongoClient, ObjectId } from 'mongodb';
 
+// Load the MongoDB connection URI from environment variables
 const uri = process.env.MONGODB_URI;
 if (!uri) {
   throw new Error('🚨 MONGODB_URI environment variable is not set');
@@ -11,7 +12,8 @@ const client = new MongoClient(uri);
 let progettiCollection;
 
 /**
- * Restituisce la collection "progetti", con connessione lazy e caching.
+ * Lazily connects to MongoDB and retrieves the 'progetti' collection
+ * Uses memoization to avoid reconnecting unnecessarily
  * @returns {Promise<import('mongodb').Collection>}
  */
 async function getCollection() {
@@ -24,7 +26,7 @@ async function getCollection() {
 }
 
 /**
- * Salva un nuovo progetto associato all'utente in sessione.
+ * Save a new project in the database, associated with the current user session
  */
 export async function saveProject(req, res) {
   try {
@@ -47,7 +49,7 @@ export async function saveProject(req, res) {
 }
 
 /**
- * Recupera tutti i progetti dell'utente in sessione.
+ * Load all projects for the currently authenticated user
  */
 export async function loadProjects(req, res) {
   try {
@@ -76,7 +78,7 @@ export async function loadProjects(req, res) {
 }
 
 /**
- * Aggiorna un progetto esistente dell'utente in sessione.
+ * Update an existing project belonging to the authenticated user
  */
 export async function updateProject(req, res) {
   try {
@@ -106,7 +108,7 @@ export async function updateProject(req, res) {
 }
 
 /**
- * Elimina un progetto dell'utente in sessione.
+ * Delete a project by ID for the current user
  */
 export async function deleteProject(req, res) {
   try {

@@ -3,6 +3,9 @@ import { initGallery } from './gallery.js';
 
 const backendUrl = 'https://musebrush.onrender.com';
 
+/**
+ * Update the UI icon based on authentication status
+ */
 export function updateAuthIcon(loggedIn) {
   const authIcon = document.getElementById('authIcon');
   if (!authIcon) return;
@@ -11,6 +14,9 @@ export function updateAuthIcon(loggedIn) {
   updateStates({ isAuthenticated: loggedIn });
 }
 
+/**
+ * Fetch CSRF token required for secure API requests
+ */
 async function fetchCsrfToken() {
   const res = await fetch(`${backendUrl}/api/csrf-token`, { credentials: 'include' });
   if (!res.ok) throw new Error('CSRF token non ottenuto');
@@ -18,6 +24,9 @@ async function fetchCsrfToken() {
   return csrfToken;
 }
 
+/**
+ * Authenticate user using email and password
+ */
 export async function loginWithEmail() {
   const email = document.getElementById('emailInput')?.value.trim();
   const password = document.getElementById('passwordInput')?.value;
@@ -40,6 +49,9 @@ export async function loginWithEmail() {
   }
 }
 
+/**
+ * Register a new user account
+ */
 export async function registerWithEmail() {
   const email = document.getElementById('emailInput')?.value.trim();
   const password = document.getElementById('passwordInput')?.value;
@@ -60,6 +72,9 @@ export async function registerWithEmail() {
   }
 }
 
+/**
+ * Send password reset email
+ */
 export async function resetPassword() {
   const email = document.getElementById('emailInput')?.value.trim();
   if (!email) return alert('📧 Inserisci un\'email valida');
@@ -78,6 +93,9 @@ export async function resetPassword() {
   }
 }
 
+/**
+ * Resend verification email
+ */
 export async function resendVerification() {
   const email = document.getElementById('emailInput')?.value.trim();
   if (!email) return alert('📧 Inserisci un\'email valida');
@@ -96,6 +114,9 @@ export async function resendVerification() {
   }
 }
 
+/**
+ * Logout the currently authenticated user
+ */
 export async function logoutUser() {
   try {
     const token = await fetchCsrfToken();
@@ -114,9 +135,17 @@ export async function logoutUser() {
     alert('❌ Errore di rete: ' + e.message);
   }
 }
+
+/**
+ * Redirect to Google login
+ */
 function loginWithGoogle() {
   window.location.href = `${backendUrl}/api/googleLogin`;
 }
+
+/**
+ * Attach all necessary event handlers for the auth modal
+ */
 function attachAuthHandlers() {
   document.getElementById('loginBtn')?.addEventListener('click', loginWithEmail);
   document.getElementById('signupBtn')?.addEventListener('click', registerWithEmail);
@@ -134,6 +163,9 @@ function attachAuthHandlers() {
   });
 }
 
+/**
+ * Initialize authentication status and UI handlers
+ */
 export async function authInit() {
   attachAuthHandlers();
 

@@ -11,12 +11,14 @@ import {
 } from './state.js'
 import { showConfirm } from './canvas-utils.js'
 
+// Function: highlightTool - defines behavior related to highlighttool UI controls
 function highlightTool(buttonId) {
   document.querySelectorAll('.tool-active').forEach(btn => btn.classList.remove('tool-active'))
   const btn = document.getElementById(buttonId)
   if (btn) btn.classList.add('tool-active')
 }
 
+// Function: addRecentColor - defines behavior related to addrecentcolor UI controls
 function addRecentColor(color) {
   const recent = JSON.parse(localStorage.getItem('recentColors') || '[]').filter(c => c !== color)
   recent.unshift(color)
@@ -25,6 +27,7 @@ function addRecentColor(color) {
   renderRecentColors()
 }
 
+// Function: renderRecentColors - defines behavior related to renderrecentcolors UI controls
 function renderRecentColors() {
   const container = document.getElementById('recentColors')
   container.innerHTML = ''
@@ -43,6 +46,7 @@ function renderRecentColors() {
   })
 }
 
+// Exported function: initUIControls - available externally to manage UI features
 export function initUIControls() {
   const brushButton = document.getElementById('brushes_tab')
   const brushDropdown = document.getElementById('brushDropdown')
@@ -62,7 +66,6 @@ export function initUIControls() {
   downloadBtn.addEventListener('click', () => {
     downloadDropdown.style.display = downloadDropdown.style.display === 'block' ? 'none' : 'block'
   })
-   // Toggle eraser dropdown on desktop
   eraserButton.addEventListener('click', () => {
     eraserDropdown.style.display = eraserDropdown.style.display === 'block' ? 'none' : 'block'
   })
@@ -134,7 +137,7 @@ export function initUIControls() {
       brushDropdown.style.display = 'none'
     })
   })
-
+// All events listeners for buttons
   document.getElementById('bucket_tab')?.addEventListener('click', () => {
     updateStates({
       isFilling: true,
@@ -213,7 +216,7 @@ export function initUIControls() {
       document.getElementById('layersPanel').classList.remove('visible')
     }
   })
-  // Toggle di apertura/chiusura modali
+
 
   const galleryToggle = document.getElementById('galleryBtn');
   const galleryModal = document.getElementById('galleryModal');
@@ -221,7 +224,6 @@ export function initUIControls() {
     galleryModal.classList.toggle('hidden');
   });
 
-  // Pulsanti “×”: chiudi il modal
   document.querySelectorAll('.close-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const modal = btn.closest('.modal');
@@ -230,6 +232,7 @@ export function initUIControls() {
   });
 }
 
+// Exported function: updateMenuHeight - available externally to manage UI features
 export function updateMenuHeight() {
   const isMobile = window.innerWidth <= 1068
   const menuEl = document.querySelector(isMobile ? '#responsiveTopMenu' : '#menu')
@@ -241,6 +244,7 @@ export function updateMenuHeight() {
   }
 }
 
+// Exported function: initResponsiveMenus - available externally to manage UI features
 export function initResponsiveMenus() {
   const leftMenu = document.getElementById('responsiveLeftMenu')
   const rightMenu = document.getElementById('responsiveRightMenu')
@@ -258,6 +262,7 @@ export function initResponsiveMenus() {
     leftMenu.classList.add('hidden')
   }
 
+// Function: populateResponsiveMenus - defines behavior related to populateresponsivemenus UI controls
   function populateResponsiveMenus() {
     leftMenu.innerHTML = `
       <button id="brushes_tab_mobile"><img src="./images/brush.png"/><span class="btn-label">Brushes</span></button>
@@ -324,6 +329,7 @@ export function initResponsiveMenus() {
     }
   }
 
+// Function: resetDropdowns - defines behavior related to resetdropdowns UI controls
   function resetDropdowns() {
     const leftWrappers = Array.from(document.querySelectorAll('#menu .menu-left > .dropdown-wrapper'))
     const rightWrapper = document.querySelector('#menu .menu-right > .dropdown-wrapper')
@@ -334,6 +340,7 @@ export function initResponsiveMenus() {
       { id: 'downloadDropdown', wrapper: rightWrapper }
     ]
     mappings.forEach(({ id, wrapper }) => {
+// Reference to DOM element: dd
       const dd = document.getElementById(id)
       if (dd && wrapper && dd.parentElement !== wrapper) {
         ['position', 'top', 'left', 'zIndex', 'display'].forEach(prop => {
@@ -344,6 +351,7 @@ export function initResponsiveMenus() {
     })
   }
 
+// Function: handleResponsive - defines behavior related to handleresponsive UI controls
   function handleResponsive() {
     if (window.innerWidth <= 1068) {
       topMenu.classList.remove('hidden')
@@ -362,6 +370,7 @@ export function initResponsiveMenus() {
     }
   }
 
+// Attach responsive handler to window resize
   window.addEventListener('resize', handleResponsive)
   handleResponsive()
 }

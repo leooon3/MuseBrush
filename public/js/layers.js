@@ -20,13 +20,13 @@ const layersPanel = document.getElementById('layersPanel');
 const layersList  = document.getElementById('layersList');
 
 /**
- * Ricostruisce la lista dei layer nel pannello.
+ * Render the list of layers in the UI and setup control buttons.
  */
 export function renderLayerList() {
   if (!layersList) return;
   layersList.innerHTML = '';
 
-  // ➕ Pulsante “Nuovo Livello”
+  // Button to add a new layer
   const addBtn = document.createElement('button');
   addBtn.textContent  = '+ Nuovo Livello';
   addBtn.className    = 'add-layer-btn';
@@ -41,12 +41,12 @@ export function renderLayerList() {
   });
   layersList.appendChild(addBtn);
 
-  // ➖ Elenco dei layer
+  // Create each layer entry
   layers.forEach((layer, index) => {
     const li = document.createElement('li');
     li.className = index === activeLayerIndex ? 'active' : '';
 
-    // Nome layer (cliccabile per rinomina)
+    // Editable layer name
     const nameSpan = document.createElement('span');
     nameSpan.textContent  = layer.name;
     nameSpan.style.flexGrow = '1';
@@ -61,11 +61,10 @@ export function renderLayerList() {
     });
     li.appendChild(nameSpan);
 
-    // Controlli layer
+    // Layer controls: up, down, visibility, delete
     const controls = document.createElement('div');
     controls.className = 'layer-controls';
 
-    // Sposta su
     const upBtn = document.createElement('button');
     upBtn.textContent = '⬆️';
     upBtn.addEventListener('click', e => {
@@ -78,7 +77,6 @@ export function renderLayerList() {
     });
     controls.appendChild(upBtn);
 
-    // Sposta giù
     const downBtn = document.createElement('button');
     downBtn.textContent = '⬇️';
     downBtn.addEventListener('click', e => {
@@ -91,7 +89,6 @@ export function renderLayerList() {
     });
     controls.appendChild(downBtn);
 
-    // Toggle visibilità
     const visBtn = document.createElement('button');
     visBtn.textContent = layer.visible ? '👁️' : '🚫';
     visBtn.addEventListener('click', e => {
@@ -102,7 +99,6 @@ export function renderLayerList() {
     });
     controls.appendChild(visBtn);
 
-    // Elimina layer
     const delBtn = document.createElement('button');
     delBtn.textContent = '🗑️';
     delBtn.addEventListener('click', async e => {
@@ -126,7 +122,7 @@ export function renderLayerList() {
 
     li.appendChild(controls);
 
-    // Seleziona layer
+    // Selecting a layer
     li.addEventListener('click', () => {
       updateStates({ activeLayerIndex: index });
       updateCanvasVisibility();
@@ -140,7 +136,7 @@ export function renderLayerList() {
 }
 
 /**
- * Inizializza il pannello layer: toggle visibilità e render.
+ * Initialize the layer panel toggle button
  */
 export function initLayerPanel() {
   if (!layersTab || !layersPanel) return;

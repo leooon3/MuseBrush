@@ -4,14 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MuseBrush</title>
+  <!-- Favicon and main stylesheet -->
   <link rel="icon" href="./images/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="./style.css" />
+  <!-- Fabric.js library loaded asynchronously -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js" defer></script>
 </head>
 <body>
+  <!-- Top navigation menu -->
   <header id="menu">
     <div class="menu-container">
       <div class="menu-left">
+        <!-- Brush selection dropdown -->
         <div class="dropdown-wrapper">
           <button id="brushes_tab" title="Pennelli">
             <img src="./images/brush.png" alt="Pennelli" />
@@ -25,11 +29,16 @@
             <button class="brush-option" data-brush="Calligraphy">Calligraphy</button>
           </div>
         </div>
+        <!-- Brush color picker -->
         <input type="color" id="colorInput" class="color-picker" title="Colore pennello" />
         <div id="recentColors" class="color-history"></div>
+
+        <!-- Toggle pointer tool -->
         <button id="pointerToggleBtn" title="Pointer">
           <img id="pointerIcon" src="./images/pointer-icon.png" alt="Pointer" />
         </button>
+
+        <!-- Shape selection dropdown -->
         <div class="dropdown-wrapper">
           <button id="shapes_tab" title="Forme">
             <img src="./images/square.png" alt="Forme" />
@@ -40,12 +49,16 @@
             <button class="shape-option" data-shape="line">Linea</button>
           </div>
         </div>
+
+        <!-- Bucket fill and text tools -->
         <button id="bucket_tab" title="Riempimento">
           <img src="./images/bucket.png" alt="Riempimento" />
         </button>
         <button id="text_tab" title="Testo">
           <img src="./images/text.png" alt="Testo" />
         </button>
+
+        <!-- Eraser tool dropdown -->
         <div class="dropdown-wrapper">
           <button id="eraser_tab" title="Gomma">
             <img src="./images/eraser.png" alt="Gomma" />
@@ -56,8 +69,12 @@
           </div>
         </div>
       </div>
+
+      <!-- Center logo -->
       <h1 class="logo">MuseBrush</h1>
+
       <div class="menu-right">
+        <!-- Export options dropdown -->
         <div class="dropdown-wrapper">
           <button id="download_tab" title="Download">
             <img src="./images/downloads.png" alt="Download" />
@@ -68,6 +85,8 @@
             <button class="download-option" value="svg">SVG</button>
           </div>
         </div>
+
+        <!-- Other utility buttons -->
         <button id="layers_tab" title="Livelli">
           <img src="./images/layers.png" alt="Livelli" />
         </button>
@@ -93,8 +112,10 @@
     </div>
   </header>
 
+  <!-- Dynamic dropdown container -->
   <div id="globalDropdowns"></div>
 
+  <!-- Responsive UI menus -->
   <div id="responsiveTopMenu" class="responsive-top-menu hidden">
     <button id="toggleLeftMenu">☰</button>
     <span class="logo">MuseBrush</span>
@@ -103,10 +124,12 @@
   <div id="responsiveLeftMenu" class="responsive-side-menu hidden"></div>
   <div id="responsiveRightMenu" class="responsive-side-menu hidden"></div>
 
+  <!-- Brush thickness slider -->
   <div class="slider-container">
     <input type="range" id="thicknessSlider" min="1" max="100" value="6" title="Spessore" class="slider" />
   </div>
 
+  <!-- Main canvas and layer panel -->
   <main>
     <div class="canvas-container"></div>
     <aside id="layersPanel" class="panel">
@@ -115,6 +138,7 @@
     </aside>
   </main>
 
+  <!-- Authentication modal -->
   <div id="authModal" class="modal modal-auth hidden">
     <div class="modal-content">
       <button class="close-btn" aria-label="Chiudi modal">×</button>
@@ -132,6 +156,7 @@
     </div>
   </div>
 
+  <!-- Project gallery modal -->
   <div id="galleryModal" class="modal modal-gallery hidden">
     <div class="modal-content">
       <button class="close-btn" aria-label="Chiudi modal">×</button>
@@ -149,6 +174,7 @@
     </div>
   </div>
 
+  <!-- Exit confirmation modal -->
   <div id="exitModal" class="modal hidden">
     <div class="modal-content">
       <h3>⚠️ Uscita senza salvare</h3>
@@ -160,7 +186,8 @@
       </div>
     </div>
   </div>
-  
+
+  <!-- Main script module -->
   <script type="module" src="./js/main.js"></script>
 </body>
 </html>

@@ -1,6 +1,9 @@
 import { saveState } from './actions.js';
 import { updateStates } from './state.js';
 
+/**
+ * Convert a hex color string to RGBA array.
+ */
 function hexToRgba(hex) {
   const bigint = parseInt(hex.replace('#', ''), 16);
   return [
@@ -11,11 +14,17 @@ function hexToRgba(hex) {
   ];
 }
 
+/**
+ * Get the color of a pixel from image data.
+ */
 function getPixelColor(imgData, x, y) {
   const index = (y * imgData.width + x) * 4;
   return imgData.data.slice(index, index + 4);
 }
 
+/**
+ * Set the color of a pixel in image data.
+ */
 function setPixelColor(imgData, x, y, [r, g, b, a]) {
   const index = (y * imgData.width + x) * 4;
   imgData.data[index] = r;
@@ -24,6 +33,9 @@ function setPixelColor(imgData, x, y, [r, g, b, a]) {
   imgData.data[index + 3] = a;
 }
 
+/**
+ * Compare two colors with a tolerance.
+ */
 function colorsMatch(a, b, tolerance = 32) {
   return Math.abs(a[0] - b[0]) < tolerance &&
          Math.abs(a[1] - b[1]) < tolerance &&
@@ -31,6 +43,9 @@ function colorsMatch(a, b, tolerance = 32) {
          Math.abs(a[3] - b[3]) < tolerance;
 }
 
+/**
+ * Perform a flood fill on the canvas starting from a specific point.
+ */
 export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
   const width = fabricCanvas.getWidth();
   const height = fabricCanvas.getHeight();
@@ -65,6 +80,7 @@ export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
     const queue = [[rawX, rawY]];
     const visited = new Uint8Array(width * height);
 
+    // Breadth-first fill algorithm
     while (queue.length > 0) {
       const [cx, cy] = queue.shift();
       if (cx < 0 || cy < 0 || cx >= width || cy >= height) continue;
@@ -84,6 +100,7 @@ export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
       queue.push([cx, cy - 1]);
     }
 
+    // Determine the bounding box of the filled area
     let minX = width, minY = height, maxX = 0, maxY = 0;
     for (let yy = 0; yy < height; yy++) {
       for (let xx = 0; xx < width; xx++) {
@@ -100,6 +117,7 @@ export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
     const fillWidth = maxX - minX + 1;
     const fillHeight = maxY - minY + 1;
 
+    // Extract the filled region as a new canvas
     const croppedCanvas = document.createElement('canvas');
     croppedCanvas.width = fillWidth;
     croppedCanvas.height = fillHeight;
@@ -119,6 +137,7 @@ export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
 
     croppedCtx.putImageData(croppedImageData, 0, 0);
 
+    // Create a Fabric image from the filled region and add it to the canvas
     fabric.Image.fromURL(croppedCanvas.toDataURL(), (fillImg) => {
       const adjustedLeft = (minX - vt[4]) / zoom;
       const adjustedTop = (minY - vt[5]) / zoom;
@@ -134,6 +153,7 @@ export function floodFillFromPoint(fabricCanvas, x, y, fillColorHex) {
         evented: true
       });
 
+      // Optionally group with object under the fill if overlapping
       let target = fabricCanvas.getObjects().filter(obj => obj.type !== 'image')
         .find(obj => {
           const bounds = obj.getBoundingRect(true);

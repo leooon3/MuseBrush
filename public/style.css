@@ -75,24 +75,55 @@ button.tool-active {
    COLOR PICKER & HISTORY
 ===================================== */
 .color-picker {
-  width: 36px; height: 36px;
-  border: none; border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
   cursor: pointer;
   box-shadow: 0 2px 6px var(--shadow-light);
-  appearance: none; background: none;
+  appearance: none;
+  background: none;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 0;
+  overflow: hidden;
 }
-.color-picker:hover { transform: scale(1.15); box-shadow: 0 4px 12px var(--shadow-medium); }
-.color-picker::-webkit-color-swatch-wrapper { padding: 0; }
-.color-picker::-webkit-color-swatch, .color-picker::-moz-color-swatch { border-radius: 50%; }
-.color-history { display: flex; gap: 6px; margin-top: 6px; }
+
+.color-picker:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px var(--shadow-medium);
+}
+
+.color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 50%;
+}
+
+.color-picker::-webkit-color-swatch,
+.color-picker::-moz-color-swatch {
+  border-radius: 50%;
+  border: none;
+}
+
+.color-history {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
 .color-history button {
-  width: 24px; height: 24px;
+  width: 24px;
+  height: 24px;
   border: 2px solid var(--border-medium);
-  border-radius: 50%; background: transparent;
-  cursor: pointer; transition: transform 0.2s ease;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
-.color-history button:hover { transform: scale(1.2); border-color: #666; }
+
+.color-history button:hover {
+  transform: scale(1.2);
+  border-color: #666;
+}
 
 /* =====================================
    SLIDER (THICKNESS)
@@ -225,7 +256,6 @@ button.tool-active {
  /* =====================================
     MODAL AUTH
  ==================================== */
-/* nessuna regola specifica per auth */
 #authModal .auth-actions {
   display: flex;
   justify-content: center;
@@ -284,19 +314,16 @@ button.tool-active {
    RESPONSIVE
 ===================================== */
 @media (max-width: 1068px) {
-  /* Hide desktop menus */
   .menu-left > button,
   .menu-right > button
   { display: none !important; }
 
-  /* Dropdown positioning */
   .dropdown-content {
     position: fixed !important;
     z-index: 2000 !important;
     white-space: nowrap;
   }
 
-  /* Top responsive bar */
   .responsive-top-menu {
     display: flex; justify-content: space-between; align-items: center;
     padding: 10px 20px;
@@ -305,7 +332,6 @@ button.tool-active {
     position: fixed; top: 0; width: 100%; z-index: 1001;
   }
 
-  /* Side menus styling */
   .responsive-side-menu {
     position: fixed;
     top: 60px;
@@ -321,12 +347,10 @@ button.tool-active {
     z-index: 1001;
   }
 
-  /* Left menu on left */
   #responsiveLeftMenu { left: 0; border-right: 1px solid var(--border-medium); }
-  /* Right menu on right */
   #responsiveRightMenu { right: 0; border-left: 1px solid var(--border-medium); }
 
-  /* Buttons inside responsive menus */
+
   .responsive-side-menu button,
   .responsive-top-menu button {
     display: inline-flex !important;
@@ -338,7 +362,7 @@ button.tool-active {
     text-overflow: ellipsis;
   }
 
-  /* Enhance slider for mobile */
+
   .slider {
     z-index: 4000 !important;
     background: linear-gradient(to bottom, #464646, #a7a7a7) !important;

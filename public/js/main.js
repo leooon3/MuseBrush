@@ -13,16 +13,16 @@ import { attachCanvasEvents } from './events.js';
 import { setDrawingMode, setBrush } from './tool.js';
 
 /**
- * Initial setup after DOM is loaded.
+ * Perform the full initialization of the app after DOM is ready.
  */
 window.addEventListener('DOMContentLoaded', async () => {
-  // New canvas button
+  // Setup the "New Canvas" button
   const newCanvasBtn = document.getElementById('newCanvasBtn');
   if (newCanvasBtn) {
     newCanvasBtn.onclick = setupNewCanvas;
   }
 
-  // Initialize services and UI
+  // Initialize authentication, UI controls, gallery, exit handlers, etc.
   authInit();
   initUIControls();
   initLayerPanel();
@@ -30,17 +30,17 @@ window.addEventListener('DOMContentLoaded', async () => {
   initGallery();
   initExitHandlers();
 
-  // Initial state
+  // Set initial state values
   updateStates({
     globalDrawingMode: true,
     isInsertingText: false,
     drawingShape: null
   });
 
-  // Initialize layers
+  // Create initial layer
   initLayers(1);
 
-  // Setup first layer if exists
+  // Setup drawing and event handling for the first layer
   if (layers.length > 0) {
     updateStates({ activeLayerIndex: 0 });
     const firstLayer = layers[0];
@@ -52,12 +52,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     updateCanvasVisibility();
   }
 
-  // Responsive menus and layout
+  // Setup responsive menu and layout handling
   initResponsiveMenus();
   updateMenuHeight();
   window.addEventListener('resize', updateMenuHeight);
 
-  // Canvas resize on window resize
+  // Resize canvas on window resize
   window.addEventListener('resize', () => {
     layers.forEach(layer => fitCanvasToContainer(layer.canvas));
   });

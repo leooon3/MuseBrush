@@ -14,15 +14,14 @@ import {
 import { saveState } from './actions.js';
 
 /**
- * Applica il pennello selezionato o la gomma sul layer attivo.
- * @param {'Basic'|'Smooth'|'Thick'|'Spray'|'Dotted'|'Calligraphy'|'Eraser'|'PixelEraser'} type
+ * Set the current drawing brush on the active canvas layer.
+ * @param {'Basic'|'Smooth'|'Thick'|'Spray'|'Dotted'|'Calligraphy'|'Eraser'|'PixelEraser'} type - The brush type to apply.
  */
 export function setBrush(type) {
   const layer = getActiveLayer();
   if (!layer) return;
   const canvas = layer.canvas;
 
-  // Disabilita drawing mode e rimuove handler precedenti
   canvas.isDrawingMode = false;
   canvas.off('path:created');
 
@@ -94,18 +93,18 @@ export function setBrush(type) {
   updateStates({ currentBrush: type });
   canvas.freeDrawingBrush = brush;
 
-  // Riattiva drawing mode se consentito
+  // Activate drawing mode if not in pointer or other special modes
   canvas.isDrawingMode = !getIsPointerMode() && !drawingShape && !isInsertingText && !isFilling;
 
-  // Riattacca saveState per tutti i brush (eccetto eraser gestito sopra)
+  // Save state on drawing completion
   canvas.on('path:created', () => {
     saveState();
   });
 }
 
 /**
- * Abilita o disabilita la modalità di disegno sul layer attivo.
- * @param {boolean} active
+ * Enable or disable drawing mode on the current layer
+ * @param {boolean} active - True to enable drawing mode
  */
 export function setDrawingMode(active) {
   const layer = getActiveLayer();
@@ -116,17 +115,17 @@ export function setDrawingMode(active) {
   const drawing = allowDraw && !drawingShape && !isInsertingText && !isFilling;
 
   canvas.isDrawingMode = drawing;
-  canvas.selection      = !drawing;
+  canvas.selection = !drawing;
   canvas.skipTargetFind = drawing;
 
   canvas.getObjects().forEach(obj => {
     obj.selectable = !canvas.isDrawingMode;
-    obj.evented    = !canvas.isDrawingMode;
+    obj.evented = !canvas.isDrawingMode;
   });
 }
 
 /**
- * Pulisce il contenuto del layer attivo e ripristina lo sfondo.
+ * Clears all objects from the current layer canvas.
  */
 export function clearCanvas() {
   const layer = getActiveLayer();
@@ -139,7 +138,7 @@ export function clearCanvas() {
 }
 
 /**
- * Disabilita drawing mode su tutti i layer.
+ * Disables drawing mode on all canvas layers silently.
  */
 export function disableDrawingSilently() {
   layers.forEach(l => l.canvas.isDrawingMode = false);

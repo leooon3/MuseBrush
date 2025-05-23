@@ -7,6 +7,9 @@ import { showConfirm } from './canvas-utils.js';
 const backendUrl = 'https://musebrush.onrender.com';
 const frontendLogin = `${window.location.origin}`;
 
+/**
+ * Fetches CSRF token required for backend requests
+ */
 async function getCsrfToken() {
   const res = await fetch(`${backendUrl}/api/csrf-token`, { credentials: 'include' });
   if (!res.ok) throw new Error('Impossibile ottenere CSRF token');
@@ -14,37 +17,69 @@ async function getCsrfToken() {
   return csrfToken;
 }
 
+/**
+ * Initializes gallery UI event listeners
+ */
 export function initGallery() {
   const openBtn = document.getElementById('galleryBtn');
   if (openBtn) {
-    openBtn.addEventListener('click', () => {
-      document.getElementById('galleryModal').classList.remove('hidden');
-      loadProjectsFromBackend();
-    });
+    openBtn.removeEventListener('click', openGallery);
+    openBtn.addEventListener('click', openGallery);
   }
 
-  window.addEventListener('click', (e) => {
-    const modal = document.getElementById('galleryModal');
-    if (e.target === modal) {
-      modal.classList.add('hidden');
-    }
-  });
+  window.removeEventListener('click', closeModalOutside);
+  window.addEventListener('click', closeModalOutside);
 
-  document.getElementById('saveCanvasBtn').addEventListener('click', () => {
-    const projectName = document.getElementById('projectNameInput').value;
-    if (!projectName) return alert('Inserisci un nome per il progetto!');
-    saveProjectToBackend(projectName);
-  });
+  const saveBtn = document.getElementById('saveCanvasBtn');
+  saveBtn.removeEventListener('click', handleSaveClick);
+  saveBtn.addEventListener('click', handleSaveClick);
 
-  document.getElementById('updateProjectBtn').addEventListener('click', () => {
-    const projectId = getCurrentProjectId();
-    const projectName = document.getElementById('projectNameInput').value;
-    if (!projectId) return alert('Nessun progetto da aggiornare!');
-    if (!projectName) return alert('Inserisci un nome per aggiornare il progetto!');
-    updateProjectOnBackend(projectId, projectName);
-  });
+  const updateBtn = document.getElementById('updateProjectBtn');
+  updateBtn.removeEventListener('click', handleUpdateClick);
+  updateBtn.addEventListener('click', handleUpdateClick);
 }
 
+/**
+ * Opens the gallery modal and triggers loading of projects
+ */
+function openGallery() {
+  document.getElementById('galleryModal').classList.remove('hidden');
+  loadProjectsFromBackend();
+}
+
+/**
+ * Closes modal if user clicks outside of it
+ */
+function closeModalOutside(e) {
+  const modal = document.getElementById('galleryModal');
+  if (e.target === modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+/**
+ * Handles save project button click
+ */
+function handleSaveClick() {
+  const projectName = document.getElementById('projectNameInput').value;
+  if (!projectName) return alert('Inserisci un nome per il progetto!');
+  saveProjectToBackend(projectName);
+}
+
+/**
+ * Handles update project button click
+ */
+function handleUpdateClick() {
+  const projectId = getCurrentProjectId();
+  const projectName = document.getElementById('projectNameInput').value;
+  if (!projectId) return alert('Nessun progetto da aggiornare!');
+  if (!projectName) return alert('Inserisci un nome per aggiornare il progetto!');
+  updateProjectOnBackend(projectId, projectName);
+}
+
+/**
+ * Loads projects from backend and populates gallery
+ */
 export async function loadProjectsFromBackend() {
   const listEl = document.getElementById('projectList');
   if (!listEl) return;
@@ -70,7 +105,7 @@ export async function loadProjectsFromBackend() {
   }
 
   if (res.status === 401 || res.status === 403) {
-    return (window.location.href = frontendLogin);
+    return (alert('Devi essere autenticato , per vedere i progetti'));
   }
   if (!res.ok) {
     listEl.innerHTML = `<p>Errore ${res.status}</p>`;
@@ -90,6 +125,9 @@ export async function loadProjectsFromBackend() {
   });
 }
 
+/**
+ * Creates a DOM element representing a project item
+ */
 function createProjectItem(id, project) {
   const div = document.createElement('div');
   div.className = 'project';
@@ -127,6 +165,9 @@ function createProjectItem(id, project) {
   return div;
 }
 
+/**
+ * Deletes a project from the backend
+ */
 export async function deleteProjectFromBackend(projectId) {
   const token = await getCsrfToken();
   await fetch(`${backendUrl}/api/deleteProject`, {
@@ -138,6 +179,9 @@ export async function deleteProjectFromBackend(projectId) {
   loadProjectsFromBackend();
 }
 
+/**
+ * Saves a new project to the backend
+ */
 export async function saveProjectToBackend(projectName) {
   const project = {
     nome: projectName,
@@ -155,6 +199,9 @@ export async function saveProjectToBackend(projectName) {
   loadProjectsFromBackend();
 }
 
+/**
+ * Updates an existing project on the backend
+ */
 export async function updateProjectOnBackend(projectId, projectName) {
   const token = await getCsrfToken();
   await fetch(`${backendUrl}/api/updateProject`, {
@@ -166,6 +213,9 @@ export async function updateProjectOnBackend(projectId, projectName) {
   loadProjectsFromBackend();
 }
 
+/**
+ * Generates a preview image for a project using visible layers
+ */
 function generateProjectPreview() {
   const background = getBackgroundCanvas();
   if (!background) return '';

@@ -6,10 +6,9 @@ import { currentBrush, globalDrawingMode, updateStates } from './state.js';
 import { renderLayerList } from './layers.js';
 
 /**
- * showConfirm: Promise-based wrapper per dialog di conferma.
- * Sostituisci con un modal custom se preferisci.
- * @param {string} message - Testo del dialog.
- * @returns {Promise<boolean>}
+ * Display a confirmation dialog with a message
+ * @param {string} message - The message to display in the confirmation
+ * @returns {Promise<boolean>} - Resolves with true if confirmed, false otherwise
  */
 export function showConfirm(message) {
   return new Promise(resolve => {
@@ -19,12 +18,8 @@ export function showConfirm(message) {
 }
 
 /**
- * setupNewCanvas: elimina il canvas corrente e ne crea uno nuovo.
- * - Verifica autenticazione
- * - Chiede conferma all'utente
- * - Inizializza un nuovo layer
- * - Resetta undo/redo stack per ogni layer
- * - Aggiorna lo stato e la UI
+ * Clears existing canvas layers and initializes a new canvas session
+ * Requires the user to be authenticated
  */
 export async function setupNewCanvas() {
   const userId = localStorage.getItem('userId');
@@ -38,25 +33,25 @@ export async function setupNewCanvas() {
   );
   if (!confirmed) return;
 
-  // Svuota i layers e reinizializza uno nuovo
+  // Reset the layers array
   layers.length = 0;
   initLayers(1);
 
-  // Reset undo/redo stack a stato iniziale per ogni layer
+  // Reset undo/redo stacks for all new layers
   layers.forEach(layer => {
     const initialState = layer.canvas.toJSON();
     layer.undoStack = [initialState];
     layer.redoStack = [];
   });
 
-  // Aggiorna lo stato globale dell'app
+  // Reset application state to default
   updateStates({
     activeLayerIndex: 0,
     currentProjectName: null,
     globalDrawingMode: globalDrawingMode
   });
 
-  // Aggiorna la lista dei layers e la modalità di disegno
+  // Update UI and enable drawing tools
   renderLayerList();
   setDrawingMode(globalDrawingMode);
   setBrush(currentBrush);

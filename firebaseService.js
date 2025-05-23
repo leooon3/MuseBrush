@@ -4,7 +4,7 @@ import admin from 'firebase-admin';
 import nodemailer from 'nodemailer';
 import axios from 'axios';
 
-// Verifica delle variabili d’ambiente
+// Load environment variables required for Firebase and email services
 const {
   FIREBASE_API_KEY,
   FB_DATABASE_URL,
@@ -20,11 +20,12 @@ const {
   FIREBASE_PRIVATE_KEY
 } = process.env;
 
+// Validate essential Firebase config
 if (!FIREBASE_API_KEY || !FB_DATABASE_URL) {
   throw new Error('🚨 Firebase config environment variables are missing');
 }
 
-// Configura le credenziali del service account
+// Prepare Firebase Admin SDK credentials
 let serviceAccount;
 if (GOOGLE_APPLICATION_CREDENTIALS_JSON) {
   serviceAccount = JSON.parse(GOOGLE_APPLICATION_CREDENTIALS_JSON);
@@ -35,11 +36,11 @@ if (GOOGLE_APPLICATION_CREDENTIALS_JSON) {
   serviceAccount = {
     projectId:   FIREBASE_PROJECT_ID,
     clientEmail: FIREBASE_CLIENT_EMAIL,
-    privateKey:  FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    privateKey:  FIREBASE_PRIVATE_KEY.replace(/\n/g, '\n'),
   };
 }
 
-// Inizializza l’Admin SDK (singleton)
+// Initialize Firebase Admin SDK if not already initialized
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -47,9 +48,10 @@ if (!admin.apps.length) {
   });
 }
 
+// Firebase Auth instance
 const auth = admin.auth();
 
-// Configura Nodemailer
+// Setup Nodemailer transporter for sending emails
 const transporter = nodemailer.createTransport({
   host: SMTP_HOST,
   port: Number(SMTP_PORT),
@@ -61,7 +63,7 @@ const transporter = nodemailer.createTransport({
 });
 
 /**
- * Invia una mail tramite Nodemailer.
+ * Send email using Nodemailer
  * @param {{ to: string; subject: string; html: string }} mailOptions
  */
 async function sendMail({ to, subject, html }) {
@@ -69,7 +71,7 @@ async function sendMail({ to, subject, html }) {
 }
 
 /**
- * Registra un nuovo utente e invia il link di verifica.
+ * Register a new user with email/password and send verification email
  */
 export async function registerUser(req, res) {
   const { email, password } = req.body;
@@ -97,7 +99,7 @@ export async function registerUser(req, res) {
 }
 
 /**
- * Effettua il login via REST API Firebase e verifica il token.
+ * Authenticate a user using Firebase REST API and verify their token
  */
 export async function loginUserRaw(email, password) {
   if (!email || !password) {
@@ -126,7 +128,7 @@ export async function loginUserRaw(email, password) {
 }
 
 /**
- * Wrapper per gestire la richiesta di login e rispondere al client.
+ * Wrapper for loginUserRaw that handles HTTP request and response
  */
 export async function loginUser(req, res) {
   const { email, password } = req.body;
@@ -140,7 +142,7 @@ export async function loginUser(req, res) {
 }
 
 /**
- * Reinvia il link di verifica e-mail.
+ * Resend verification email to the user
  */
 export async function resendVerification(req, res) {
   const { email } = req.body;
@@ -160,7 +162,7 @@ export async function resendVerification(req, res) {
 }
 
 /**
- * Invia il link per il reset password via e-mail.
+ * Send a password reset email to the user
  */
 export async function resetPassword(req, res) {
   const { email } = req.body;

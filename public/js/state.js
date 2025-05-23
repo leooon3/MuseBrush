@@ -1,8 +1,6 @@
 // state.js
 
-/**
- * 📦 Stato globale dell’applicazione.
- */
+// Global state variables for the drawing application
 export let currentBrush        = "Basic";
 export let brushColor          = "#000000";
 export let globalDrawingMode   = true;
@@ -20,11 +18,9 @@ export let currentProjectName  = null;
 export let currentProjectId    = null;
 export let activeLayerIndex    = 0;
 export let isPointerMode       = false;
-export let isAuthenticated     = false;  // nuovo stato di autenticazione
+export let isAuthenticated     = false;  // Whether the user is logged in
 
-/**
- * 📌 Setter e Getter per lo stato.
- */
+// Getters and setters for each state variable
 export function setCurrentBrush(val)        { currentBrush        = val; }
 export function getCurrentBrush()           { return currentBrush; }
 
@@ -80,8 +76,8 @@ export function setIsAuthenticated(val)     { isAuthenticated     = val; }
 export function getIsAuthenticated()        { return isAuthenticated; }
 
 /**
- * 🚀 updateStates: aggiorna più stati in un colpo solo.
- * Usa le funzioni setter sopra definite.
+ * Bulk update multiple state values using the setters
+ * @param {Object} updates - Key-value pairs of state updates
  */
 export function updateStates(updates = {}) {
   const setterFns = {
@@ -102,7 +98,7 @@ export function updateStates(updates = {}) {
     currentProjectId:    setCurrentProjectId,
     activeLayerIndex:    setActiveLayerIndex,
     isPointerMode:       setIsPointerMode,
-    isAuthenticated:     setIsAuthenticated  // registrato qui
+    isAuthenticated:     setIsAuthenticated
   };
 
   Object.entries(updates).forEach(([key, value]) => {

@@ -10,6 +10,9 @@ const DEFAULT_CANVAS_WIDTH = 1920;
 const DEFAULT_CANVAS_HEIGHT = 1080;
 let backgroundCanvas = null;
 
+/**
+ * Returns the currently active canvas layer.
+ */
 export function getActiveLayer() {
   console.log('[getActiveLayer]', activeLayerIndex, 'of', layers.length);
   const layer = layers[activeLayerIndex];
@@ -17,6 +20,10 @@ export function getActiveLayer() {
   return layer;
 }
 
+/**
+ * Initializes the canvas layers and background.
+ * @param {number} count - Number of user layers to create
+ */
 export function initLayers(count = 1) {
   const container = document.querySelector('.canvas-container');
   container.innerHTML = '';
@@ -25,6 +32,11 @@ export function initLayers(count = 1) {
   updateCanvasVisibility();
 }
 
+/**
+ * Creates a new canvas layer, sets up its properties, and attaches event handlers.
+ * @param {HTMLElement} container - The DOM element to append the canvas to
+ * @param {number} index - The index of the new layer
+ */
 export function createLayer(container, index) {
   console.log('[createLayer] index =', index);
   if (!container) return;
@@ -40,11 +52,13 @@ export function createLayer(container, index) {
     height: DEFAULT_CANVAS_HEIGHT
   });
 
+  // Style and attach both canvas layers
   layerCanvas.lowerCanvasEl.classList.add('layer-canvas');
   layerCanvas.upperCanvasEl.classList.add('layer-canvas');
   container.appendChild(layerCanvas.lowerCanvasEl);
   container.appendChild(layerCanvas.upperCanvasEl);
 
+  // Save initial state and add layer to the array
   const initialState = JSON.stringify(layerCanvas.toJSON());
   console.log('[createLayer] initialState =', initialState);
   layers.push({
@@ -60,6 +74,9 @@ export function createLayer(container, index) {
   fitCanvasToContainer(layerCanvas);
 }
 
+/**
+ * Updates visibility, interactivity, and drawing mode of each layer.
+ */
 export function updateCanvasVisibility() {
   layers.forEach((layer, i) => {
     const canvas = layer.canvas;
@@ -77,6 +94,9 @@ export function updateCanvasVisibility() {
   });
 }
 
+/**
+ * Reorders all layers in the DOM according to their stacking order.
+ */
 export function updateCanvasStacking() {
   const container = document.querySelector('.canvas-container');
   container.innerHTML = '';
@@ -93,6 +113,10 @@ export function updateCanvasStacking() {
   updateCanvasVisibility();
 }
 
+/**
+ * Scales and positions a canvas to fit its container.
+ * @param {fabric.Canvas} canvas - The canvas to resize
+ */
 export function fitCanvasToContainer(canvas) {
   const container = document.querySelector('.canvas-container');
   const cw = container.clientWidth;
@@ -102,6 +126,7 @@ export function fitCanvasToContainer(canvas) {
   const containerRatio = cw / ch;
   const canvasRatio = vw / vh;
   let scale, dw, dh, mx = 0, my = 20;
+
   if (containerRatio > canvasRatio) {
     scale = ch / vh;
     dw = vw * scale;
@@ -125,11 +150,23 @@ export function fitCanvasToContainer(canvas) {
   canvas.renderAll();
 }
 
-export function getBackgroundCanvas() { return backgroundCanvas; }
+/**
+ * Returns the canvas used as the background layer.
+ */
+export function getBackgroundCanvas() {
+  return backgroundCanvas;
+}
+
+/**
+ * Creates a white background layer that sits behind all user layers.
+ * @param {HTMLElement} container - The DOM container to attach to
+ */
 export function createBackgroundLayer(container) {
   backgroundCanvas = new fabric.Canvas(document.createElement('canvas'), {
-    backgroundColor: 'white', isDrawingMode: false,
-    width: DEFAULT_CANVAS_WIDTH, height: DEFAULT_CANVAS_HEIGHT,
+    backgroundColor: 'white',
+    isDrawingMode: false,
+    width: DEFAULT_CANVAS_WIDTH,
+    height: DEFAULT_CANVAS_HEIGHT,
     selection: false
   });
   backgroundCanvas.lowerCanvasEl.style.zIndex = 0;
