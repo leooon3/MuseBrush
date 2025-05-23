@@ -1,5 +1,3 @@
-// gallery.js
-
 import { layers, getBackgroundCanvas } from './canvas.js';
 import { getCurrentCanvasState } from './storage.js';
 import { loadProject } from './projects.js';
@@ -9,21 +7,13 @@ import { showConfirm } from './canvas-utils.js';
 const backendUrl = 'https://musebrush.onrender.com';
 const frontendLogin = `${window.location.origin}`;
 
-/**
- * Recupera e ritorna il token CSRF per le chiamate protette.
- */
 async function getCsrfToken() {
-  const res = await fetch(`${backendUrl}/api/csrf-token`, {
-    credentials: 'include'
-  });
+  const res = await fetch(`${backendUrl}/api/csrf-token`, { credentials: 'include' });
   if (!res.ok) throw new Error('Impossibile ottenere CSRF token');
   const { csrfToken } = await res.json();
   return csrfToken;
 }
 
-/**
- * Inizializza il gallery modal e il bottone di apertura.
- */
 export function initGallery() {
   const openBtn = document.getElementById('galleryBtn');
   if (openBtn) {
@@ -39,22 +29,32 @@ export function initGallery() {
       modal.classList.add('hidden');
     }
   });
+
+  document.getElementById('saveCanvasBtn').addEventListener('click', () => {
+    const projectName = document.getElementById('projectNameInput').value;
+    if (!projectName) return alert('Inserisci un nome per il progetto!');
+    saveProjectToBackend(projectName);
+  });
+
+  document.getElementById('updateProjectBtn').addEventListener('click', () => {
+    const projectId = getCurrentProjectId();
+    const projectName = document.getElementById('projectNameInput').value;
+    if (!projectId) return alert('Nessun progetto da aggiornare!');
+    if (!projectName) return alert('Inserisci un nome per aggiornare il progetto!');
+    updateProjectOnBackend(projectId, projectName);
+  });
 }
 
-
-/**
- * Carica la lista dei progetti da backend e la renderizza.
- */
 export async function loadProjectsFromBackend() {
   const listEl = document.getElementById('projectList');
-  if (!listEl) return console.error('projectList non trovato in DOM');
+  if (!listEl) return;
   listEl.innerHTML = '<p>⏳ Caricamento...</p>';
 
   let token;
   try {
     token = await getCsrfToken();
   } catch {
-    return window.location.href = frontendLogin;
+    return (window.location.href = frontendLogin);
   }
 
   let res;
@@ -70,7 +70,7 @@ export async function loadProjectsFromBackend() {
   }
 
   if (res.status === 401 || res.status === 403) {
-    return window.location.href = frontendLogin;
+    return (window.location.href = frontendLogin);
   }
   if (!res.ok) {
     listEl.innerHTML = `<p>Errore ${res.status}</p>`;
@@ -90,9 +90,6 @@ export async function loadProjectsFromBackend() {
   });
 }
 
-/**
- * Crea e ritorna l’elemento DOM per un singolo progetto.
- */
 function createProjectItem(id, project) {
   const div = document.createElement('div');
   div.className = 'project';
@@ -130,97 +127,53 @@ function createProjectItem(id, project) {
   return div;
 }
 
-/**
- * Elimina un progetto su backend e ricarica la lista.
- */
 async function deleteProjectFromBackend(projectId) {
-  let token;
-  try {
-    token = await getCsrfToken();
-  } catch {
-    return window.location.href = frontendLogin;
-  }
-
-  const res = await fetch(`${backendUrl}/api/deleteProject`, {
+  const token = await getCsrfToken();
+  await fetch(`${backendUrl}/api/deleteProject`, {
     method: 'DELETE',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': token
-    },
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
     body: JSON.stringify({ projectId })
   });
-
-  if (res.status === 401 || res.status === 403) {
-    return window.location.href = frontendLogin;
-  }
-  const { message } = await res.json();
-  showGalleryMessage(message);
   loadProjectsFromBackend();
 }
 
-/**
- * Salva un nuovo progetto su backend.
- */
-export async function saveProjectToBackend(projectName) {
+async function saveProjectToBackend(projectName) {
   const project = {
     nome: projectName,
     layers: getCurrentCanvasState(),
     preview: generateProjectPreview(),
     timestamp: Date.now()
   };
-  let token;
-  try {
-    token = await getCsrfToken();
-  } catch {
-    return window.location.href = frontendLogin;
-  }
-
-  const res = await fetch(`${backendUrl}/api/saveProject`, {
+  const token = await getCsrfToken();
+  await fetch(`${backendUrl}/api/saveProject`, {
     method: 'POST',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': token
-    },
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
     body: JSON.stringify({ project })
   });
-
-  if (res.status === 401 || res.status === 403) {
-    return window.location.href = frontendLogin;
-  }
-  const { message } = await res.json();
-  showGalleryMessage(message);
   loadProjectsFromBackend();
 }
 
-/**
- * Genera il preview JPEG unendo background e layers visibili.
- */
+async function updateProjectOnBackend(projectId, projectName) {
+  const token = await getCsrfToken();
+  await fetch(`${backendUrl}/api/updateProject`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
+    body: JSON.stringify({ projectId, project: { nome: projectName, layers: getCurrentCanvasState(), preview: generateProjectPreview() } })
+  });
+  loadProjectsFromBackend();
+}
+
 function generateProjectPreview() {
   const background = getBackgroundCanvas();
   if (!background) return '';
-  const width = background.getWidth();
-  const height = background.getHeight();
-  const merged = document.createElement('canvas');
-  merged.width = width;
-  merged.height = height;
-  const ctx = merged.getContext('2d');
+  const canvas = document.createElement('canvas');
+  canvas.width = background.getWidth();
+  canvas.height = background.getHeight();
+  const ctx = canvas.getContext('2d');
   ctx.drawImage(background.lowerCanvasEl, 0, 0);
-  layers.forEach(layer => {
-    if (layer.visible) {
-      ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0);
-    }
-  });
-  return merged.toDataURL('image/jpeg', 0.6);
-}
-
-/**
- * Mostra un messaggio all’interno del gallery modal.
- */
-function showGalleryMessage(msg) {
-  const listEl = document.getElementById('projectList');
-  if (listEl) {
-    listEl.innerHTML = `<p style="padding:10px; text-align:center;">${msg}</p>`;
-  }
+  layers.forEach(layer => layer.visible && ctx.drawImage(layer.canvas.lowerCanvasEl, 0, 0));
+  return canvas.toDataURL('image/jpeg', 0.6);
 }
