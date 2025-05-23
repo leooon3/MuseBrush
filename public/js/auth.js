@@ -117,14 +117,11 @@ export async function logoutUser() {
 
 // Login con Google tramite popup e polling dell'URL di callback
 export function loginWithGoogle() {
-  // 1) Apro il popup verso l'endpoint Google OAuth sul backend
   const popup = window.open(
     `${backendUrl}/api/googleLogin`,
     'googleLogin',
     'width=600,height=700'
   );
-  
-  // 2) Ogni 500ms guardo se il popup è tornato sulla mia pagina callback statica
   const pollTimer = setInterval(async () => {
     if (!popup || popup.closed) {
       clearInterval(pollTimer);
@@ -135,34 +132,27 @@ export function loginWithGoogle() {
     try {
       href = popup.location.href;
     } catch {
-      // è ancora su google.com o un'origine diversa, aspetto
-      return;
+      return; // ancora in google.com, aspetto
     }
     const expected = `${window.location.origin}/google-callback.html`;
     if (href.startsWith(expected)) {
-      // 3) estraggo uid dalla query string
+      clearInterval(pollTimer);
       const params = new URLSearchParams(popup.location.search);
       const uid = params.get('uid');
       if (uid) {
-        clearInterval(pollTimer);
-
-        // 4) Qui NON fai postMessage (opener è null), bensì:
-        //    a) Aggiorni la UI
+        // 1) Aggiorna UI e stato
         localStorage.setItem('userId', uid);
         updateAuthIcon(true);
         initGallery();
-
-        //    b) Ricarichi la pagina principale per includere il cookie di sessione
+        // 2) Ricarica il main per i cookie di sessione
         window.location.reload();
-
-        //    c) Se vuoi chiudere il popup, fallo **da qui**, dopo un paio di secondi
-        setTimeout(() => {
-          if (!popup.closed) popup.close();
-        }, 1000);
+        // 3) Solo **dopo** un secondo, chiudi il popup
+        setTimeout(() => popup.close(), 1000);
       }
     }
   }, 500);
 }
+
 
 function attachAuthHandlers() {
   document.getElementById('loginBtn')?.addEventListener('click', loginWithEmail);

@@ -124,21 +124,20 @@ app.post('/api/resetPassword',      firebaseService.resetPassword);
 app.post('/api/resendVerification', firebaseService.resendVerification);
 
 // 4. Google OAuth
-app.get(
-  '/api/googleLogin',
+app.get('/api/googleLogin',
   passport.authenticate('google', { scope: ['profile'] })
 );
-app.get(
-  '/api/googleCallback',
+
+// callback di Google: dopo passport.authenticate, rispondi SOLO con il file statico
+app.get('/api/googleCallback',
   passport.authenticate('google', {
     failureRedirect: process.env.FRONTEND_URL,
     session: true
   }),
   (req, res) => {
-    // Dopo autenticazione, prendo l'UID da req.user
     const uid = req.user.uid;
-    // Faccio un redirect vero al file statico includendo uid in query
-     res.redirect(`${process.env.BACKEND_URL}/google-callback.html?uid=${encodeURIComponent(uid)}`);
+    // Invia il tuo Google callback statico **includendo** ?uid=
+    res.redirect(`${process.env.BACKEND_URL}/google-callback.html?uid=${encodeURIComponent(uid)}`);
   }
 );
 
