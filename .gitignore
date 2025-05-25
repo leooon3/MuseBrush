@@ -3,6 +3,5 @@
 node_modules
 babel.config.js
 tests
-info
 coverage
 .gitignore
