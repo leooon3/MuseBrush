@@ -1,8 +1,8 @@
-info/backend/node_modules/
-info/backend/serviceAccountKey.json
 .env
 .env.local
 node_modules
 babel.config.js
 tests
+info
 coverage
+.gitignore

@@ -235,12 +235,34 @@ button.tool-active {
   background-color: #fff;
   padding: 24px 32px;
   border-radius: 12px;
-  width: 90%; max-width: 500px;
-  max-height: 85vh; overflow-y: auto;
+  width: 95%;
+  max-width: 700px;
+  max-height: 85vh;
+  overflow-x: hidden;
+  overflow-y: auto; 
   box-shadow: 0 8px 24px var(--shadow-medium);
   animation: slideInUp 0.3s ease-out;
 }
-/* Pulsante chiudi “×” */
+#importProjectInput + .import-label,
+.import-label {
+  display: inline-block;
+  padding: 8px 12px;
+  background: var(--info);
+  color: #fff;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transform-origin: center center;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+#importProjectInput + .import-label:hover,
+.import-label:hover {
+  background: var(--info-dark);
+  transform: scale(1.02);
+}
+
+
 .modal-content .close-btn {
   position: absolute;
   top: 12px; right: 12px;
